@@ -177,12 +177,21 @@ export default function LoginPage() {
             </p>
           </div>
 
+          {/* Build info */}
+          <div className="mt-6 p-3 bg-stone-100 rounded-lg">
+            <div className="text-center text-xs text-stone-500">
+              <span className="font-semibold">Poslednje ažuriranje:</span>
+              <br />
+              <span className="text-stone-600">12.02.2026 - 08:45</span>
+            </div>
+          </div>
+
           {/* Footer */}
-          <div className="mt-10 pt-6 border-t border-stone-200">
+          <div className="mt-6 pt-6 border-t border-stone-200">
             <div className="flex items-center justify-center gap-3 text-xs text-stone-400">
               <span className="font-medium">AuditClaw v1.0</span>
               <span className="w-1 h-1 bg-stone-300 rounded-full"></span>
-              <span>2024</span>
+              <span>2026</span>
             </div>
           </div>
         </div>
