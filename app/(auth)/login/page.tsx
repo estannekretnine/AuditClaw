@@ -1,21 +1,41 @@
 'use client'
 
 import { useState } from 'react'
-import { login } from '@/lib/actions/auth'
+import { useRouter } from 'next/navigation'
 import { Building2, ArrowRight } from 'lucide-react'
 
 export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const router = useRouter()
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
     setError('')
     setLoading(true)
 
-    const result = await login(formData)
-    
-    if (result?.error) {
-      setError(result.error)
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || 'Greška pri prijavljivanju')
+        setLoading(false)
+        return
+      }
+
+      router.push('/dashboard')
+    } catch {
+      setError('Greška pri povezivanju sa serverom')
       setLoading(false)
     }
   }
@@ -101,7 +121,7 @@ export default function LoginPage() {
           </div>
 
           {/* Forma */}
-          <form action={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-stone-700 mb-2">
                 Email adresa
@@ -182,7 +202,7 @@ export default function LoginPage() {
             <div className="text-center text-xs text-stone-500">
               <span className="font-semibold">Poslednje ažuriranje:</span>
               <br />
-              <span className="text-stone-600">12.02.2026 - 09:35</span>
+              <span className="text-stone-600">12.02.2026 - 09:45</span>
             </div>
           </div>
 
