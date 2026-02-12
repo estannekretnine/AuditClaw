@@ -6,11 +6,11 @@ import { z } from 'zod'
 
 const korisnikSchema = z.object({
   naziv: z.string().min(1, 'Naziv je obavezan'),
-  email: z.string().email('Nevažeća email adresa'),
-  password: z.string().optional(),
+  email: z.string().email('Nevažeća email adresa').optional().nullable(),
+  password: z.string().optional().nullable(),
   brojmob: z.string().optional().nullable(),
   adresa: z.string().optional().nullable(),
-  stsstatus: z.enum(['admin', 'agent', 'user']).default('admin'),
+  stsstatus: z.enum(['kupac', 'prodavac', 'agent', 'admin', 'manager']).default('admin'),
   stsaktivan: z.enum(['da', 'ne']).default('da'),
 })
 

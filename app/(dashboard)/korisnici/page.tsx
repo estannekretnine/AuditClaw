@@ -57,7 +57,7 @@ export default function KorisniciPage() {
   }
 
   const handleToggleStatus = async (korisnik: Korisnik) => {
-    const { error } = await toggleKorisnikStatus(korisnik.id, korisnik.stsaktivan)
+    const { error } = await toggleKorisnikStatus(korisnik.id, korisnik.stsaktivan || 'ne')
     if (error) {
       alert('Greška pri promeni statusa: ' + error)
       return
@@ -149,9 +149,11 @@ export default function KorisniciPage() {
 
   const getStatusBadgeColor = (status: string) => {
     const colors: Record<string, string> = {
-      'user': 'bg-blue-100 text-blue-700 border-blue-200',
+      'kupac': 'bg-blue-100 text-blue-700 border-blue-200',
+      'prodavac': 'bg-green-100 text-green-700 border-green-200',
       'agent': 'bg-purple-100 text-purple-700 border-purple-200',
       'admin': 'bg-red-100 text-red-700 border-red-200',
+      'manager': 'bg-amber-100 text-amber-700 border-amber-200',
     }
     return colors[status] || 'bg-gray-100 text-gray-700 border-gray-200'
   }
@@ -415,8 +417,10 @@ export default function KorisniciPage() {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Status *</label>
                 <select value={formData.stsstatus} onChange={(e) => setFormData({ ...formData, stsstatus: e.target.value })} required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all">
                   <option value="admin">Admin</option>
+                  <option value="manager">Manager</option>
                   <option value="agent">Agent</option>
-                  <option value="user">User</option>
+                  <option value="prodavac">Prodavac</option>
+                  <option value="kupac">Kupac</option>
                 </select>
               </div>
               <div>
