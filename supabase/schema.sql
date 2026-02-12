@@ -46,3 +46,60 @@ CREATE POLICY "Allow public update access" ON korisnici
 DROP POLICY IF EXISTS "Allow public delete access" ON korisnici;
 CREATE POLICY "Allow public delete access" ON korisnici
   FOR DELETE USING (true);
+
+-- =============================================
+-- Tabela PONUDA - RLS politike
+-- =============================================
+-- NAPOMENA: Tabela 'ponuda' već postoji u bazi 'audit'
+-- Pokrenite ove komande u Supabase SQL Editor-u
+
+-- Omogući RLS za ponuda tabelu
+ALTER TABLE ponuda ENABLE ROW LEVEL SECURITY;
+
+-- Politika za čitanje ponuda
+DROP POLICY IF EXISTS "Allow public read ponuda" ON ponuda;
+CREATE POLICY "Allow public read ponuda" ON ponuda
+  FOR SELECT USING (true);
+
+-- Politika za insert ponuda
+DROP POLICY IF EXISTS "Allow public insert ponuda" ON ponuda;
+CREATE POLICY "Allow public insert ponuda" ON ponuda
+  FOR INSERT WITH CHECK (true);
+
+-- Politika za update ponuda
+DROP POLICY IF EXISTS "Allow public update ponuda" ON ponuda;
+CREATE POLICY "Allow public update ponuda" ON ponuda
+  FOR UPDATE USING (true) WITH CHECK (true);
+
+-- Politika za delete ponuda
+DROP POLICY IF EXISTS "Allow public delete ponuda" ON ponuda;
+CREATE POLICY "Allow public delete ponuda" ON ponuda
+  FOR DELETE USING (true);
+
+-- =============================================
+-- Tabela PONUDAFOTO - RLS politike
+-- =============================================
+-- NAPOMENA: Tabela 'ponudafoto' već postoji u bazi 'audit'
+
+-- Omogući RLS za ponudafoto tabelu
+ALTER TABLE ponudafoto ENABLE ROW LEVEL SECURITY;
+
+-- Politika za čitanje fotografija
+DROP POLICY IF EXISTS "Allow public read ponudafoto" ON ponudafoto;
+CREATE POLICY "Allow public read ponudafoto" ON ponudafoto
+  FOR SELECT USING (true);
+
+-- Politika za insert fotografija
+DROP POLICY IF EXISTS "Allow public insert ponudafoto" ON ponudafoto;
+CREATE POLICY "Allow public insert ponudafoto" ON ponudafoto
+  FOR INSERT WITH CHECK (true);
+
+-- Politika za update fotografija
+DROP POLICY IF EXISTS "Allow public update ponudafoto" ON ponudafoto;
+CREATE POLICY "Allow public update ponudafoto" ON ponudafoto
+  FOR UPDATE USING (true) WITH CHECK (true);
+
+-- Politika za delete fotografija
+DROP POLICY IF EXISTS "Allow public delete ponudafoto" ON ponudafoto;
+CREATE POLICY "Allow public delete ponudafoto" ON ponudafoto
+  FOR DELETE USING (true);

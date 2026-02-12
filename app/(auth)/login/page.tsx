@@ -202,7 +202,7 @@ export default function LoginPage() {
             <div className="text-center text-xs text-stone-500">
               <span className="font-semibold">Poslednje ažuriranje:</span>
               <br />
-              <span className="text-stone-600">12.02.2026 - 10:20</span>
+              <span className="text-stone-600">12.02.2026 - 19:35</span>
             </div>
           </div>
 
