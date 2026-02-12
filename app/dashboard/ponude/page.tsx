@@ -677,9 +677,17 @@ export default function PonudePage() {
               key={ponuda.id}
               className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-200"
             >
-              {/* Placeholder image */}
-              <div className="h-40 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative">
-                <Home className="w-12 h-12 text-gray-300" />
+              {/* Fotografija */}
+              <div className="h-40 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative overflow-hidden">
+                {ponuda.glavna_foto_url ? (
+                  <img 
+                    src={ponuda.glavna_foto_url} 
+                    alt={ponuda.naslovoglasa || 'Ponuda'} 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Home className="w-12 h-12 text-gray-300" />
+                )}
                 <div className="absolute top-3 left-3">
                   {getTipBadge(ponuda.stsrentaprodaja)}
                 </div>
