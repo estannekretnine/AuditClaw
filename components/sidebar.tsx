@@ -18,7 +18,7 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
   const [isAdminOpen, setIsAdminOpen] = useState(true)
   const pathname = usePathname()
 
-  const isAdmin = user?.stsstatus === 'admin'
+  const isAdmin = user?.stsstatus === 'admin' || user?.stsstatus === 'manager'
 
   const adminSubItems = [
     { id: 'korisnici', label: 'Korisnici', href: '/dashboard/korisnici', icon: Users },

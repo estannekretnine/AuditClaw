@@ -42,7 +42,7 @@ export default function DashboardLayout({
     await logout()
   }
 
-  const isAdmin = user?.stsstatus === 'admin'
+  const isAdmin = user?.stsstatus === 'admin' || user?.stsstatus === 'manager'
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
