@@ -5,12 +5,13 @@ import {
   Plus, Home, ArrowUp, ArrowDown, X, 
   Check, ChevronLeft, ChevronRight,
   Filter, LayoutGrid, LayoutList, Pencil, MoreVertical, Edit,
-  Archive, ArchiveRestore
+  Archive, ArchiveRestore, Megaphone
 } from 'lucide-react'
 import { getPonude, togglePonudaStatus, arhivirajPonuda, dearhivirajPonuda } from '@/lib/actions/ponude'
 import type { Ponuda } from '@/lib/types/ponuda'
 import type { Korisnik } from '@/lib/types/database'
 import PonudaForm from '@/components/ponuda-form'
+import KampanjaModal from '@/components/kampanja-modal'
 
 export default function PonudePage() {
   const [ponude, setPonude] = useState<Ponuda[]>([])
@@ -23,6 +24,8 @@ export default function PonudePage() {
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
   const [showFilterModal, setShowFilterModal] = useState(false)
   const [openActionMenu, setOpenActionMenu] = useState<number | null>(null)
+  const [showKampanjaModal, setShowKampanjaModal] = useState(false)
+  const [selectedPonudaForKampanja, setSelectedPonudaForKampanja] = useState<Ponuda | null>(null)
   
   // Paginacija
   const [currentPage, setCurrentPage] = useState(1)
@@ -116,6 +119,12 @@ export default function PonudePage() {
     }
     loadPonude()
     setOpenActionMenu(null)
+  }
+
+  const handleKampanja = (ponuda: Ponuda) => {
+    setOpenActionMenu(null)
+    setSelectedPonudaForKampanja(ponuda)
+    setShowKampanjaModal(true)
   }
 
   const formatDate = (dateString: string | null) => {
@@ -601,6 +610,16 @@ export default function PonudePage() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation()
+                                  handleKampanja(ponuda)
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-violet-50 hover:text-violet-700 transition-colors"
+                              >
+                                <Megaphone className="w-3 h-3" />
+                                Kampanja
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
                                   handleArhiviraj(ponuda)
                                 }}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
@@ -779,6 +798,19 @@ export default function PonudePage() {
           userStatus={user?.stsstatus || null}
           onClose={handleFormClose}
           onSuccess={handleFormSuccess}
+        />
+      )}
+
+      {/* Kampanja Modal */}
+      {showKampanjaModal && selectedPonudaForKampanja && (
+        <KampanjaModal
+          ponuda={selectedPonudaForKampanja}
+          userId={user?.id || null}
+          userStatus={user?.stsstatus || null}
+          onClose={() => {
+            setShowKampanjaModal(false)
+            setSelectedPonudaForKampanja(null)
+          }}
         />
       )}
     </div>
