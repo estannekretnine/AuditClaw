@@ -50,10 +50,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Nemate pristup admin panelu.' }, { status: 403 })
     }
 
-    // Čuvanje korisnika u cookie
+    // Čuvanje korisnika u cookie (bez httpOnly da bi klijent mogao da čita)
     const cookieStore = await cookies()
     cookieStore.set('user', JSON.stringify(korisnik), {
-      httpOnly: true,
+      httpOnly: false, // Mora biti false da bi klijent mogao da čita user data
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 dana
