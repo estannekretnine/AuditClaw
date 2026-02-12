@@ -5,13 +5,14 @@ import {
   Plus, Home, ArrowUp, ArrowDown, X, 
   Check, ChevronLeft, ChevronRight,
   Filter, LayoutGrid, LayoutList, Pencil, MoreVertical, Edit,
-  Archive, ArchiveRestore, Megaphone
+  Archive, ArchiveRestore, Megaphone, Phone
 } from 'lucide-react'
 import { getPonude, togglePonudaStatus, arhivirajPonuda, dearhivirajPonuda } from '@/lib/actions/ponude'
 import type { Ponuda } from '@/lib/types/ponuda'
 import type { Korisnik } from '@/lib/types/database'
 import PonudaForm from '@/components/ponuda-form'
 import KampanjaModal from '@/components/kampanja-modal'
+import PoziviModal from '@/components/pozivi-modal'
 
 export default function PonudePage() {
   const [ponude, setPonude] = useState<Ponuda[]>([])
@@ -26,6 +27,8 @@ export default function PonudePage() {
   const [openActionMenu, setOpenActionMenu] = useState<number | null>(null)
   const [showKampanjaModal, setShowKampanjaModal] = useState(false)
   const [selectedPonudaForKampanja, setSelectedPonudaForKampanja] = useState<Ponuda | null>(null)
+  const [showPoziviModal, setShowPoziviModal] = useState(false)
+  const [selectedPonudaForPozivi, setSelectedPonudaForPozivi] = useState<Ponuda | null>(null)
   
   // Paginacija
   const [currentPage, setCurrentPage] = useState(1)
@@ -125,6 +128,12 @@ export default function PonudePage() {
     setOpenActionMenu(null)
     setSelectedPonudaForKampanja(ponuda)
     setShowKampanjaModal(true)
+  }
+
+  const handlePozivi = (ponuda: Ponuda) => {
+    setOpenActionMenu(null)
+    setSelectedPonudaForPozivi(ponuda)
+    setShowPoziviModal(true)
   }
 
   const formatDate = (dateString: string | null) => {
@@ -620,6 +629,16 @@ export default function PonudePage() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation()
+                                  handlePozivi(ponuda)
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
+                              >
+                                <Phone className="w-3 h-3" />
+                                Pozivi
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
                                   handleArhiviraj(ponuda)
                                 }}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
@@ -810,6 +829,19 @@ export default function PonudePage() {
           onClose={() => {
             setShowKampanjaModal(false)
             setSelectedPonudaForKampanja(null)
+          }}
+        />
+      )}
+
+      {/* Pozivi Modal */}
+      {showPoziviModal && selectedPonudaForPozivi && (
+        <PoziviModal
+          ponuda={selectedPonudaForPozivi}
+          userId={user?.id || null}
+          userStatus={user?.stsstatus || null}
+          onClose={() => {
+            setShowPoziviModal(false)
+            setSelectedPonudaForPozivi(null)
           }}
         />
       )}
