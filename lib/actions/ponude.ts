@@ -124,17 +124,19 @@ export async function createPonuda(formData: FormData) {
 
   const supabase = await createClient()
 
-  const { error } = await supabase
+  const { data: insertedData, error } = await supabase
     .from('ponuda')
     .insert([data])
+    .select('id')
+    .single()
 
   if (error) {
     console.error('Error creating ponuda:', error)
-    return { error: error.message }
+    return { error: error.message, data: null }
   }
 
   revalidatePath('/dashboard/ponude')
-  return { error: null }
+  return { error: null, data: insertedData }
 }
 
 // Ažuriranje ponude
@@ -212,6 +214,42 @@ export async function deletePonuda(id: number) {
   return { error: null }
 }
 
+// Arhiviranje ponude (postavlja stsaktivan na false)
+export async function arhivirajPonuda(id: number) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('ponuda')
+    .update({ stsaktivan: false })
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error archiving ponuda:', error)
+    return { error: error.message }
+  }
+
+  revalidatePath('/dashboard/ponude')
+  return { error: null }
+}
+
+// Dearhiviranje ponude (postavlja stsaktivan na true)
+export async function dearhivirajPonuda(id: number) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('ponuda')
+    .update({ stsaktivan: true })
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error unarchiving ponuda:', error)
+    return { error: error.message }
+  }
+
+  revalidatePath('/dashboard/ponude')
+  return { error: null }
+}
+
 // Toggle status aktivan/neaktivan
 export async function togglePonudaStatus(id: number, currentStatus: boolean | null) {
   const supabase = await createClient()
@@ -225,6 +263,129 @@ export async function togglePonudaStatus(id: number, currentStatus: boolean | nu
   if (error) {
     console.error('Error toggling ponuda status:', error)
     return { error: error.message }
+  }
+
+  revalidatePath('/dashboard/ponude')
+  return { error: null }
+}
+
+// Dohvatanje fotografija za ponudu
+export async function getPonudaFotografije(ponudaId: number) {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('ponudafoto')
+    .select('*')
+    .eq('idponude', ponudaId)
+    .order('redosled', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching ponuda photos:', error)
+    return { data: null, error: error.message }
+  }
+
+  return { data, error: null }
+}
+
+// Interface za foto item koji dolazi iz komponente
+interface PhotoItemInput {
+  id: number
+  file?: File
+  url: string
+  opis: string | null
+  redosled: number | null
+  glavna: boolean | null
+  stsskica: boolean | null
+  skica_coords?: string | null
+  idponude?: number | null
+  datumpromene?: string
+  opisfoto?: Record<string, unknown> | null
+  skica_segment?: string | null
+  isNew?: boolean
+  isDeleted?: boolean
+}
+
+// Čuvanje fotografija za ponudu
+export async function savePonudaFotografije(ponudaId: number, photos: PhotoItemInput[]) {
+  const supabase = await createClient()
+
+  // 1. Obriši fotografije koje su označene za brisanje
+  const photosToDelete = photos.filter(p => p.isDeleted && !p.isNew)
+  for (const photo of photosToDelete) {
+    // Obriši iz storage ako je URL iz Supabase
+    if (photo.url && photo.url.includes('supabase')) {
+      const urlParts = photo.url.split('/ponudafoto/')
+      if (urlParts[1]) {
+        await supabase.storage.from('ponudafoto').remove([urlParts[1]])
+      }
+    }
+    
+    // Obriši iz baze
+    await supabase.from('ponudafoto').delete().eq('id', photo.id)
+  }
+
+  // 2. Upload novih fotografija i ažuriraj postojeće
+  const photosToSave = photos.filter(p => !p.isDeleted)
+  
+  for (const photo of photosToSave) {
+    let photoUrl = photo.url
+
+    // Ako ima novi file, upload-uj ga
+    if (photo.file && photo.isNew) {
+      const fileExt = photo.file.name.split('.').pop()
+      const fileName = `${ponudaId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('ponudafoto')
+        .upload(fileName, photo.file)
+
+      if (uploadError) {
+        console.error('Error uploading photo:', uploadError)
+        continue
+      }
+
+      // Dobij public URL
+      const { data: urlData } = supabase.storage
+        .from('ponudafoto')
+        .getPublicUrl(fileName)
+      
+      photoUrl = urlData.publicUrl
+    }
+
+    // Pripremi podatke za čuvanje
+    const photoData = {
+      idponude: ponudaId,
+      url: photoUrl,
+      opis: photo.opis,
+      redosled: photo.redosled,
+      glavna: photo.glavna,
+      stsskica: photo.stsskica,
+      skica_coords: photo.skica_coords || null,
+      skica_segment: photo.skica_segment || null,
+      opisfoto: photo.opisfoto || null,
+      datumpromene: new Date().toISOString()
+    }
+
+    if (photo.isNew) {
+      // Insert nova fotografija
+      const { error: insertError } = await supabase
+        .from('ponudafoto')
+        .insert([photoData])
+
+      if (insertError) {
+        console.error('Error inserting photo:', insertError)
+      }
+    } else {
+      // Update postojeća fotografija
+      const { error: updateError } = await supabase
+        .from('ponudafoto')
+        .update(photoData)
+        .eq('id', photo.id)
+
+      if (updateError) {
+        console.error('Error updating photo:', updateError)
+      }
+    }
   }
 
   revalidatePath('/dashboard/ponude')

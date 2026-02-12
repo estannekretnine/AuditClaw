@@ -4,9 +4,10 @@ import { useState, useEffect, useMemo } from 'react'
 import { 
   Plus, Home, ArrowUp, ArrowDown, X, 
   Check, ChevronLeft, ChevronRight,
-  Filter, LayoutGrid, LayoutList, Pencil, MoreVertical, Edit
+  Filter, LayoutGrid, LayoutList, Pencil, MoreVertical, Edit,
+  Archive, ArchiveRestore
 } from 'lucide-react'
-import { getPonude, togglePonudaStatus } from '@/lib/actions/ponude'
+import { getPonude, togglePonudaStatus, arhivirajPonuda, dearhivirajPonuda } from '@/lib/actions/ponude'
 import type { Ponuda } from '@/lib/types/ponuda'
 import type { Korisnik } from '@/lib/types/database'
 import PonudaForm from '@/components/ponuda-form'
@@ -26,6 +27,9 @@ export default function PonudePage() {
   // Paginacija
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
+
+  // Filter za status (aktivne/arhivirane/sve)
+  const [statusFilter, setStatusFilter] = useState<'aktivne' | 'arhivirane' | 'sve'>('aktivne')
 
   // Filteri za kolone
   const [columnFilters, setColumnFilters] = useState({
@@ -93,6 +97,26 @@ export default function PonudePage() {
     setOpenActionMenu(null)
   }
 
+  const handleArhiviraj = async (ponuda: Ponuda) => {
+    if (ponuda.stsaktivan) {
+      // Arhiviraj
+      const { error } = await arhivirajPonuda(ponuda.id)
+      if (error) {
+        alert('Greška pri arhiviranju: ' + error)
+        return
+      }
+    } else {
+      // Dearhiviraj
+      const { error } = await dearhivirajPonuda(ponuda.id)
+      if (error) {
+        alert('Greška pri dearhiviranju: ' + error)
+        return
+      }
+    }
+    loadPonude()
+    setOpenActionMenu(null)
+  }
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-'
     try {
@@ -137,6 +161,14 @@ export default function PonudePage() {
 
   const filteredAndSortedData = useMemo(() => {
     let data = [...ponude]
+
+    // Primeni status filter
+    if (statusFilter === 'aktivne') {
+      data = data.filter(p => p.stsaktivan === true)
+    } else if (statusFilter === 'arhivirane') {
+      data = data.filter(p => p.stsaktivan === false || p.stsaktivan === null)
+    }
+    // 'sve' - ne filtrira
 
     // Primeni filtere kolona
     Object.entries(columnFilters).forEach(([key, value]) => {
@@ -192,7 +224,7 @@ export default function PonudePage() {
     }
 
     return data
-  }, [ponude, sortColumn, sortDirection, columnFilters])
+  }, [ponude, sortColumn, sortDirection, columnFilters, statusFilter])
 
   // Paginacija
   const totalPages = Math.ceil(filteredAndSortedData.length / itemsPerPage)
@@ -272,7 +304,7 @@ export default function PonudePage() {
           <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Ponude</h2>
           <p className="text-gray-500 mt-1">Upravljanje ponudama nekretnina</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={handleAdd}
             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-lg shadow-amber-500/25 font-medium"
@@ -301,6 +333,40 @@ export default function PonudePage() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Status filter tabs */}
+      <div className="flex items-center gap-2 bg-white rounded-xl p-1 shadow-sm border border-gray-100 w-fit">
+        <button
+          onClick={() => { setStatusFilter('aktivne'); setCurrentPage(1) }}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            statusFilter === 'aktivne' 
+              ? 'bg-emerald-100 text-emerald-700' 
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          Aktivne
+        </button>
+        <button
+          onClick={() => { setStatusFilter('arhivirane'); setCurrentPage(1) }}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            statusFilter === 'arhivirane' 
+              ? 'bg-gray-700 text-white' 
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          Arhivirane
+        </button>
+        <button
+          onClick={() => { setStatusFilter('sve'); setCurrentPage(1) }}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            statusFilter === 'sve' 
+              ? 'bg-amber-100 text-amber-700' 
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          Sve
+        </button>
       </div>
 
       {ponude.length === 0 ? (
@@ -504,18 +570,18 @@ export default function PonudePage() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  handleToggleStatus(ponuda)
+                                  handleArhiviraj(ponuda)
                                 }}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                               >
                                 {ponuda.stsaktivan ? (
                                   <>
-                                    <X className="w-3 h-3" />
-                                    Deaktiviraj
+                                    <Archive className="w-3 h-3" />
+                                    Arhiviraj
                                   </>
                                 ) : (
                                   <>
-                                    <Check className="w-3 h-3" />
+                                    <ArchiveRestore className="w-3 h-3" />
                                     Aktiviraj
                                   </>
                                 )}

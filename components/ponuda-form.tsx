@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { X, Home, MapPin, DollarSign, Settings, Link2, ChevronDown, ChevronUp } from 'lucide-react'
-import { createPonuda, updatePonuda } from '@/lib/actions/ponude'
+import { useState, useEffect } from 'react'
+import { X, Home, MapPin, DollarSign, Settings, Link2, ChevronDown, ChevronUp, Image as ImageIcon } from 'lucide-react'
+import { createPonuda, updatePonuda, getPonudaFotografije, savePonudaFotografije } from '@/lib/actions/ponude'
 import type { Ponuda } from '@/lib/types/ponuda'
+import PhotoUpload, { type PhotoItem } from './photo-upload'
 
 interface PonudaFormProps {
   ponuda: Ponuda | null
@@ -15,6 +16,8 @@ interface PonudaFormProps {
 export default function PonudaForm({ ponuda, userId, onClose, onSuccess }: PonudaFormProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [photos, setPhotos] = useState<PhotoItem[]>([])
+  const [loadingPhotos, setLoadingPhotos] = useState(false)
   
   // Accordion sekcije
   const [openSections, setOpenSections] = useState({
@@ -23,8 +26,46 @@ export default function PonudaForm({ ponuda, userId, onClose, onSuccess }: Ponud
     cena: true,
     tehnicke: false,
     dodatne: false,
-    linkovi: false
+    linkovi: false,
+    fotografije: true
   })
+
+  // Učitaj postojeće fotografije ako je editing mode
+  useEffect(() => {
+    if (ponuda?.id) {
+      loadPhotos(ponuda.id)
+    }
+  }, [ponuda?.id])
+
+  const loadPhotos = async (ponudaId: number) => {
+    setLoadingPhotos(true)
+    try {
+      const result = await getPonudaFotografije(ponudaId)
+      if (result.data) {
+        // Konvertuj PonudaFoto u PhotoItem
+        const photoItems: PhotoItem[] = result.data.map(foto => ({
+          id: foto.id,
+          url: foto.url || '',
+          opis: foto.opis,
+          redosled: foto.redosled,
+          glavna: foto.glavna,
+          stsskica: foto.stsskica,
+          skica_coords: foto.skica_coords,
+          idponude: foto.idponude,
+          datumpromene: foto.datumpromene,
+          opisfoto: foto.opisfoto,
+          skica_segment: foto.skica_segment,
+          isNew: false,
+          isDeleted: false
+        }))
+        setPhotos(photoItems)
+      }
+    } catch (err) {
+      console.error('Error loading photos:', err)
+    } finally {
+      setLoadingPhotos(false)
+    }
+  }
 
   const [formData, setFormData] = useState({
     vrstaobjekta_ag: ponuda?.vrstaobjekta_ag || '',
@@ -85,15 +126,28 @@ export default function PonudaForm({ ponuda, userId, onClose, onSuccess }: Ponud
       })
 
       let result
+      let ponudaId: number
+      
       if (ponuda) {
         result = await updatePonuda(ponuda.id, formDataObj)
+        ponudaId = ponuda.id
       } else {
         result = await createPonuda(formDataObj)
+        ponudaId = result.data?.id || 0
       }
 
       if (result.error) {
         setError(result.error)
         return
+      }
+
+      // Sačuvaj fotografije ako ima promena
+      if (ponudaId && photos.length > 0) {
+        const photoResult = await savePonudaFotografije(ponudaId, photos)
+        if (photoResult.error) {
+          console.error('Error saving photos:', photoResult.error)
+          // Ne prekidamo proces, samo logujemo grešku
+        }
       }
 
       onSuccess()
@@ -538,6 +592,41 @@ export default function PonudaForm({ ponuda, userId, onClose, onSuccess }: Ponud
                     className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
                   />
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* Fotografije */}
+          <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => toggleSection('fotografije')}
+              className="w-full px-4 py-3 flex items-center justify-between bg-slate-100 hover:bg-slate-200 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-amber-600" />
+                <span className="font-semibold text-gray-900">Fotografije</span>
+                {photos.filter(p => !p.isDeleted).length > 0 && (
+                  <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full">
+                    {photos.filter(p => !p.isDeleted).length}
+                  </span>
+                )}
+              </div>
+              {openSections.fotografije ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+            
+            {openSections.fotografije && (
+              <div className="p-4">
+                {loadingPhotos ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+                  </div>
+                ) : (
+                  <PhotoUpload 
+                    photos={photos} 
+                    onPhotosChange={setPhotos} 
+                  />
+                )}
               </div>
             )}
           </div>

@@ -103,3 +103,35 @@ CREATE POLICY "Allow public update ponudafoto" ON ponudafoto
 DROP POLICY IF EXISTS "Allow public delete ponudafoto" ON ponudafoto;
 CREATE POLICY "Allow public delete ponudafoto" ON ponudafoto
   FOR DELETE USING (true);
+
+-- =============================================
+-- Storage Bucket za fotografije ponuda
+-- =============================================
+-- NAPOMENA: Pokrenite ove komande u Supabase SQL Editor-u
+-- ili kreirajte bucket ručno u Supabase Dashboard > Storage
+
+-- Kreiranje storage bucket-a (ako ne postoji)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('ponudafoto', 'ponudafoto', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- RLS politike za storage bucket
+-- Politika za čitanje (javno)
+DROP POLICY IF EXISTS "Public Access" ON storage.objects;
+CREATE POLICY "Public Access" ON storage.objects
+  FOR SELECT USING (bucket_id = 'ponudafoto');
+
+-- Politika za upload (javno)
+DROP POLICY IF EXISTS "Allow uploads" ON storage.objects;
+CREATE POLICY "Allow uploads" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'ponudafoto');
+
+-- Politika za update (javno)
+DROP POLICY IF EXISTS "Allow updates" ON storage.objects;
+CREATE POLICY "Allow updates" ON storage.objects
+  FOR UPDATE USING (bucket_id = 'ponudafoto');
+
+-- Politika za delete (javno)
+DROP POLICY IF EXISTS "Allow deletes" ON storage.objects;
+CREATE POLICY "Allow deletes" ON storage.objects
+  FOR DELETE USING (bucket_id = 'ponudafoto');
