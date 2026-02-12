@@ -89,7 +89,6 @@ export default function PonudePage() {
       return
     }
     loadPonude()
-    setOpenActionMenu(null)
   }
 
   const formatDate = (dateString: string | null) => {
@@ -203,7 +202,6 @@ export default function PonudePage() {
   const handleEdit = (ponuda: Ponuda) => {
     setEditingPonuda(ponuda)
     setShowForm(true)
-    setOpenActionMenu(null)
   }
 
   const handleAdd = () => {
