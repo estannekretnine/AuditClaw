@@ -40,16 +40,17 @@ const ponudaSchema = z.object({
   stsrentaprodaja: z.string().optional().nullable(),
 })
 
-// Dohvatanje svih ponuda sa JOIN na korisnici za ime agencije
+// Dohvatanje svih ponuda sa JOIN na korisnici za ime agencije i glavnu fotografiju
 export async function getPonude(userId?: number, isAdmin?: boolean) {
   const supabase = await createClient()
   
-  // Koristimo LEFT JOIN da dobijemo naziv agencije
+  // Koristimo LEFT JOIN da dobijemo naziv agencije i glavnu fotografiju
   let query = supabase
     .from('ponuda')
     .select(`
       *,
-      agencija:korisnici!ponuda_idkorisnik_agencija_fkey(naziv)
+      agencija:korisnici!ponuda_idkorisnik_agencija_fkey(naziv),
+      fotografije:ponudafoto(id, url, glavna, redosled)
     `)
     .order('id', { ascending: false })
 
@@ -65,12 +66,26 @@ export async function getPonude(userId?: number, isAdmin?: boolean) {
     return { data: null, error: error.message }
   }
 
-  // Transformiši podatke da dodamo agencija_naziv
-  const transformedData = data?.map(item => ({
-    ...item,
-    agencija_naziv: item.agencija?.naziv || null,
-    agencija: undefined // Ukloni nested objekat
-  })) as Ponuda[]
+  // Transformiši podatke da dodamo agencija_naziv i glavna_foto_url
+  const transformedData = data?.map(item => {
+    // Pronađi glavnu fotografiju ili prvu po redosledu
+    const fotografije = item.fotografije || []
+    let glavnaFoto = fotografije.find((f: { glavna: boolean }) => f.glavna)
+    if (!glavnaFoto && fotografije.length > 0) {
+      // Ako nema glavne, uzmi prvu po redosledu
+      glavnaFoto = fotografije.sort((a: { redosled: number }, b: { redosled: number }) => 
+        (a.redosled || 999) - (b.redosled || 999)
+      )[0]
+    }
+    
+    return {
+      ...item,
+      agencija_naziv: item.agencija?.naziv || null,
+      glavna_foto_url: glavnaFoto?.url || null,
+      agencija: undefined,
+      fotografije: undefined
+    }
+  }) as Ponuda[]
 
   return { data: transformedData, error: null }
 }

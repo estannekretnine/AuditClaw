@@ -391,6 +391,7 @@ export default function PonudePage() {
               {/* Header */}
               <thead className="bg-gradient-to-r from-gray-900 to-black">
                 <tr>
+                  <th className="px-1 py-3 text-center text-[10px] font-bold text-white uppercase tracking-wider w-14">FOTO</th>
                   <th className="px-2 py-3 text-left text-[10px] font-bold text-white uppercase tracking-wider w-14 cursor-pointer hover:bg-white/10 transition-colors select-none" onClick={() => handleSort('id')}>
                     <div className="flex items-center">ID{getSortIcon('id')}</div>
                   </th>
@@ -430,6 +431,7 @@ export default function PonudePage() {
               {/* Filter row */}
               <thead className="bg-gray-800">
                 <tr>
+                  <th className="px-1 py-2"></th>
                   <th className="px-2 py-2">
                     <input
                       type="text"
@@ -525,6 +527,19 @@ export default function PonudePage() {
                     key={ponuda.id} 
                     className="hover:bg-amber-50 border-l-2 border-l-transparent hover:border-l-amber-500 transition-all duration-200"
                   >
+                    <td className="px-1 py-2 whitespace-nowrap">
+                      {ponuda.glavna_foto_url ? (
+                        <img 
+                          src={ponuda.glavna_foto_url} 
+                          alt="" 
+                          className="w-10 h-10 object-cover rounded-lg border border-gray-200"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <Home className="w-4 h-4 text-gray-400" />
+                        </div>
+                      )}
+                    </td>
                     <td className="px-2 py-3 whitespace-nowrap">
                       <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-amber-600 bg-amber-100 rounded">
                         {ponuda.id}

@@ -6,6 +6,7 @@ export interface Ponuda {
   idkorisnik: number | null
   idkorisnik_agencija: number | null
   agencija_naziv?: string | null // JOIN podatak iz korisnici tabele
+  glavna_foto_url?: string | null // JOIN podatak iz ponudafoto tabele
   vrstaobjekta_ag: string | null
   grad_ag: string | null
   opstina_ag: string | null
