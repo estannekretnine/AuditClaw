@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Brain, Target, MessageSquare, Settings, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
+import { X, Brain, MessageSquare, Settings, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
 import { createKampanja, updateKampanja, updateKampanjaAgent } from '@/lib/actions/kampanje'
 import type { Kampanja } from '@/lib/types/kampanja'
 
@@ -12,6 +12,54 @@ interface KampanjaFormProps {
   userStatus: string | null // 'admin' | 'manager' | 'agent' | etc.
   onClose: () => void
   onSuccess: () => void
+}
+
+// Accordion Section Component - definisan izvan glavne komponente
+interface AccordionSectionProps {
+  title: string
+  icon: React.ElementType
+  isOpen: boolean
+  onToggle: () => void
+  children: React.ReactNode
+  iconColor?: string
+  bgColor?: string
+}
+
+function AccordionSection({ 
+  title, 
+  icon: Icon, 
+  isOpen,
+  onToggle,
+  children,
+  iconColor = 'text-violet-600',
+  bgColor = 'bg-violet-100'
+}: AccordionSectionProps) {
+  return (
+    <div className="border border-gray-200 rounded-2xl overflow-hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className={`p-2 ${bgColor} rounded-xl`}>
+            <Icon className={`w-4 h-4 ${iconColor}`} />
+          </div>
+          <span className="font-semibold text-gray-900">{title}</span>
+        </div>
+        {isOpen ? (
+          <ChevronUp className="w-5 h-5 text-gray-400" />
+        ) : (
+          <ChevronDown className="w-5 h-5 text-gray-400" />
+        )}
+      </button>
+      {isOpen && (
+        <div className="p-4 bg-white">
+          {children}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function KampanjaForm({ kampanja, ponudaId, userId, userStatus, onClose, onSuccess }: KampanjaFormProps) {
@@ -107,48 +155,6 @@ export default function KampanjaForm({ kampanja, ponudaId, userId, userStatus, o
     }
   }
 
-  // Accordion Section Component
-  const AccordionSection = ({ 
-    title, 
-    icon: Icon, 
-    sectionKey, 
-    children,
-    iconColor = 'text-violet-600',
-    bgColor = 'bg-violet-100'
-  }: { 
-    title: string
-    icon: React.ElementType
-    sectionKey: keyof typeof openSections
-    children: React.ReactNode
-    iconColor?: string
-    bgColor?: string
-  }) => (
-    <div className="border border-gray-200 rounded-2xl overflow-hidden">
-      <button
-        type="button"
-        onClick={() => toggleSection(sectionKey)}
-        className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
-      >
-        <div className="flex items-center gap-3">
-          <div className={`p-2 ${bgColor} rounded-xl`}>
-            <Icon className={`w-4 h-4 ${iconColor}`} />
-          </div>
-          <span className="font-semibold text-gray-900">{title}</span>
-        </div>
-        {openSections[sectionKey] ? (
-          <ChevronUp className="w-5 h-5 text-gray-400" />
-        ) : (
-          <ChevronDown className="w-5 h-5 text-gray-400" />
-        )}
-      </button>
-      {openSections[sectionKey] && (
-        <div className="p-4 bg-white">
-          {children}
-        </div>
-      )}
-    </div>
-  )
-
   return (
     <div 
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-3 sm:p-4 overflow-y-auto"
@@ -190,7 +196,8 @@ export default function KampanjaForm({ kampanja, ponudaId, userId, userStatus, o
           <AccordionSection 
             title="AI Analiza" 
             icon={Brain} 
-            sectionKey="aiAnaliza"
+            isOpen={openSections.aiAnaliza}
+            onToggle={() => toggleSection('aiAnaliza')}
           >
             <div className="space-y-4">
               {/* Analiza oglasa */}
@@ -311,7 +318,8 @@ export default function KampanjaForm({ kampanja, ponudaId, userId, userStatus, o
           <AccordionSection 
             title="Zaključak agencije" 
             icon={MessageSquare} 
-            sectionKey="zakljucakAg"
+            isOpen={openSections.zakljucakAg}
+            onToggle={() => toggleSection('zakljucakAg')}
             iconColor="text-amber-600"
             bgColor="bg-amber-100"
           >
@@ -340,7 +348,8 @@ export default function KampanjaForm({ kampanja, ponudaId, userId, userStatus, o
             <AccordionSection 
               title="Podešavanja" 
               icon={Settings} 
-              sectionKey="podesavanja"
+              isOpen={openSections.podesavanja}
+              onToggle={() => toggleSection('podesavanja')}
               iconColor="text-gray-600"
               bgColor="bg-gray-200"
             >

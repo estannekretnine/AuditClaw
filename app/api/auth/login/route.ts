@@ -45,9 +45,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Vaš nalog je deaktiviran. Kontaktirajte administratora.' }, { status: 403 })
     }
 
-    // Provera da li je admin ili manager
-    if (korisnik.stsstatus !== 'admin' && korisnik.stsstatus !== 'manager') {
-      return NextResponse.json({ error: 'Nemate pristup admin panelu.' }, { status: 403 })
+    // Provera da li je admin, manager ili agent
+    if (korisnik.stsstatus !== 'admin' && korisnik.stsstatus !== 'manager' && korisnik.stsstatus !== 'agent') {
+      return NextResponse.json({ error: 'Nemate pristup panelu.' }, { status: 403 })
     }
 
     // Čuvanje korisnika u cookie (bez httpOnly da bi klijent mogao da čita)
