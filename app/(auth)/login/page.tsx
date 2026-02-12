@@ -1,13 +1,27 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Building2, ArrowRight } from 'lucide-react'
 
 export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [currentDateTime, setCurrentDateTime] = useState('')
   const router = useRouter()
+
+  // Dinamički datum i vreme
+  useEffect(() => {
+    const now = new Date()
+    const formatted = now.toLocaleString('sr-RS', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).replace(',', ' -')
+    setCurrentDateTime(formatted)
+  }, [])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -33,7 +47,12 @@ export default function LoginPage() {
         return
       }
 
-      router.push('/dashboard')
+      // Redirect na osnovu statusa korisnika
+      if (data.user?.stsstatus === 'agent') {
+        router.push('/dashboard/ponude')
+      } else {
+        router.push('/dashboard')
+      }
     } catch {
       setError('Greška pri povezivanju sa serverom')
       setLoading(false)
@@ -202,7 +221,7 @@ export default function LoginPage() {
             <div className="text-center text-xs text-stone-500">
               <span className="font-semibold">Poslednje ažuriranje:</span>
               <br />
-              <span className="text-stone-600">12.02.2026 - 22:50</span>
+              <span className="text-stone-600">{currentDateTime || 'Učitavanje...'}</span>
             </div>
           </div>
 
