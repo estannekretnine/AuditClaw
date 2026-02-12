@@ -8,6 +8,7 @@ import type { Ponuda, PonudaInsert } from '@/lib/types/ponuda'
 // Zod schema za validaciju ponude
 const ponudaSchema = z.object({
   idkorisnik: z.number().optional().nullable(),
+  idkorisnik_agencija: z.number().optional().nullable(),
   vrstaobjekta_ag: z.string().optional().nullable(),
   grad_ag: z.string().optional().nullable(),
   opstina_ag: z.string().optional().nullable(),
@@ -39,18 +40,22 @@ const ponudaSchema = z.object({
   stsrentaprodaja: z.string().optional().nullable(),
 })
 
-// Dohvatanje svih ponuda
+// Dohvatanje svih ponuda sa JOIN na korisnici za ime agencije
 export async function getPonude(userId?: number, isAdmin?: boolean) {
   const supabase = await createClient()
   
+  // Koristimo LEFT JOIN da dobijemo naziv agencije
   let query = supabase
     .from('ponuda')
-    .select('*')
+    .select(`
+      *,
+      agencija:korisnici!ponuda_idkorisnik_agencija_fkey(naziv)
+    `)
     .order('id', { ascending: false })
 
-  // Ako nije admin, filtriraj po korisniku
+  // Ako nije admin, filtriraj po korisniku (agencija vidi samo svoje ponude)
   if (!isAdmin && userId) {
-    query = query.eq('idkorisnik', userId)
+    query = query.eq('idkorisnik_agencija', userId)
   }
 
   const { data, error } = await query
@@ -60,7 +65,14 @@ export async function getPonude(userId?: number, isAdmin?: boolean) {
     return { data: null, error: error.message }
   }
 
-  return { data: data as Ponuda[], error: null }
+  // Transformiši podatke da dodamo agencija_naziv
+  const transformedData = data?.map(item => ({
+    ...item,
+    agencija_naziv: item.agencija?.naziv || null,
+    agencija: undefined // Ukloni nested objekat
+  })) as Ponuda[]
+
+  return { data: transformedData, error: null }
 }
 
 // Dohvatanje jedne ponude po ID-u
@@ -85,6 +97,7 @@ export async function getPonudaById(id: number) {
 export async function createPonuda(formData: FormData) {
   const data: PonudaInsert = {
     idkorisnik: formData.get('idkorisnik') ? Number(formData.get('idkorisnik')) : null,
+    idkorisnik_agencija: formData.get('idkorisnik_agencija') ? Number(formData.get('idkorisnik_agencija')) : null,
     vrstaobjekta_ag: formData.get('vrstaobjekta_ag') as string || null,
     grad_ag: formData.get('grad_ag') as string || null,
     opstina_ag: formData.get('opstina_ag') as string || null,
@@ -143,6 +156,7 @@ export async function createPonuda(formData: FormData) {
 export async function updatePonuda(id: number, formData: FormData) {
   const data: PonudaInsert = {
     idkorisnik: formData.get('idkorisnik') ? Number(formData.get('idkorisnik')) : null,
+    idkorisnik_agencija: formData.get('idkorisnik_agencija') ? Number(formData.get('idkorisnik_agencija')) : null,
     vrstaobjekta_ag: formData.get('vrstaobjekta_ag') as string || null,
     grad_ag: formData.get('grad_ag') as string || null,
     opstina_ag: formData.get('opstina_ag') as string || null,
@@ -267,6 +281,25 @@ export async function togglePonudaStatus(id: number, currentStatus: boolean | nu
 
   revalidatePath('/dashboard/ponude')
   return { error: null }
+}
+
+// Dohvatanje liste agencija (korisnici sa statusom agent ili manager)
+export async function getAgencije() {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('korisnici')
+    .select('id, naziv, email, stsstatus')
+    .in('stsstatus', ['agent', 'manager'])
+    .eq('stsaktivan', 'da')
+    .order('naziv', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching agencije:', error)
+    return { data: null, error: error.message }
+  }
+
+  return { data, error: null }
 }
 
 // Dohvatanje fotografija za ponudu

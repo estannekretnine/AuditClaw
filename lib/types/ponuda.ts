@@ -4,6 +4,8 @@ export interface Ponuda {
   id: number
   created_at: string
   idkorisnik: number | null
+  idkorisnik_agencija: number | null
+  agencija_naziv?: string | null // JOIN podatak iz korisnici tabele
   vrstaobjekta_ag: string | null
   grad_ag: string | null
   opstina_ag: string | null
@@ -37,6 +39,7 @@ export interface Ponuda {
 
 export interface PonudaInsert {
   idkorisnik?: number | null
+  idkorisnik_agencija?: number | null
   vrstaobjekta_ag?: string | null
   grad_ag?: string | null
   opstina_ag?: string | null

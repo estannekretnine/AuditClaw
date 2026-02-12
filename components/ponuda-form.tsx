@@ -1,23 +1,35 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Home, MapPin, DollarSign, Settings, Link2, ChevronDown, ChevronUp, Image as ImageIcon } from 'lucide-react'
-import { createPonuda, updatePonuda, getPonudaFotografije, savePonudaFotografije } from '@/lib/actions/ponude'
+import { X, Home, MapPin, DollarSign, Settings, Link2, ChevronDown, ChevronUp, Image as ImageIcon, Users } from 'lucide-react'
+import { createPonuda, updatePonuda, getPonudaFotografije, savePonudaFotografije, getAgencije } from '@/lib/actions/ponude'
 import type { Ponuda } from '@/lib/types/ponuda'
 import PhotoUpload, { type PhotoItem } from './photo-upload'
+
+interface Agencija {
+  id: number
+  naziv: string
+  email: string | null
+  stsstatus: string | null
+}
 
 interface PonudaFormProps {
   ponuda: Ponuda | null
   userId: number | null
+  userStatus: string | null // 'admin' | 'manager' | 'agent' | etc.
   onClose: () => void
   onSuccess: () => void
 }
 
-export default function PonudaForm({ ponuda, userId, onClose, onSuccess }: PonudaFormProps) {
+export default function PonudaForm({ ponuda, userId, userStatus, onClose, onSuccess }: PonudaFormProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [photos, setPhotos] = useState<PhotoItem[]>([])
   const [loadingPhotos, setLoadingPhotos] = useState(false)
+  const [agencije, setAgencije] = useState<Agencija[]>([])
+  const [loadingAgencije, setLoadingAgencije] = useState(false)
+  
+  const isAdmin = userStatus === 'admin'
   
   // Accordion sekcije
   const [openSections, setOpenSections] = useState({
@@ -36,6 +48,27 @@ export default function PonudaForm({ ponuda, userId, onClose, onSuccess }: Ponud
       loadPhotos(ponuda.id)
     }
   }, [ponuda?.id])
+
+  // Učitaj listu agencija ako je admin
+  useEffect(() => {
+    if (isAdmin) {
+      loadAgencije()
+    }
+  }, [isAdmin])
+
+  const loadAgencije = async () => {
+    setLoadingAgencije(true)
+    try {
+      const result = await getAgencije()
+      if (result.data) {
+        setAgencije(result.data)
+      }
+    } catch (err) {
+      console.error('Error loading agencije:', err)
+    } finally {
+      setLoadingAgencije(false)
+    }
+  }
 
   const loadPhotos = async (ponudaId: number) => {
     setLoadingPhotos(true)
@@ -68,6 +101,7 @@ export default function PonudaForm({ ponuda, userId, onClose, onSuccess }: Ponud
   }
 
   const [formData, setFormData] = useState({
+    idkorisnik_agencija: ponuda?.idkorisnik_agencija?.toString() || '',
     vrstaobjekta_ag: ponuda?.vrstaobjekta_ag || '',
     stsrentaprodaja: ponuda?.stsrentaprodaja || 'prodaja',
     naslovoglasa: ponuda?.naslovoglasa || '',
@@ -111,13 +145,27 @@ export default function PonudaForm({ ponuda, userId, onClose, onSuccess }: Ponud
     try {
       const formDataObj = new FormData()
       
-      // Dodaj userId
+      // Dodaj userId (ko je kreirao/menjao)
       if (userId) {
         formDataObj.append('idkorisnik', userId.toString())
       }
       
-      // Dodaj sva polja
+      // Postavi idkorisnik_agencija
+      if (isAdmin) {
+        // Admin bira agenciju iz dropdown-a
+        if (formData.idkorisnik_agencija) {
+          formDataObj.append('idkorisnik_agencija', formData.idkorisnik_agencija)
+        }
+      } else {
+        // Agencija (agent/manager) - automatski postavi svoj ID
+        if (userId) {
+          formDataObj.append('idkorisnik_agencija', userId.toString())
+        }
+      }
+      
+      // Dodaj sva polja (osim idkorisnik_agencija koji smo već obradili)
       Object.entries(formData).forEach(([key, value]) => {
+        if (key === 'idkorisnik_agencija') return // Već obrađeno gore
         if (typeof value === 'boolean') {
           formDataObj.append(key, value.toString())
         } else if (value !== null && value !== undefined) {
@@ -215,6 +263,32 @@ export default function PonudaForm({ ponuda, userId, onClose, onSuccess }: Ponud
             
             {openSections.osnovne && (
               <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Dropdown za agenciju - samo za admina */}
+                {isAdmin && (
+                  <div className="md:col-span-3">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      <Users className="w-3 h-3 inline-block mr-1" />
+                      Agencija
+                    </label>
+                    <select
+                      value={formData.idkorisnik_agencija}
+                      onChange={(e) => setFormData({ ...formData, idkorisnik_agencija: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+                      disabled={loadingAgencije}
+                    >
+                      <option value="">Izaberite agenciju...</option>
+                      {agencije.map(a => (
+                        <option key={a.id} value={a.id}>
+                          {a.naziv} {a.email ? `(${a.email})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    {loadingAgencije && (
+                      <p className="text-xs text-gray-400 mt-1">Učitavanje agencija...</p>
+                    )}
+                  </div>
+                )}
+                
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Vrsta objekta</label>
                   <select

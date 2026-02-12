@@ -48,6 +48,24 @@ CREATE POLICY "Allow public delete access" ON korisnici
   FOR DELETE USING (true);
 
 -- =============================================
+-- Tabela PONUDA - Nova kolona idkorisnik_agencija
+-- =============================================
+-- NAPOMENA: Pokrenite ovu komandu u Supabase SQL Editor-u
+-- da dodate novu kolonu za agenciju
+
+-- Dodaj kolonu idkorisnik_agencija ako ne postoji
+ALTER TABLE ponuda ADD COLUMN IF NOT EXISTS idkorisnik_agencija bigint NULL;
+
+-- Dodaj foreign key constraint
+ALTER TABLE ponuda 
+  DROP CONSTRAINT IF EXISTS ponuda_idkorisnik_agencija_fkey;
+ALTER TABLE ponuda 
+  ADD CONSTRAINT ponuda_idkorisnik_agencija_fkey 
+  FOREIGN KEY (idkorisnik_agencija) 
+  REFERENCES korisnici(id) 
+  ON DELETE SET NULL;
+
+-- =============================================
 -- Tabela PONUDA - RLS politike
 -- =============================================
 -- NAPOMENA: Tabela 'ponuda' već postoji u bazi 'audit'

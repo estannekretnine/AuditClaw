@@ -34,6 +34,7 @@ export default function PonudePage() {
   // Filteri za kolone
   const [columnFilters, setColumnFilters] = useState({
     id: '',
+    agencija_naziv: '',
     vrstaobjekta_ag: '',
     opstina_ag: '',
     lokacija_ag: '',
@@ -393,6 +394,9 @@ export default function PonudePage() {
                   <th className="px-2 py-3 text-left text-[10px] font-bold text-white uppercase tracking-wider w-14 cursor-pointer hover:bg-white/10 transition-colors select-none" onClick={() => handleSort('id')}>
                     <div className="flex items-center">ID{getSortIcon('id')}</div>
                   </th>
+                  <th className="px-2 py-3 text-left text-[10px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-white/10 transition-colors select-none" onClick={() => handleSort('agencija_naziv')}>
+                    <div className="flex items-center">AGENCIJA{getSortIcon('agencija_naziv')}</div>
+                  </th>
                   <th className="px-2 py-3 text-left text-[10px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-white/10 transition-colors select-none" onClick={() => handleSort('vrstaobjekta_ag')}>
                     <div className="flex items-center">VRSTA{getSortIcon('vrstaobjekta_ag')}</div>
                   </th>
@@ -432,6 +436,15 @@ export default function PonudePage() {
                       value={columnFilters.id}
                       onChange={(e) => handleColumnFilterChange('id', e.target.value)}
                       placeholder=">"
+                      className="w-full px-2 py-1 text-xs bg-gray-700 border border-gray-600 rounded text-white placeholder-gray-400 focus:ring-1 focus:ring-amber-500 focus:border-transparent"
+                    />
+                  </th>
+                  <th className="px-2 py-2">
+                    <input
+                      type="text"
+                      value={columnFilters.agencija_naziv}
+                      onChange={(e) => handleColumnFilterChange('agencija_naziv', e.target.value)}
+                      placeholder="*"
                       className="w-full px-2 py-1 text-xs bg-gray-700 border border-gray-600 rounded text-white placeholder-gray-400 focus:ring-1 focus:ring-amber-500 focus:border-transparent"
                     />
                   </th>
@@ -516,6 +529,9 @@ export default function PonudePage() {
                       <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-amber-600 bg-amber-100 rounded">
                         {ponuda.id}
                       </span>
+                    </td>
+                    <td className="px-2 py-3 text-sm text-gray-600 truncate max-w-[120px]">
+                      {ponuda.agencija_naziv || '-'}
                     </td>
                     <td className="px-2 py-3 text-sm text-gray-900">
                       <div className="flex items-center gap-2">
@@ -712,6 +728,7 @@ export default function PonudePage() {
                 onClick={() => {
                   setColumnFilters({
                     id: '',
+                    agencija_naziv: '',
                     vrstaobjekta_ag: '',
                     opstina_ag: '',
                     lokacija_ag: '',
@@ -736,6 +753,7 @@ export default function PonudePage() {
         <PonudaForm
           ponuda={editingPonuda}
           userId={user?.id || null}
+          userStatus={user?.stsstatus || null}
           onClose={handleFormClose}
           onSuccess={handleFormSuccess}
         />
