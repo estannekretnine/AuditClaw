@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { 
   Plus, Home, ArrowUp, ArrowDown, X, 
   Check, ChevronLeft, ChevronRight,
-  Filter, LayoutGrid, LayoutList, Edit
+  Filter, LayoutGrid, LayoutList, Pencil, MoreVertical, Edit
 } from 'lucide-react'
 import { getPonude, togglePonudaStatus } from '@/lib/actions/ponude'
 import type { Ponuda } from '@/lib/types/ponuda'
@@ -21,6 +21,7 @@ export default function PonudePage() {
   const [user, setUser] = useState<Korisnik | null>(null)
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
   const [showFilterModal, setShowFilterModal] = useState(false)
+  const [openActionMenu, setOpenActionMenu] = useState<number | null>(null)
   
   // Paginacija
   const [currentPage, setCurrentPage] = useState(1)
@@ -89,6 +90,7 @@ export default function PonudePage() {
       return
     }
     loadPonude()
+    setOpenActionMenu(null)
   }
 
   const formatDate = (dateString: string | null) => {
@@ -202,6 +204,7 @@ export default function PonudePage() {
   const handleEdit = (ponuda: Ponuda) => {
     setEditingPonuda(ponuda)
     setShowForm(true)
+    setOpenActionMenu(null)
   }
 
   const handleAdd = () => {
@@ -345,9 +348,12 @@ export default function PonudePage() {
                   <th className="px-2 py-3 text-left text-[10px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-white/10 transition-colors select-none" onClick={() => handleSort('cena_ag')}>
                     <div className="flex items-center">CENA{getSortIcon('cena_ag')}</div>
                   </th>
+                  <th className="px-2 py-3 text-left text-[10px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-white/10 transition-colors select-none" onClick={() => handleSort('created_at')}>
+                    <div className="flex items-center">DATUM{getSortIcon('created_at')}</div>
+                  </th>
                   <th className="px-2 py-3 text-left text-[10px] font-bold text-white uppercase tracking-wider w-16">STATUS</th>
                   <th className="px-2 py-3 text-left text-[10px] font-bold text-white uppercase tracking-wider w-12">TIP</th>
-                  <th className="px-2 py-3 text-center text-[10px] font-bold text-white uppercase tracking-wider w-24">AKCIJE</th>
+                  <th className="px-2 py-3 text-center text-[10px] font-bold text-white uppercase tracking-wider w-10"></th>
                 </tr>
               </thead>
               
@@ -429,12 +435,13 @@ export default function PonudePage() {
                   <th className="px-2 py-2"></th>
                   <th className="px-2 py-2"></th>
                   <th className="px-2 py-2"></th>
+                  <th className="px-2 py-2"></th>
                 </tr>
               </thead>
               
               {/* Body */}
               <tbody className="divide-y divide-gray-100">
-                {paginatedData.map((ponuda) => (
+                {paginatedData.map((ponuda, index) => (
                   <tr 
                     key={ponuda.id} 
                     className="hover:bg-amber-50 border-l-2 border-l-transparent hover:border-l-amber-500 transition-all duration-200"
@@ -456,17 +463,66 @@ export default function PonudePage() {
                     <td className="px-2 py-3 text-sm text-gray-900 font-medium">{formatNumber(ponuda.kvadratura_ag)}</td>
                     <td className="px-2 py-3 text-sm text-gray-900 font-medium">{ponuda.struktura_ag || '-'}</td>
                     <td className="px-2 py-3 text-sm text-gray-900 font-semibold">{formatNumber(ponuda.cena_ag)}</td>
+                    <td className="px-2 py-3 text-sm text-gray-500">{formatDate(ponuda.created_at)}</td>
                     <td className="px-2 py-3 whitespace-nowrap">{getStatusBadge(ponuda.stsaktivan)}</td>
                     <td className="px-2 py-3 whitespace-nowrap">{getTipBadge(ponuda.stsrentaprodaja)}</td>
-                    <td className="px-2 py-3 whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-1">
+                    <td className="px-1 py-2 whitespace-nowrap text-center">
+                      <div className="relative inline-block">
                         <button
-                          onClick={() => handleEdit(ponuda)}
-                          className="px-2 py-1 text-xs font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors"
-                          title="Izmeni"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setOpenActionMenu(openActionMenu === ponuda.id ? null : ponuda.id)
+                          }}
+                          className="inline-flex items-center justify-center w-7 h-7 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-all"
                         >
-                          Izmeni
+                          <MoreVertical className="w-4 h-4" />
                         </button>
+                        
+                        {/* Dropdown meni - prikaži iznad za poslednja 2 reda */}
+                        {openActionMenu === ponuda.id && (
+                          <>
+                            {/* Invisible overlay to close menu */}
+                            <div 
+                              className="fixed inset-0 z-40" 
+                              onClick={() => setOpenActionMenu(null)}
+                            />
+                            <div className={`absolute right-0 w-36 bg-white rounded-lg shadow-2xl border border-gray-100 py-1 z-50 ${
+                              index >= paginatedData.length - 2 
+                                ? 'bottom-full mb-1' 
+                                : 'top-full mt-1'
+                            }`}>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleEdit(ponuda)
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+                              >
+                                <Pencil className="w-3 h-3" />
+                                Izmeni
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleToggleStatus(ponuda)
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                              >
+                                {ponuda.stsaktivan ? (
+                                  <>
+                                    <X className="w-3 h-3" />
+                                    Deaktiviraj
+                                  </>
+                                ) : (
+                                  <>
+                                    <Check className="w-3 h-3" />
+                                    Aktiviraj
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
