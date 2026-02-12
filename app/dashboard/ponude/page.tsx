@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { 
-  Edit, Plus, Home, ArrowUp, ArrowDown, X, 
+  Plus, Home, ArrowUp, ArrowDown, X, 
   Check, ChevronLeft, ChevronRight,
-  Filter, LayoutGrid, LayoutList
+  Filter, LayoutGrid, LayoutList, Edit
 } from 'lucide-react'
 import { getPonude, togglePonudaStatus } from '@/lib/actions/ponude'
 import type { Ponuda } from '@/lib/types/ponuda'
@@ -347,12 +347,9 @@ export default function PonudePage() {
                   <th className="px-2 py-3 text-left text-[10px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-white/10 transition-colors select-none" onClick={() => handleSort('cena_ag')}>
                     <div className="flex items-center">CENA{getSortIcon('cena_ag')}</div>
                   </th>
-                  <th className="px-2 py-3 text-left text-[10px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-white/10 transition-colors select-none" onClick={() => handleSort('created_at')}>
-                    <div className="flex items-center">DATUM{getSortIcon('created_at')}</div>
-                  </th>
                   <th className="px-2 py-3 text-left text-[10px] font-bold text-white uppercase tracking-wider w-16">STATUS</th>
                   <th className="px-2 py-3 text-left text-[10px] font-bold text-white uppercase tracking-wider w-12">TIP</th>
-                  <th className="px-2 py-3 text-center text-[10px] font-bold text-white uppercase tracking-wider w-10"></th>
+                  <th className="px-2 py-3 text-center text-[10px] font-bold text-white uppercase tracking-wider w-24">AKCIJE</th>
                 </tr>
               </thead>
               
@@ -434,7 +431,6 @@ export default function PonudePage() {
                   <th className="px-2 py-2"></th>
                   <th className="px-2 py-2"></th>
                   <th className="px-2 py-2"></th>
-                  <th className="px-2 py-2"></th>
                 </tr>
               </thead>
               
@@ -462,24 +458,16 @@ export default function PonudePage() {
                     <td className="px-2 py-3 text-sm text-gray-900 font-medium">{formatNumber(ponuda.kvadratura_ag)}</td>
                     <td className="px-2 py-3 text-sm text-gray-900 font-medium">{ponuda.struktura_ag || '-'}</td>
                     <td className="px-2 py-3 text-sm text-gray-900 font-semibold">{formatNumber(ponuda.cena_ag)}</td>
-                    <td className="px-2 py-3 text-sm text-gray-500">{formatDate(ponuda.created_at)}</td>
                     <td className="px-2 py-3 whitespace-nowrap">{getStatusBadge(ponuda.stsaktivan)}</td>
                     <td className="px-2 py-3 whitespace-nowrap">{getTipBadge(ponuda.stsrentaprodaja)}</td>
-                    <td className="px-2 py-3 whitespace-nowrap text-center">
+                    <td className="px-2 py-3 whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1">
                         <button
                           onClick={() => handleEdit(ponuda)}
-                          className="p-1.5 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
+                          className="px-2 py-1 text-xs font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors"
                           title="Izmeni"
                         >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleToggleStatus(ponuda)}
-                          className={`p-1.5 rounded-lg transition-colors ${ponuda.stsaktivan ? 'text-gray-500 hover:text-red-600 hover:bg-red-50' : 'text-green-600 hover:text-green-700 hover:bg-green-50'}`}
-                          title={ponuda.stsaktivan ? 'Deaktiviraj' : 'Aktiviraj'}
-                        >
-                          {ponuda.stsaktivan ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+                          Izmeni
                         </button>
                       </div>
                     </td>
