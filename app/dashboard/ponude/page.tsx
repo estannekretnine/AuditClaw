@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { 
-  Edit, Plus, Home, ArrowUp, ArrowDown, Search, X, 
-  MoreVertical, Check, ChevronLeft, ChevronRight,
+  Edit, Plus, Home, ArrowUp, ArrowDown, X, 
+  Check, ChevronLeft, ChevronRight,
   Filter, LayoutGrid, LayoutList
 } from 'lucide-react'
 import { getPonude, togglePonudaStatus } from '@/lib/actions/ponude'
@@ -21,7 +21,6 @@ export default function PonudePage() {
   const [user, setUser] = useState<Korisnik | null>(null)
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
   const [showFilterModal, setShowFilterModal] = useState(false)
-  const [openActionMenu, setOpenActionMenu] = useState<number | null>(null)
   
   // Paginacija
   const [currentPage, setCurrentPage] = useState(1)
@@ -466,33 +465,23 @@ export default function PonudePage() {
                     <td className="px-2 py-3 text-sm text-gray-500">{formatDate(ponuda.created_at)}</td>
                     <td className="px-2 py-3 whitespace-nowrap">{getStatusBadge(ponuda.stsaktivan)}</td>
                     <td className="px-2 py-3 whitespace-nowrap">{getTipBadge(ponuda.stsrentaprodaja)}</td>
-                    <td className="px-2 py-3 whitespace-nowrap text-center relative">
-                      <button
-                        onClick={() => setOpenActionMenu(openActionMenu === ponuda.id ? null : ponuda.id)}
-                        className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-                      
-                      {/* Dropdown menu */}
-                      {openActionMenu === ponuda.id && (
-                        <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50">
-                          <button
-                            onClick={() => handleEdit(ponuda)}
-                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-700 flex items-center gap-2"
-                          >
-                            <Edit className="w-4 h-4" />
-                            Izmeni
-                          </button>
-                          <button
-                            onClick={() => handleToggleStatus(ponuda)}
-                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-700 flex items-center gap-2"
-                          >
-                            <Check className="w-4 h-4" />
-                            {ponuda.stsaktivan ? 'Deaktiviraj' : 'Aktiviraj'}
-                          </button>
-                        </div>
-                      )}
+                    <td className="px-2 py-3 whitespace-nowrap text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => handleEdit(ponuda)}
+                          className="p-1.5 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
+                          title="Izmeni"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleToggleStatus(ponuda)}
+                          className={`p-1.5 rounded-lg transition-colors ${ponuda.stsaktivan ? 'text-gray-500 hover:text-red-600 hover:bg-red-50' : 'text-green-600 hover:text-green-700 hover:bg-green-50'}`}
+                          title={ponuda.stsaktivan ? 'Deaktiviraj' : 'Aktiviraj'}
+                        >
+                          {ponuda.stsaktivan ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -641,14 +630,6 @@ export default function PonudePage() {
           userId={user?.id || null}
           onClose={handleFormClose}
           onSuccess={handleFormSuccess}
-        />
-      )}
-
-      {/* Click outside to close action menu */}
-      {openActionMenu && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setOpenActionMenu(null)}
         />
       )}
     </div>
