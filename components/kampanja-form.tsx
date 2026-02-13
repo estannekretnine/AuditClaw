@@ -65,6 +65,7 @@ function AccordionSection({
 
 export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onClose, onSuccess }: KampanjaFormProps) {
   const [loading, setLoading] = useState(false)
+  const [aiLoading, setAiLoading] = useState(false)
   const [error, setError] = useState('')
   const [showKodDropdown, setShowKodDropdown] = useState(false)
   const kodDropdownRef = useRef<HTMLDivElement>(null)
@@ -136,6 +137,56 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
   const handleSelectKod = (value: string) => {
     setFormData(prev => ({ ...prev, kodkampanje: value }))
     setShowKodDropdown(false)
+  }
+
+  // AI Analiza funkcija
+  const handleAnalyzeAI = async () => {
+    setAiLoading(true)
+    setError('')
+
+    try {
+      const response = await fetch('/api/ai/analyze-kampanja', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ponuda)
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Greška pri AI analizi')
+        return
+      }
+
+      // Popuni polja sekvencijalno sa malim kašnjenjem za vizuelni efekat
+      const fields = [
+        { key: 'analizaoglasa_ai', value: data.analizaoglasa_ai },
+        { key: 'ciljnagrupa_ai', value: data.ciljnagrupa_ai },
+        { key: 'ciljaniregion_ai', value: data.ciljaniregion_ai },
+        { key: 'kljucnereci_ai', value: data.kljucnereci_ai },
+        { key: 'psiholoskiprofil_ai', value: data.psiholoskiprofil_ai },
+        { key: 'predlogkampanje_ai', value: data.predlogkampanje_ai },
+        { key: 'zakljucak_ai', value: data.zakljucak_ai },
+      ]
+
+      for (const field of fields) {
+        if (field.value) {
+          setFormData(prev => ({ ...prev, [field.key]: field.value }))
+          await new Promise(resolve => setTimeout(resolve, 150)) // Mali delay za vizuelni efekat
+        }
+      }
+
+      // Postavi URL slug kao kod kampanje ako nije već postavljen
+      if (data.urlSlug && !formData.kodkampanje) {
+        setFormData(prev => ({ ...prev, kodkampanje: data.urlSlug }))
+      }
+
+    } catch (err) {
+      console.error('AI Analysis error:', err)
+      setError('Greška pri povezivanju sa AI servisom')
+    } finally {
+      setAiLoading(false)
+    }
   }
 
   const toggleSection = (section: keyof typeof openSections) => {
@@ -297,13 +348,49 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
           )}
 
           {/* AI Analiza sekcija */}
-          <AccordionSection 
-            title="AI Analiza" 
-            icon={Brain} 
-            isOpen={openSections.aiAnaliza}
-            onToggle={() => toggleSection('aiAnaliza')}
-          >
-            <div className="space-y-4">
+          <div className="border border-gray-200 rounded-2xl overflow-hidden">
+            <div className="w-full flex items-center justify-between p-4 bg-gray-50">
+              <button
+                type="button"
+                onClick={() => toggleSection('aiAnaliza')}
+                className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+              >
+                <div className="p-2 bg-violet-100 rounded-xl">
+                  <Brain className="w-4 h-4 text-violet-600" />
+                </div>
+                <span className="font-semibold text-gray-900">AI Analiza</span>
+                {openSections.aiAnaliza ? (
+                  <ChevronUp className="w-5 h-5 text-gray-400" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-gray-400" />
+                )}
+              </button>
+              
+              {/* Dugme Analiziraj AI */}
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={handleAnalyzeAI}
+                  disabled={aiLoading}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg shadow-emerald-500/25 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {aiLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Analiziram...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Analiziraj AI</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+            
+            {openSections.aiAnaliza && (
+              <div className="p-4 bg-white space-y-4">
               {/* Analiza oglasa */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -415,8 +502,9 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
                   placeholder="AI zaključak..."
                 />
               </div>
-            </div>
-          </AccordionSection>
+              </div>
+            )}
+          </div>
 
           {/* Zaključak agencije sekcija */}
           <AccordionSection 
