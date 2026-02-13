@@ -76,7 +76,7 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
   const [openSections, setOpenSections] = useState({
     aiAnaliza: true,
     zakljucakAg: true,
-    podesavanja: isAdmin
+    podesavanja: true // Uvek otvoreno
   })
 
   // Form data
@@ -238,6 +238,61 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
           {error && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
               {error}
+            </div>
+          )}
+
+          {/* Kod kampanje - na vrhu, uvek vidljivo za admina */}
+          {isAdmin && (
+            <div className="bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-200 rounded-2xl p-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Wand2 className="w-4 h-4 inline-block mr-1 text-violet-600" />
+                Kod kampanje
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  name="kodkampanje"
+                  value={formData.kodkampanje}
+                  onChange={handleInputChange}
+                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all font-mono text-sm bg-white"
+                  placeholder="Unesite ili izaberite kod..."
+                />
+                <div className="relative" ref={kodDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowKodDropdown(!showKodDropdown)}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl hover:from-violet-600 hover:to-purple-700 transition-all shadow-lg shadow-violet-500/25 font-medium"
+                  >
+                    <Wand2 className="w-4 h-4" />
+                    Predloži
+                    <ChevronDown className={`w-4 h-4 transition-transform ${showKodDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {showKodDropdown && (
+                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50">
+                      <div className="px-3 py-2 border-b border-gray-100">
+                        <p className="text-xs font-medium text-gray-500 uppercase">Izaberite format</p>
+                      </div>
+                      {generateKodPredlozi().map((predlog, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => handleSelectKod(predlog.value)}
+                          className="w-full px-3 py-3 hover:bg-violet-50 transition-colors text-left"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-gray-900">{predlog.label}</span>
+                            <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-violet-600">
+                              {predlog.value}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">{predlog.description}</p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -436,57 +491,6 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
                   </label>
                 </div>
 
-                {/* Kod kampanje sa predlozima */}
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Kod kampanje
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      name="kodkampanje"
-                      value={formData.kodkampanje}
-                      onChange={handleInputChange}
-                      className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all font-mono text-sm"
-                      placeholder="Unesite ili izaberite kod..."
-                    />
-                    <div className="relative" ref={kodDropdownRef}>
-                      <button
-                        type="button"
-                        onClick={() => setShowKodDropdown(!showKodDropdown)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl hover:from-violet-600 hover:to-purple-700 transition-all shadow-lg shadow-violet-500/25 font-medium"
-                      >
-                        <Wand2 className="w-4 h-4" />
-                        Predloži
-                        <ChevronDown className={`w-4 h-4 transition-transform ${showKodDropdown ? 'rotate-180' : ''}`} />
-                      </button>
-                      
-                      {showKodDropdown && (
-                        <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50">
-                          <div className="px-3 py-2 border-b border-gray-100">
-                            <p className="text-xs font-medium text-gray-500 uppercase">Izaberite format</p>
-                          </div>
-                          {generateKodPredlozi().map((predlog, index) => (
-                            <button
-                              key={index}
-                              type="button"
-                              onClick={() => handleSelectKod(predlog.value)}
-                              className="w-full px-3 py-3 hover:bg-violet-50 transition-colors text-left"
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-gray-900">{predlog.label}</span>
-                                <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-violet-600">
-                                  {predlog.value}
-                                </span>
-                              </div>
-                              <p className="text-xs text-gray-500 mt-1">{predlog.description}</p>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
               </div>
             </AccordionSection>
           )}
