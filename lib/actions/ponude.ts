@@ -9,6 +9,7 @@ import type { Ponuda, PonudaInsert } from '@/lib/types/ponuda'
 const ponudaSchema = z.object({
   idkorisnik: z.number().optional().nullable(),
   idkorisnik_agencija: z.number().optional().nullable(),
+  oglasid_agencija: z.string().optional().nullable(),
   vrstaobjekta_ag: z.string().optional().nullable(),
   grad_ag: z.string().optional().nullable(),
   opstina_ag: z.string().optional().nullable(),
@@ -113,6 +114,7 @@ export async function createPonuda(formData: FormData) {
   const data: PonudaInsert = {
     idkorisnik: formData.get('idkorisnik') ? Number(formData.get('idkorisnik')) : null,
     idkorisnik_agencija: formData.get('idkorisnik_agencija') ? Number(formData.get('idkorisnik_agencija')) : null,
+    oglasid_agencija: formData.get('oglasid_agencija') as string || null,
     vrstaobjekta_ag: formData.get('vrstaobjekta_ag') as string || null,
     grad_ag: formData.get('grad_ag') as string || null,
     opstina_ag: formData.get('opstina_ag') as string || null,
@@ -172,6 +174,7 @@ export async function updatePonuda(id: number, formData: FormData) {
   const data: PonudaInsert = {
     idkorisnik: formData.get('idkorisnik') ? Number(formData.get('idkorisnik')) : null,
     idkorisnik_agencija: formData.get('idkorisnik_agencija') ? Number(formData.get('idkorisnik_agencija')) : null,
+    oglasid_agencija: formData.get('oglasid_agencija') as string || null,
     vrstaobjekta_ag: formData.get('vrstaobjekta_ag') as string || null,
     grad_ag: formData.get('grad_ag') as string || null,
     opstina_ag: formData.get('opstina_ag') as string || null,
