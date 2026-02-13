@@ -101,6 +101,7 @@ export default function PonudaForm({ ponuda, userId, userStatus, onClose, onSucc
   }
 
   const [formData, setFormData] = useState({
+    oglasid_agencija: ponuda?.oglasid_agencija || '',
     idkorisnik_agencija: ponuda?.idkorisnik_agencija?.toString() || '',
     vrstaobjekta_ag: ponuda?.vrstaobjekta_ag || '',
     stsrentaprodaja: ponuda?.stsrentaprodaja || 'prodaja',
@@ -263,6 +264,20 @@ export default function PonudaForm({ ponuda, userId, userStatus, onClose, onSucc
             
             {openSections.osnovne && (
               <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Agencijski broj oglasa - na vrhu */}
+                <div className="md:col-span-3">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Agencijski broj oglasa
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.oglasid_agencija}
+                    onChange={(e) => setFormData({ ...formData, oglasid_agencija: e.target.value })}
+                    placeholder="Npr: AG-2024-001"
+                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+                  />
+                </div>
+
                 {/* Dropdown za agenciju - samo za admina */}
                 {isAdmin && (
                   <div className="md:col-span-3">

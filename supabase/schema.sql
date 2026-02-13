@@ -56,6 +56,15 @@ CREATE POLICY "Allow public delete access" ON korisnici
 -- Dodaj kolonu idkorisnik_agencija ako ne postoji
 ALTER TABLE ponuda ADD COLUMN IF NOT EXISTS idkorisnik_agencija bigint NULL;
 
+-- =============================================
+-- Tabela PONUDA - Nova kolona oglasid_agencija
+-- =============================================
+-- NAPOMENA: Pokrenite ovu komandu u Supabase SQL Editor-u
+-- da dodate novu kolonu za agencijski broj oglasa
+
+-- Dodaj kolonu oglasid_agencija ako ne postoji
+ALTER TABLE ponuda ADD COLUMN IF NOT EXISTS oglasid_agencija text NULL;
+
 -- Dodaj foreign key constraint
 ALTER TABLE ponuda 
   DROP CONSTRAINT IF EXISTS ponuda_idkorisnik_agencija_fkey;

@@ -5,6 +5,7 @@ export interface Ponuda {
   created_at: string
   idkorisnik: number | null
   idkorisnik_agencija: number | null
+  oglasid_agencija: string | null // Agencijski broj oglasa
   agencija_naziv?: string | null // JOIN podatak iz korisnici tabele
   glavna_foto_url?: string | null // JOIN podatak iz ponudafoto tabele
   vrstaobjekta_ag: string | null
@@ -41,6 +42,7 @@ export interface Ponuda {
 export interface PonudaInsert {
   idkorisnik?: number | null
   idkorisnik_agencija?: number | null
+  oglasid_agencija?: string | null
   vrstaobjekta_ag?: string | null
   grad_ag?: string | null
   opstina_ag?: string | null
