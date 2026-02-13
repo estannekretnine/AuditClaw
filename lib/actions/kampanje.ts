@@ -69,6 +69,7 @@ export async function createKampanja(formData: FormData) {
     ciljnagrupa_ai: formData.get('ciljnagrupa_ai') as string || null,
     zakljucak_ai: formData.get('zakljucak_ai') as string || null,
     budzet: formData.get('budzet') ? Number(formData.get('budzet')) : null,
+    kodkampanje: formData.get('kodkampanje') as string || null,
     predlogkampanje_ai: formData.get('predlogkampanje_ai') as string || null,
     stsaktivan: formData.get('stsaktivan') !== 'false', // Default true
     ciljaniregion_ai: formData.get('ciljaniregion_ai') as string || null,
@@ -108,6 +109,7 @@ export async function updateKampanja(id: number, formData: FormData) {
     ciljnagrupa_ai: formData.get('ciljnagrupa_ai') as string || null,
     zakljucak_ai: formData.get('zakljucak_ai') as string || null,
     budzet: formData.get('budzet') ? Number(formData.get('budzet')) : null,
+    kodkampanje: formData.get('kodkampanje') as string || null,
     predlogkampanje_ai: formData.get('predlogkampanje_ai') as string || null,
     stsaktivan: formData.get('stsaktivan') !== 'false',
     ciljaniregion_ai: formData.get('ciljaniregion_ai') as string || null,

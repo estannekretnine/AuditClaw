@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
-import { X, Brain, MessageSquare, Settings, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { X, Brain, MessageSquare, Settings, ChevronDown, ChevronUp, Sparkles, Wand2 } from 'lucide-react'
 import { createKampanja, updateKampanja, updateKampanjaAgent } from '@/lib/actions/kampanje'
 import type { Kampanja } from '@/lib/types/kampanja'
+import type { Ponuda } from '@/lib/types/ponuda'
 
 interface KampanjaFormProps {
   kampanja: Kampanja | null
-  ponudaId: number
+  ponuda: Ponuda
   userId: number | null
   userStatus: string | null // 'admin' | 'manager' | 'agent' | etc.
   onClose: () => void
@@ -62,9 +63,11 @@ function AccordionSection({
   )
 }
 
-export default function KampanjaForm({ kampanja, ponudaId, userId, userStatus, onClose, onSuccess }: KampanjaFormProps) {
+export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onClose, onSuccess }: KampanjaFormProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showKodDropdown, setShowKodDropdown] = useState(false)
+  const kodDropdownRef = useRef<HTMLDivElement>(null)
   
   const isAdmin = userStatus === 'admin' || userStatus === 'manager'
   const isEditing = !!kampanja
@@ -88,7 +91,52 @@ export default function KampanjaForm({ kampanja, ponudaId, userId, userStatus, o
     zakljucak_ag: kampanja?.zakljucak_ag || '',
     budzet: kampanja?.budzet?.toString() || '',
     stsaktivan: kampanja?.stsaktivan !== false, // Default true
+    kodkampanje: kampanja?.kodkampanje || '',
   })
+
+  // Zatvori dropdown kada se klikne izvan
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (kodDropdownRef.current && !kodDropdownRef.current.contains(event.target as Node)) {
+        setShowKodDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Generisanje predloga za kod kampanje
+  const generateKodPredlozi = () => {
+    const lokacija = ponuda.lokacija_ag || ponuda.opstina_ag || 'LOK'
+    const lokacijaClean = lokacija.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 10)
+    const lokacijaShort = lokacija.substring(0, 2).toUpperCase()
+    const oglasId = ponuda.oglasid_agencija || ponuda.id.toString()
+    const random2 = Math.floor(Math.random() * 90 + 10) // 10-99
+    const random6 = Math.random().toString(36).substring(2, 8) // 6 random chars
+    
+    return [
+      {
+        label: 'SEO format',
+        value: `${ponuda.id}${lokacijaClean}-${oglasId}`,
+        description: 'Najbolje za SEO i prepoznatljivost'
+      },
+      {
+        label: 'Investitor format',
+        value: `INV-${lokacijaShort}-${random2}`,
+        description: 'Za "Vibe" investicije'
+      },
+      {
+        label: 'Kratki format',
+        value: random6,
+        description: 'Najbolje za WhatsApp linkove'
+      }
+    ]
+  }
+
+  const handleSelectKod = (value: string) => {
+    setFormData(prev => ({ ...prev, kodkampanje: value }))
+    setShowKodDropdown(false)
+  }
 
   const toggleSection = (section: keyof typeof openSections) => {
     setOpenSections(prev => ({
@@ -131,7 +179,8 @@ export default function KampanjaForm({ kampanja, ponudaId, userId, userStatus, o
         formDataObj.append('zakljucak_ag', formData.zakljucak_ag)
         formDataObj.append('budzet', formData.budzet)
         formDataObj.append('stsaktivan', formData.stsaktivan.toString())
-        formDataObj.append('ponudaid', ponudaId.toString())
+        formDataObj.append('kodkampanje', formData.kodkampanje)
+        formDataObj.append('ponudaid', ponuda.id.toString())
 
         let result
         if (isEditing) {
@@ -387,20 +436,57 @@ export default function KampanjaForm({ kampanja, ponudaId, userId, userStatus, o
                   </label>
                 </div>
 
-                {/* Kod kampanje (readonly) */}
-                {kampanja?.kodkampanje && (
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Kod kampanje
-                    </label>
+                {/* Kod kampanje sa predlozima */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Kod kampanje
+                  </label>
+                  <div className="flex gap-2">
                     <input
                       type="text"
-                      value={kampanja.kodkampanje}
-                      readOnly
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-500 font-mono text-sm"
+                      name="kodkampanje"
+                      value={formData.kodkampanje}
+                      onChange={handleInputChange}
+                      className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all font-mono text-sm"
+                      placeholder="Unesite ili izaberite kod..."
                     />
+                    <div className="relative" ref={kodDropdownRef}>
+                      <button
+                        type="button"
+                        onClick={() => setShowKodDropdown(!showKodDropdown)}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl hover:from-violet-600 hover:to-purple-700 transition-all shadow-lg shadow-violet-500/25 font-medium"
+                      >
+                        <Wand2 className="w-4 h-4" />
+                        Predloži
+                        <ChevronDown className={`w-4 h-4 transition-transform ${showKodDropdown ? 'rotate-180' : ''}`} />
+                      </button>
+                      
+                      {showKodDropdown && (
+                        <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50">
+                          <div className="px-3 py-2 border-b border-gray-100">
+                            <p className="text-xs font-medium text-gray-500 uppercase">Izaberite format</p>
+                          </div>
+                          {generateKodPredlozi().map((predlog, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => handleSelectKod(predlog.value)}
+                              className="w-full px-3 py-3 hover:bg-violet-50 transition-colors text-left"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-gray-900">{predlog.label}</span>
+                                <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-violet-600">
+                                  {predlog.value}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-500 mt-1">{predlog.description}</p>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
             </AccordionSection>
           )}

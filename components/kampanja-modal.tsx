@@ -311,7 +311,7 @@ export default function KampanjaModal({ ponuda, userId, userStatus, onClose }: K
         {showForm && (
           <KampanjaForm
             kampanja={editingKampanja}
-            ponudaId={ponuda.id}
+            ponuda={ponuda}
             userId={userId}
             userStatus={userStatus}
             onClose={handleFormClose}

@@ -1,27 +1,32 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Building2, ArrowRight } from 'lucide-react'
+
+// Build time se generiše pri kompajliranju
+const BUILD_TIME = process.env.NEXT_PUBLIC_BUILD_TIME || new Date().toISOString()
 
 export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [currentDateTime, setCurrentDateTime] = useState('')
   const router = useRouter()
 
-  // Dinamički datum i vreme
-  useEffect(() => {
-    const now = new Date()
-    const formatted = now.toLocaleString('sr-RS', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).replace(',', ' -')
-    setCurrentDateTime(formatted)
-  }, [])
+  // Formatiraj build time
+  const formatBuildTime = () => {
+    try {
+      const date = new Date(BUILD_TIME)
+      return date.toLocaleString('sr-RS', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).replace(',', ' -')
+    } catch {
+      return BUILD_TIME
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -221,7 +226,7 @@ export default function LoginPage() {
             <div className="text-center text-xs text-stone-500">
               <span className="font-semibold">Poslednje ažuriranje:</span>
               <br />
-              <span className="text-stone-600">{currentDateTime || 'Učitavanje...'}</span>
+              <span className="text-stone-600">{formatBuildTime()}</span>
             </div>
           </div>
 
