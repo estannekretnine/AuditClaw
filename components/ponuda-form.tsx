@@ -183,25 +183,33 @@ export default function PonudaForm({ ponuda, userId, userStatus, onClose, onSucc
       } else {
         result = await createPonuda(formDataObj)
         ponudaId = result.data?.id || 0
+        console.log('Created ponuda with ID:', ponudaId, 'result:', result)
       }
 
       if (result.error) {
+        console.error('Server error:', result.error)
         setError(result.error)
         return
       }
 
       // Sačuvaj fotografije ako ima promena
       if (ponudaId && photos.length > 0) {
+        console.log('Saving photos for ponuda:', ponudaId, 'photos count:', photos.length)
         const photoResult = await savePonudaFotografije(ponudaId, photos)
         if (photoResult.error) {
           console.error('Error saving photos:', photoResult.error)
-          // Ne prekidamo proces, samo logujemo grešku
+          setError('Ponuda sačuvana, ali greška pri čuvanju fotografija: ' + photoResult.error)
+          return
         }
+        console.log('Photos saved successfully')
+      } else {
+        console.log('No photos to save or ponudaId is 0:', { ponudaId, photosLength: photos.length })
       }
 
       onSuccess()
-    } catch {
-      setError('Greška pri čuvanju ponude')
+    } catch (err) {
+      console.error('Catch error:', err)
+      setError('Greška pri čuvanju ponude: ' + (err instanceof Error ? err.message : String(err)))
     } finally {
       setLoading(false)
     }
