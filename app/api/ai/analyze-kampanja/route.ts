@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
 
 const SYSTEM_PROMPT = `Ti si 'AuditClaw AI', brutalno iskren investicioni analitičar nekretnina. 
 Tvoj fokus je na inženjerskoj preciznosti i psihologiji kupaca visoke platežne moći iz dijaspore (Nemačka, Švajcarska, Austrija, USA). 
@@ -14,7 +12,7 @@ UVEK odgovaraj na SRPSKOM jeziku.
 
 Tvoj zadatak je da analiziraš nekretninu i generišeš sadržaj za marketing kampanju.
 
-Odgovori ISKLJUČIVO u JSON formatu sa sledećim poljima:
+Odgovori ISKLJUČIVO u JSON formatu sa sledećim poljima (bez markdown formatiranja, samo čist JSON):
 
 {
   "analizaoglasa_ai": "Oceni trenutni opis ocenom 1-10. Navedi šta nedostaje od tehničkih detalja (npr. stanje vertikala, izolacija, specifikacija prozora, elektro-instalacije, vodovod).",
@@ -50,9 +48,9 @@ interface PonudaData {
 export async function POST(request: NextRequest) {
   try {
     // Proveri da li postoji API ključ
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json(
-        { error: 'OpenAI API ključ nije konfigurisan. Dodajte OPENAI_API_KEY u environment variables.' },
+        { error: 'Gemini API ključ nije konfigurisan. Dodajte GEMINI_API_KEY u environment variables.' },
         { status: 500 }
       )
     }
@@ -85,30 +83,49 @@ PODACI O NEKRETNINI:
 OPIS NEKRETNINE:
 ${ponuda.opis_ag || 'Opis nije unet - ovo je kritičan nedostatak za marketing.'}
 
-Generiši JSON odgovor sa analizom i preporukama za kampanju.`
+Generiši JSON odgovor sa analizom i preporukama za kampanju. Odgovori SAMO sa JSON objektom, bez dodatnog teksta.`
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: userPrompt }
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+
+    const result = await model.generateContent({
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: SYSTEM_PROMPT + '\n\n' + userPrompt }]
+        }
       ],
-      temperature: 0.7,
-      max_tokens: 3000,
-      response_format: { type: 'json_object' }
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 3000,
+      }
     })
 
-    const responseContent = completion.choices[0]?.message?.content
+    const responseText = result.response.text()
 
-    if (!responseContent) {
+    if (!responseText) {
       return NextResponse.json(
         { error: 'AI nije vratio odgovor. Pokušajte ponovo.' },
         { status: 500 }
       )
     }
 
+    // Očisti odgovor od markdown formatiranja ako postoji
+    let cleanedResponse = responseText
+      .replace(/```json\n?/g, '')
+      .replace(/```\n?/g, '')
+      .trim()
+
     // Parsiraj JSON odgovor
-    const aiResponse = JSON.parse(responseContent)
+    let aiResponse
+    try {
+      aiResponse = JSON.parse(cleanedResponse)
+    } catch {
+      console.error('Failed to parse AI response:', cleanedResponse)
+      return NextResponse.json(
+        { error: 'AI je vratio neispravan format. Pokušajte ponovo.' },
+        { status: 500 }
+      )
+    }
 
     // Generiši URL slug za kodkampanje
     const lokacija = (ponuda.lokacija_ag || ponuda.opstina_ag || 'beograd')
@@ -131,19 +148,20 @@ Generiši JSON odgovor sa analizom i preporukama za kampanju.`
   } catch (error) {
     console.error('AI Analysis error:', error)
     
-    if (error instanceof OpenAI.APIError) {
-      if (error.status === 401) {
-        return NextResponse.json(
-          { error: 'Nevažeći OpenAI API ključ. Proverite OPENAI_API_KEY.' },
-          { status: 401 }
-        )
-      }
-      if (error.status === 429) {
-        return NextResponse.json(
-          { error: 'Prekoračen limit OpenAI API poziva. Pokušajte kasnije.' },
-          { status: 429 }
-        )
-      }
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    
+    if (errorMessage.includes('API_KEY')) {
+      return NextResponse.json(
+        { error: 'Nevažeći Gemini API ključ. Proverite GEMINI_API_KEY.' },
+        { status: 401 }
+      )
+    }
+    
+    if (errorMessage.includes('quota') || errorMessage.includes('rate')) {
+      return NextResponse.json(
+        { error: 'Prekoračen limit API poziva. Pokušajte kasnije.' },
+        { status: 429 }
+      )
     }
 
     return NextResponse.json(
