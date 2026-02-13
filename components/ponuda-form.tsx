@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X, Home, MapPin, DollarSign, Settings, Link2, ChevronDown, ChevronUp, Image as ImageIcon, Users } from 'lucide-react'
 import { createPonuda, updatePonuda, getPonudaFotografije, savePonudaFotografije, getAgencije } from '@/lib/actions/ponude'
+import { createClient } from '@/lib/supabase/client'
 import type { Ponuda } from '@/lib/types/ponuda'
 import PhotoUpload, { type PhotoItem } from './photo-upload'
 
@@ -195,7 +196,54 @@ export default function PonudaForm({ ponuda, userId, userStatus, onClose, onSucc
       // Sačuvaj fotografije ako ima promena
       if (ponudaId && photos.length > 0) {
         console.log('Saving photos for ponuda:', ponudaId, 'photos count:', photos.length)
-        const photoResult = await savePonudaFotografije(ponudaId, photos)
+        
+        // Upload novih fotografija direktno sa klijenta
+        const supabase = createClient()
+        const photosToSave: PhotoItem[] = []
+        
+        for (const photo of photos) {
+          if (photo.isDeleted) {
+            // Zadrži obrisane za server action da ih obriše
+            photosToSave.push({ ...photo, file: undefined })
+            continue
+          }
+          
+          if (photo.file && photo.isNew) {
+            // Upload novog fajla direktno na Supabase storage
+            const fileExt = photo.file.name.split('.').pop()
+            const fileName = `${ponudaId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+            
+            console.log('Uploading file:', fileName)
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('ponudafoto')
+              .upload(fileName, photo.file)
+            
+            if (uploadError) {
+              console.error('Error uploading photo:', uploadError)
+              continue
+            }
+            
+            // Dobij public URL
+            const { data: urlData } = supabase.storage
+              .from('ponudafoto')
+              .getPublicUrl(fileName)
+            
+            console.log('Uploaded, URL:', urlData.publicUrl)
+            
+            // Dodaj sa novim URL-om, bez File objekta
+            photosToSave.push({
+              ...photo,
+              url: urlData.publicUrl,
+              file: undefined
+            })
+          } else {
+            // Postojeća fotografija, samo proslijedi bez File objekta
+            photosToSave.push({ ...photo, file: undefined })
+          }
+        }
+        
+        // Sada pozovi server action samo za čuvanje metapodataka u bazu
+        const photoResult = await savePonudaFotografije(ponudaId, photosToSave)
         if (photoResult.error) {
           console.error('Error saving photos:', photoResult.error)
           setError('Ponuda sačuvana, ali greška pri čuvanju fotografija: ' + photoResult.error)

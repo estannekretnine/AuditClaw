@@ -338,10 +338,9 @@ export async function getPonudaFotografije(ponudaId: number) {
   return { data, error: null }
 }
 
-// Interface za foto item koji dolazi iz komponente
+// Interface za foto item koji dolazi iz komponente (bez File - upload se radi na klijentu)
 interface PhotoItemInput {
   id: number
-  file?: File
   url: string
   opis: string | null
   redosled: number | null
@@ -375,38 +374,14 @@ export async function savePonudaFotografije(ponudaId: number, photos: PhotoItemI
     await supabase.from('ponudafoto').delete().eq('id', photo.id)
   }
 
-  // 2. Upload novih fotografija i ažuriraj postojeće
+  // 2. Sačuvaj metapodatke fotografija u bazu (upload se radi na klijentu)
   const photosToSave = photos.filter(p => !p.isDeleted)
   
   for (const photo of photosToSave) {
-    let photoUrl = photo.url
-
-    // Ako ima novi file, upload-uj ga
-    if (photo.file && photo.isNew) {
-      const fileExt = photo.file.name.split('.').pop()
-      const fileName = `${ponudaId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
-      
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('ponudafoto')
-        .upload(fileName, photo.file)
-
-      if (uploadError) {
-        console.error('Error uploading photo:', uploadError)
-        continue
-      }
-
-      // Dobij public URL
-      const { data: urlData } = supabase.storage
-        .from('ponudafoto')
-        .getPublicUrl(fileName)
-      
-      photoUrl = urlData.publicUrl
-    }
-
     // Pripremi podatke za čuvanje
     const photoData = {
       idponude: ponudaId,
-      url: photoUrl,
+      url: photo.url,
       opis: photo.opis,
       redosled: photo.redosled,
       glavna: photo.glavna,
