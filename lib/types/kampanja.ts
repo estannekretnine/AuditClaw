@@ -15,6 +15,10 @@ export interface Kampanja {
   psiholoskiprofil_ai: string | null
   ponudaid: number | null
   zakljucak_ag: string | null
+  tekst_linkedin: string | null
+  tekst_email_naslov: string | null
+  tekst_email_telo: string | null
+  tekst_whatsapp: string | null
 }
 
 export interface KampanjaInsert {
@@ -30,6 +34,10 @@ export interface KampanjaInsert {
   psiholoskiprofil_ai?: string | null
   ponudaid?: number | null
   zakljucak_ag?: string | null
+  tekst_linkedin?: string | null
+  tekst_email_naslov?: string | null
+  tekst_email_telo?: string | null
+  tekst_whatsapp?: string | null
 }
 
 export interface KampanjaUpdate extends KampanjaInsert {

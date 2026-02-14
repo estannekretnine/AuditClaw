@@ -87,6 +87,10 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
     ciljaniregion_ai: kampanja?.ciljaniregion_ai || '',
     kljucnereci_ai: kampanja?.kljucnereci_ai || '',
     psiholoskiprofil_ai: kampanja?.psiholoskiprofil_ai || '',
+    tekst_linkedin: kampanja?.tekst_linkedin || '',
+    tekst_email_naslov: kampanja?.tekst_email_naslov || '',
+    tekst_email_telo: kampanja?.tekst_email_telo || '',
+    tekst_whatsapp: kampanja?.tekst_whatsapp || '',
     predlogkampanje_ai: kampanja?.predlogkampanje_ai || '',
     zakljucak_ai: kampanja?.zakljucak_ai || '',
     zakljucak_ag: kampanja?.zakljucak_ag || '',
@@ -232,6 +236,10 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
         formDataObj.append('stsaktivan', formData.stsaktivan.toString())
         formDataObj.append('kodkampanje', formData.kodkampanje)
         formDataObj.append('ponudaid', ponuda.id.toString())
+        formDataObj.append('tekst_linkedin', formData.tekst_linkedin)
+        formDataObj.append('tekst_email_naslov', formData.tekst_email_naslov)
+        formDataObj.append('tekst_email_telo', formData.tekst_email_telo)
+        formDataObj.append('tekst_whatsapp', formData.tekst_whatsapp)
 
         let result
         if (isEditing) {
@@ -401,7 +409,7 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
                   value={formData.analizaoglasa_ai}
                   onChange={handleInputChange}
                   disabled={!isAdmin}
-                  rows={3}
+                  rows={9}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="AI analiza oglasa..."
                 />
@@ -417,7 +425,7 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
                   value={formData.ciljnagrupa_ai}
                   onChange={handleInputChange}
                   disabled={!isAdmin}
-                  rows={2}
+                  rows={9}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="Ciljna grupa za kampanju..."
                 />
@@ -433,7 +441,7 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
                   value={formData.ciljaniregion_ai}
                   onChange={handleInputChange}
                   disabled={!isAdmin}
-                  rows={2}
+                  rows={9}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="Ciljani geografski region..."
                 />
@@ -449,7 +457,7 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
                   value={formData.kljucnereci_ai}
                   onChange={handleInputChange}
                   disabled={!isAdmin}
-                  rows={2}
+                  rows={9}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="Ključne reči za targetiranje..."
                 />
@@ -465,7 +473,7 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
                   value={formData.psiholoskiprofil_ai}
                   onChange={handleInputChange}
                   disabled={!isAdmin}
-                  rows={2}
+                  rows={9}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="Psihološki profil ciljne grupe..."
                 />
@@ -481,7 +489,7 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
                   value={formData.predlogkampanje_ai}
                   onChange={handleInputChange}
                   disabled={!isAdmin}
-                  rows={3}
+                  rows={9}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="AI predlog za kampanju..."
                 />
@@ -497,9 +505,73 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
                   value={formData.zakljucak_ai}
                   onChange={handleInputChange}
                   disabled={!isAdmin}
-                  rows={2}
+                  rows={9}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="AI zaključak..."
+                />
+              </div>
+
+              {/* LinkedIn tekst */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  LinkedIn tekst
+                </label>
+                <textarea
+                  name="tekst_linkedin"
+                  value={formData.tekst_linkedin}
+                  onChange={handleInputChange}
+                  disabled={!isAdmin}
+                  rows={9}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  placeholder="Tekst za LinkedIn outreach..."
+                />
+              </div>
+
+              {/* Email naslov */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Email naslov
+                </label>
+                <input
+                  type="text"
+                  name="tekst_email_naslov"
+                  value={formData.tekst_email_naslov}
+                  onChange={handleInputChange}
+                  disabled={!isAdmin}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  placeholder="Naslov email poruke..."
+                />
+              </div>
+
+              {/* Email telo */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Email telo
+                </label>
+                <textarea
+                  name="tekst_email_telo"
+                  value={formData.tekst_email_telo}
+                  onChange={handleInputChange}
+                  disabled={!isAdmin}
+                  rows={9}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  placeholder="Telo email poruke..."
+                />
+              </div>
+
+              {/* WhatsApp poruka */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  WhatsApp poruka
+                </label>
+                <textarea
+                  name="tekst_whatsapp"
+                  value={formData.tekst_whatsapp}
+                  onChange={handleInputChange}
+                  disabled={!isAdmin}
+                  rows={9}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  placeholder="Tekst za WhatsApp poruku..."
                 />
               </div>
               </div>

@@ -19,6 +19,10 @@ const kampanjaSchema = z.object({
   psiholoskiprofil_ai: z.string().optional().nullable(),
   ponudaid: z.number().optional().nullable(),
   zakljucak_ag: z.string().optional().nullable(),
+  tekst_linkedin: z.string().optional().nullable(),
+  tekst_email_naslov: z.string().optional().nullable(),
+  tekst_email_telo: z.string().optional().nullable(),
+  tekst_whatsapp: z.string().optional().nullable(),
 })
 
 // Zod schema za validaciju kampanje (Agent - samo zakljucak_ag)
@@ -77,6 +81,10 @@ export async function createKampanja(formData: FormData) {
     psiholoskiprofil_ai: formData.get('psiholoskiprofil_ai') as string || null,
     ponudaid: formData.get('ponudaid') ? Number(formData.get('ponudaid')) : null,
     zakljucak_ag: formData.get('zakljucak_ag') as string || null,
+    tekst_linkedin: formData.get('tekst_linkedin') as string || null,
+    tekst_email_naslov: formData.get('tekst_email_naslov') as string || null,
+    tekst_email_telo: formData.get('tekst_email_telo') as string || null,
+    tekst_whatsapp: formData.get('tekst_whatsapp') as string || null,
   }
 
   // Validacija
@@ -117,6 +125,10 @@ export async function updateKampanja(id: number, formData: FormData) {
     psiholoskiprofil_ai: formData.get('psiholoskiprofil_ai') as string || null,
     ponudaid: formData.get('ponudaid') ? Number(formData.get('ponudaid')) : null,
     zakljucak_ag: formData.get('zakljucak_ag') as string || null,
+    tekst_linkedin: formData.get('tekst_linkedin') as string || null,
+    tekst_email_naslov: formData.get('tekst_email_naslov') as string || null,
+    tekst_email_telo: formData.get('tekst_email_telo') as string || null,
+    tekst_whatsapp: formData.get('tekst_whatsapp') as string || null,
   }
 
   // Validacija

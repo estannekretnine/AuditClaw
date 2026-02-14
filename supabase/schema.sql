@@ -186,10 +186,20 @@ CREATE TABLE public.kampanja (
   psiholoskiprofil_ai text NULL,
   ponudaid bigint NULL,
   zakljucak_ag text NULL,
+  tekst_linkedin text NULL,
+  tekst_email_naslov text NULL,
+  tekst_email_telo text NULL,
+  tekst_whatsapp text NULL,
   CONSTRAINT kampanja_pkey PRIMARY KEY (id),
   CONSTRAINT kampanja_ponudaid_fkey FOREIGN KEY (ponudaid) REFERENCES ponuda(id) ON DELETE RESTRICT
 ) TABLESPACE pg_default;
 */
+
+-- Dodavanje novih kolona u postojeću tabelu kampanja
+ALTER TABLE kampanja ADD COLUMN IF NOT EXISTS tekst_linkedin text NULL;
+ALTER TABLE kampanja ADD COLUMN IF NOT EXISTS tekst_email_naslov text NULL;
+ALTER TABLE kampanja ADD COLUMN IF NOT EXISTS tekst_email_telo text NULL;
+ALTER TABLE kampanja ADD COLUMN IF NOT EXISTS tekst_whatsapp text NULL;
 
 -- Omogući RLS za kampanja tabelu
 ALTER TABLE kampanja ENABLE ROW LEVEL SECURITY;
