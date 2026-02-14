@@ -29,6 +29,7 @@ export default function PonudePage() {
   const [selectedPonudaForKampanja, setSelectedPonudaForKampanja] = useState<Ponuda | null>(null)
   const [showPoziviModal, setShowPoziviModal] = useState(false)
   const [selectedPonudaForPozivi, setSelectedPonudaForPozivi] = useState<Ponuda | null>(null)
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null)
   
   // Paginacija
   const [currentPage, setCurrentPage] = useState(1)
@@ -601,7 +602,17 @@ export default function PonudePage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          setOpenActionMenu(openActionMenu === ponuda.id ? null : ponuda.id)
+                          if (openActionMenu === ponuda.id) {
+                            setOpenActionMenu(null)
+                            setMenuPosition(null)
+                          } else {
+                            const rect = e.currentTarget.getBoundingClientRect()
+                            setMenuPosition({
+                              top: rect.bottom + 4,
+                              left: rect.right - 144 // 144 = širina menija (w-36 = 9rem = 144px)
+                            })
+                            setOpenActionMenu(ponuda.id)
+                          }
                         }}
                         className="inline-flex items-center justify-center w-7 h-7 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-all"
                       >
@@ -795,25 +806,25 @@ export default function PonudePage() {
         />
       )}
 
-      {/* Action Menu Dropdown - renderuje se kao portal */}
-      {openActionMenu && (
+      {/* Action Menu Dropdown - fixed pozicioniranje pored dugmeta */}
+      {openActionMenu && menuPosition && (
         <>
           <div 
             className="fixed inset-0 z-40" 
-            onClick={() => setOpenActionMenu(null)}
+            onClick={() => { setOpenActionMenu(null); setMenuPosition(null) }}
           />
-          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50">
-            <div className="px-3 py-2 border-b border-gray-100 mb-1">
-              <span className="text-xs font-semibold text-gray-500">Akcije za ponudu #{openActionMenu}</span>
-            </div>
+          <div 
+            className="fixed w-36 bg-white rounded-lg shadow-2xl border border-gray-100 py-1 z-50"
+            style={{ top: menuPosition.top, left: menuPosition.left }}
+          >
             <button
               onClick={() => {
                 const ponuda = ponude.find(p => p.id === openActionMenu)
                 if (ponuda) handleEdit(ponuda)
               }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
             >
-              <Pencil className="w-4 h-4" />
+              <Pencil className="w-3 h-3" />
               Izmeni
             </button>
             <button
@@ -821,9 +832,9 @@ export default function PonudePage() {
                 const ponuda = ponude.find(p => p.id === openActionMenu)
                 if (ponuda) handleKampanja(ponuda)
               }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-violet-50 hover:text-violet-700 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-violet-50 hover:text-violet-700 transition-colors"
             >
-              <Megaphone className="w-4 h-4" />
+              <Megaphone className="w-3 h-3" />
               Kampanja
             </button>
             <button
@@ -831,9 +842,9 @@ export default function PonudePage() {
                 const ponuda = ponude.find(p => p.id === openActionMenu)
                 if (ponuda) handlePozivi(ponuda)
               }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
             >
-              <Phone className="w-4 h-4" />
+              <Phone className="w-3 h-3" />
               Pozivi
             </button>
             <button
@@ -841,16 +852,16 @@ export default function PonudePage() {
                 const ponuda = ponude.find(p => p.id === openActionMenu)
                 if (ponuda) handleArhiviraj(ponuda)
               }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
             >
               {ponude.find(p => p.id === openActionMenu)?.stsaktivan ? (
                 <>
-                  <Archive className="w-4 h-4" />
+                  <Archive className="w-3 h-3" />
                   Arhiviraj
                 </>
               ) : (
                 <>
-                  <ArchiveRestore className="w-4 h-4" />
+                  <ArchiveRestore className="w-3 h-3" />
                   Aktiviraj
                 </>
               )}
