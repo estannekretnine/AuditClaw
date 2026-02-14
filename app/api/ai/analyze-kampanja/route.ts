@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import Groq from 'groq-sdk'
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+})
 
 const SYSTEM_PROMPT = `Ti si 'AuditClaw AI', brutalno iskren investicioni analitičar nekretnina. 
 Tvoj fokus je na inženjerskoj preciznosti i psihologiji kupaca visoke platežne moći iz dijaspore (Nemačka, Švajcarska, Austrija, USA). 
@@ -48,9 +50,9 @@ interface PonudaData {
 export async function POST(request: NextRequest) {
   try {
     // Proveri da li postoji API ključ
-    if (!process.env.GEMINI_API_KEY) {
+    if (!process.env.GROQ_API_KEY) {
       return NextResponse.json(
-        { error: 'Gemini API ključ nije konfigurisan. Dodajte GEMINI_API_KEY u environment variables.' },
+        { error: 'Groq API ključ nije konfigurisan. Dodajte GROQ_API_KEY u environment variables.' },
         { status: 500 }
       )
     }
@@ -83,44 +85,34 @@ PODACI O NEKRETNINI:
 OPIS NEKRETNINE:
 ${ponuda.opis_ag || 'Opis nije unet - ovo je kritičan nedostatak za marketing.'}
 
-Generiši JSON odgovor sa analizom i preporukama za kampanju. Odgovori SAMO sa JSON objektom, bez dodatnog teksta.`
+Generiši JSON odgovor sa analizom i preporukama za kampanju. Odgovori SAMO sa JSON objektom, bez dodatnog teksta ili markdown formatiranja.`
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
-
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: SYSTEM_PROMPT + '\n\n' + userPrompt }]
-        }
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userPrompt }
       ],
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 3000,
-      }
+      temperature: 0.7,
+      max_tokens: 3000,
+      response_format: { type: 'json_object' }
     })
 
-    const responseText = result.response.text()
+    const responseContent = completion.choices[0]?.message?.content
 
-    if (!responseText) {
+    if (!responseContent) {
       return NextResponse.json(
         { error: 'AI nije vratio odgovor. Pokušajte ponovo.' },
         { status: 500 }
       )
     }
 
-    // Očisti odgovor od markdown formatiranja ako postoji
-    let cleanedResponse = responseText
-      .replace(/```json\n?/g, '')
-      .replace(/```\n?/g, '')
-      .trim()
-
     // Parsiraj JSON odgovor
     let aiResponse
     try {
-      aiResponse = JSON.parse(cleanedResponse)
+      aiResponse = JSON.parse(responseContent)
     } catch {
-      console.error('Failed to parse AI response:', cleanedResponse)
+      console.error('Failed to parse AI response:', responseContent)
       return NextResponse.json(
         { error: 'AI je vratio neispravan format. Pokušajte ponovo.' },
         { status: 500 }
@@ -150,7 +142,6 @@ Generiši JSON odgovor sa analizom i preporukama za kampanju. Odgovori SAMO sa J
     
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     
-    // Vrati tačnu grešku za debugging
     return NextResponse.json(
       { error: `AI greška: ${errorMessage}` },
       { status: 500 }
