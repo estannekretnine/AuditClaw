@@ -618,9 +618,9 @@ export default function PonudePage() {
                               onClick={() => setOpenActionMenu(null)}
                             />
                             <div className={`absolute right-0 w-36 bg-white rounded-lg shadow-2xl border border-gray-100 py-1 z-50 ${
-                              index >= paginatedData.length - 2 
-                                ? 'bottom-full mb-1' 
-                                : 'top-full mt-1'
+                              index < 2 
+                                ? 'top-full mt-1' 
+                                : 'bottom-full mb-1'
                             }`}>
                               <button
                                 onClick={(e) => {
