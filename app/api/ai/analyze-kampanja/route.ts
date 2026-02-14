@@ -150,22 +150,9 @@ Generiši JSON odgovor sa analizom i preporukama za kampanju. Odgovori SAMO sa J
     
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     
-    if (errorMessage.includes('API_KEY')) {
-      return NextResponse.json(
-        { error: 'Nevažeći Gemini API ključ. Proverite GEMINI_API_KEY.' },
-        { status: 401 }
-      )
-    }
-    
-    if (errorMessage.includes('quota') || errorMessage.includes('rate')) {
-      return NextResponse.json(
-        { error: 'Prekoračen limit API poziva. Pokušajte kasnije.' },
-        { status: 429 }
-      )
-    }
-
+    // Vrati tačnu grešku za debugging
     return NextResponse.json(
-      { error: 'Greška pri AI analizi. Pokušajte ponovo.' },
+      { error: `AI greška: ${errorMessage}` },
       { status: 500 }
     )
   }
