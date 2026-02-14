@@ -85,7 +85,7 @@ ${ponuda.opis_ag || 'Opis nije unet - ovo je kritičan nedostatak za marketing.'
 
 Generiši JSON odgovor sa analizom i preporukama za kampanju. Odgovori SAMO sa JSON objektom, bez dodatnog teksta.`
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' })
 
     const result = await model.generateContent({
       contents: [
