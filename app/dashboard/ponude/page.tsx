@@ -404,8 +404,8 @@ export default function PonudePage() {
           </button>
         </div>
       ) : viewMode === 'table' ? (
-        <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-visible">
+          <div className="overflow-x-auto overflow-y-visible">
             <table className="min-w-full">
               {/* Header */}
               <thead className="bg-gradient-to-r from-gray-900 to-black">
@@ -617,11 +617,7 @@ export default function PonudePage() {
                               className="fixed inset-0 z-40" 
                               onClick={() => setOpenActionMenu(null)}
                             />
-                            <div className={`absolute right-0 w-36 bg-white rounded-lg shadow-2xl border border-gray-100 py-1 z-50 ${
-                              index < 2 
-                                ? 'top-full mt-1' 
-                                : 'bottom-full mb-1'
-                            }`}>
+                            <div className="absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-2xl border border-gray-100 py-1 z-50">
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation()
