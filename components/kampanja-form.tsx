@@ -171,6 +171,10 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
         { key: 'psiholoskiprofil_ai', value: data.psiholoskiprofil_ai },
         { key: 'predlogkampanje_ai', value: data.predlogkampanje_ai },
         { key: 'zakljucak_ai', value: data.zakljucak_ai },
+        { key: 'tekst_linkedin', value: data.tekst_linkedin },
+        { key: 'tekst_email_naslov', value: data.tekst_email_naslov },
+        { key: 'tekst_email_telo', value: data.tekst_email_telo },
+        { key: 'tekst_whatsapp', value: data.tekst_whatsapp },
       ]
 
       for (const field of fields) {

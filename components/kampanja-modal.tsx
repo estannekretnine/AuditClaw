@@ -22,6 +22,7 @@ export default function KampanjaModal({ ponuda, userId, userStatus, onClose }: K
   const [editingKampanja, setEditingKampanja] = useState<Kampanja | null>(null)
   const [openActionMenu, setOpenActionMenu] = useState<number | null>(null)
   const [actionLoading, setActionLoading] = useState<number | null>(null)
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null)
 
   const isAdmin = userStatus === 'admin' || userStatus === 'manager'
 
