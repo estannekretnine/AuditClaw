@@ -404,8 +404,8 @@ export default function PonudePage() {
           </button>
         </div>
       ) : viewMode === 'table' ? (
-        <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-visible">
-          <div className="overflow-x-auto overflow-y-visible">
+        <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="overflow-x-auto">
             <table className="min-w-full">
               {/* Header */}
               <thead className="bg-gradient-to-r from-gray-900 to-black">
@@ -598,79 +598,15 @@ export default function PonudePage() {
                     <td className="px-2 py-3 whitespace-nowrap">{getStatusBadge(ponuda.stsaktivan)}</td>
                     <td className="px-2 py-3 whitespace-nowrap">{getTipBadge(ponuda.stsrentaprodaja)}</td>
                     <td className="px-1 py-2 whitespace-nowrap text-center">
-                      <div className="relative inline-block">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setOpenActionMenu(openActionMenu === ponuda.id ? null : ponuda.id)
-                          }}
-                          className="inline-flex items-center justify-center w-7 h-7 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-all"
-                        >
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
-                        
-                        {/* Dropdown meni - prikaži iznad za poslednja 2 reda */}
-                        {openActionMenu === ponuda.id && (
-                          <>
-                            {/* Invisible overlay to close menu */}
-                            <div 
-                              className="fixed inset-0 z-40" 
-                              onClick={() => setOpenActionMenu(null)}
-                            />
-                            <div className="absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-2xl border border-gray-100 py-1 z-50">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleEdit(ponuda)
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
-                              >
-                                <Pencil className="w-3 h-3" />
-                                Izmeni
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleKampanja(ponuda)
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-violet-50 hover:text-violet-700 transition-colors"
-                              >
-                                <Megaphone className="w-3 h-3" />
-                                Kampanja
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handlePozivi(ponuda)
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
-                              >
-                                <Phone className="w-3 h-3" />
-                                Pozivi
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleArhiviraj(ponuda)
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                              >
-                                {ponuda.stsaktivan ? (
-                                  <>
-                                    <Archive className="w-3 h-3" />
-                                    Arhiviraj
-                                  </>
-                                ) : (
-                                  <>
-                                    <ArchiveRestore className="w-3 h-3" />
-                                    Aktiviraj
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setOpenActionMenu(openActionMenu === ponuda.id ? null : ponuda.id)
+                        }}
+                        className="inline-flex items-center justify-center w-7 h-7 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-all"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -857,6 +793,70 @@ export default function PonudePage() {
             setSelectedPonudaForPozivi(null)
           }}
         />
+      )}
+
+      {/* Action Menu Dropdown - renderuje se kao portal */}
+      {openActionMenu && (
+        <>
+          <div 
+            className="fixed inset-0 z-40" 
+            onClick={() => setOpenActionMenu(null)}
+          />
+          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50">
+            <div className="px-3 py-2 border-b border-gray-100 mb-1">
+              <span className="text-xs font-semibold text-gray-500">Akcije za ponudu #{openActionMenu}</span>
+            </div>
+            <button
+              onClick={() => {
+                const ponuda = ponude.find(p => p.id === openActionMenu)
+                if (ponuda) handleEdit(ponuda)
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+            >
+              <Pencil className="w-4 h-4" />
+              Izmeni
+            </button>
+            <button
+              onClick={() => {
+                const ponuda = ponude.find(p => p.id === openActionMenu)
+                if (ponuda) handleKampanja(ponuda)
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-violet-50 hover:text-violet-700 transition-colors"
+            >
+              <Megaphone className="w-4 h-4" />
+              Kampanja
+            </button>
+            <button
+              onClick={() => {
+                const ponuda = ponude.find(p => p.id === openActionMenu)
+                if (ponuda) handlePozivi(ponuda)
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
+            >
+              <Phone className="w-4 h-4" />
+              Pozivi
+            </button>
+            <button
+              onClick={() => {
+                const ponuda = ponude.find(p => p.id === openActionMenu)
+                if (ponuda) handleArhiviraj(ponuda)
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+            >
+              {ponude.find(p => p.id === openActionMenu)?.stsaktivan ? (
+                <>
+                  <Archive className="w-4 h-4" />
+                  Arhiviraj
+                </>
+              ) : (
+                <>
+                  <ArchiveRestore className="w-4 h-4" />
+                  Aktiviraj
+                </>
+              )}
+            </button>
+          </div>
+        </>
       )}
     </div>
   )
