@@ -579,35 +579,46 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
         </section>
       )}
 
-      {/* CTA Section */}
-      <section className={`py-16 px-6 md:px-12 ${
-        config.accentColor === 'amber' ? 'bg-gradient-to-r from-amber-600 to-amber-500' :
-        config.accentColor === 'cyan' ? 'bg-gradient-to-r from-cyan-600 to-cyan-500' :
-        config.accentColor === 'violet' ? 'bg-gradient-to-r from-violet-600 to-violet-500' :
-        'bg-gradient-to-r from-emerald-600 to-emerald-500'
-      }`}>
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${config.accentColor === 'amber' ? 'text-black' : 'text-white'}`}>
-            {t.ctaTitle}
-          </h2>
-          <a
-            href={getWhatsAppUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 px-8 py-4 bg-green-600 text-white rounded-2xl font-bold text-lg hover:bg-green-700 transition-all shadow-lg hover:shadow-xl hover:scale-105"
-          >
-            <MessageCircle className="w-6 h-6" />
-            {t.requestDetails}
-          </a>
-        </div>
-      </section>
-
       {/* Footer */}
-      <footer className={`py-8 px-6 ${isDarkTheme ? 'bg-gray-950 border-t border-gray-800' : 'bg-gray-100 border-t border-gray-200'}`}>
+      <footer className={`py-8 pb-28 px-6 ${isDarkTheme ? 'bg-gray-950 border-t border-gray-800' : 'bg-gray-100 border-t border-gray-200'}`}>
         <div className={`max-w-6xl mx-auto text-center text-sm ${isDarkTheme ? 'text-gray-500' : 'text-gray-600'}`}>
           <p>{t.poweredBy} © {new Date().getFullYear()}. {t.allRightsReserved}</p>
         </div>
       </footer>
+
+      {/* Sticky CTA Button - Always visible at bottom */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-safe">
+        <div className="max-w-lg mx-auto">
+          <a
+            href={getWhatsAppUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex items-center justify-center gap-3 w-full py-4 px-6 bg-gradient-to-r from-green-600 via-green-500 to-emerald-500 text-white rounded-2xl font-bold text-lg shadow-[0_8px_32px_rgba(34,197,94,0.4)] hover:shadow-[0_12px_40px_rgba(34,197,94,0.5)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border border-green-400/20 backdrop-blur-sm"
+          >
+            {/* Pulse animation ring */}
+            <span className="absolute inset-0 rounded-2xl bg-green-400/20 animate-ping opacity-20"></span>
+            
+            {/* Icon with glow */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-white/20 rounded-full blur-md group-hover:blur-lg transition-all"></div>
+              <MessageCircle className="relative w-6 h-6 drop-shadow-lg" />
+            </div>
+            
+            {/* Text */}
+            <span className="relative tracking-wide drop-shadow-md">
+              {t.requestDetails}
+            </span>
+            
+            {/* Arrow indicator */}
+            <svg className="w-5 h-5 ml-1 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </a>
+          
+          {/* Subtle glass effect bar behind */}
+          <div className={`absolute inset-x-0 bottom-0 h-20 -z-10 ${isDarkTheme ? 'bg-gradient-to-t from-gray-950 via-gray-950/95 to-transparent' : 'bg-gradient-to-t from-white via-white/95 to-transparent'}`}></div>
+        </div>
+      </div>
     </div>
   )
 }
