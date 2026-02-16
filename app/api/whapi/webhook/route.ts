@@ -7,26 +7,6 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-// Whapi webhook payload struktura - prilagođeno Whapi formatu
-interface WhapiMessage {
-  id: string
-  from: string
-  chat_id: string
-  text?: {
-    body: string
-  }
-  from_me: boolean
-  timestamp: number
-  type: string
-}
-
-interface WhapiWebhookPayload {
-  messages?: WhapiMessage[]
-  event?: string
-  // Alternativni format
-  message?: WhapiMessage
-}
-
 // Parsiranje ID ponude iz teksta poruke
 function extractPonudaId(text: string): number | null {
   if (!text) return null
@@ -47,89 +27,147 @@ function formatPhoneNumber(phone: string): string {
   return cleaned.startsWith('+') ? cleaned : `+${cleaned}`
 }
 
+// Izvlačenje teksta poruke iz različitih formata
+function extractMessageText(message: any): string {
+  if (!message) return ''
+  
+  // Format 1: message.text.body
+  if (message.text?.body) return message.text.body
+  
+  // Format 2: message.body
+  if (message.body) return message.body
+  
+  // Format 3: direktno string
+  if (typeof message === 'string') return message
+  
+  return ''
+}
+
+// Izvlačenje broja telefona iz različitih formata
+function extractPhoneNumber(message: any): string {
+  if (!message) return ''
+  
+  // Različiti formati koje Whapi može koristiti
+  return message.from || message.chat_id || message.sender || ''
+}
+
 export async function POST(request: NextRequest) {
+  const logs: string[] = []
+  
   try {
-    let payload: WhapiWebhookPayload
+    let payload: any
     
     try {
-      payload = await request.json()
-    } catch {
-      // Ako nije validan JSON, vrati OK (možda je test)
-      return NextResponse.json({ status: 'ok', message: 'Invalid JSON' })
+      const rawBody = await request.text()
+      logs.push(`Raw body: ${rawBody.substring(0, 500)}`)
+      payload = JSON.parse(rawBody)
+    } catch (e) {
+      logs.push(`JSON parse error: ${e}`)
+      return NextResponse.json({ status: 'ok', message: 'Invalid JSON', logs })
     }
     
-    console.log('Whapi webhook received:', JSON.stringify(payload, null, 2))
+    logs.push(`Payload keys: ${Object.keys(payload).join(', ')}`)
 
-    // Proveri različite formate koje Whapi može slati
-    const messages: WhapiMessage[] = []
+    // Pronađi poruke u payload-u
+    let messages: any[] = []
     
-    if (payload.messages && Array.isArray(payload.messages)) {
-      messages.push(...payload.messages)
-    }
-    if (payload.message) {
-      messages.push(payload.message)
+    if (Array.isArray(payload.messages)) {
+      messages = payload.messages
+      logs.push(`Found messages array with ${messages.length} items`)
+    } else if (payload.message) {
+      messages = [payload.message]
+      logs.push(`Found single message`)
+    } else if (payload.event === 'messages' && payload.data) {
+      messages = Array.isArray(payload.data) ? payload.data : [payload.data]
+      logs.push(`Found messages in data field`)
+    } else {
+      // Možda je ceo payload jedna poruka
+      if (payload.from || payload.chat_id) {
+        messages = [payload]
+        logs.push(`Treating entire payload as message`)
+      }
     }
 
-    // Ako nema poruka, vrati OK (možda je test ping)
     if (messages.length === 0) {
-      return NextResponse.json({ status: 'ok', message: 'No messages to process' })
+      logs.push(`No messages found in payload`)
+      return NextResponse.json({ status: 'ok', message: 'No messages', logs })
     }
 
-    // Obradi svaku poruku
+    let processed = 0
+    
     for (const message of messages) {
+      logs.push(`Processing message: ${JSON.stringify(message).substring(0, 200)}`)
+      
       // Preskoči poruke koje smo mi poslali
-      if (message.from_me) {
+      if (message.from_me === true) {
+        logs.push(`Skipping: from_me=true`)
         continue
       }
 
-      // Izvuci tekst poruke
-      const messageText = message.text?.body || ''
+      const messageText = extractMessageText(message)
+      logs.push(`Message text: ${messageText.substring(0, 100)}`)
       
-      // Preskoči prazne poruke
       if (!messageText) {
+        logs.push(`Skipping: empty message text`)
         continue
       }
 
       const ponudaId = extractPonudaId(messageText)
-      const phoneNumber = formatPhoneNumber(message.from || message.chat_id)
+      const phoneNumber = formatPhoneNumber(extractPhoneNumber(message))
+      
+      logs.push(`Extracted: phone=${phoneNumber}, ponudaId=${ponudaId}`)
 
       // Kreiraj zapis u pozivi tabeli
-      const { error } = await supabase
+      const insertData = {
+        mobtel: phoneNumber || null,
+        ponudaid: ponudaId,
+        validacija_ag: messageText.substring(0, 500), // Ograniči dužinu
+        created_at: new Date().toISOString(),
+      }
+      
+      logs.push(`Inserting: ${JSON.stringify(insertData)}`)
+
+      const { data, error } = await supabase
         .from('pozivi')
-        .insert({
-          mobtel: phoneNumber,
-          ponudaid: ponudaId,
-          validacija_ag: messageText,
-        })
+        .insert(insertData)
+        .select()
 
       if (error) {
-        console.error('Error inserting poziv:', error)
+        logs.push(`Insert error: ${JSON.stringify(error)}`)
         continue
       }
 
-      console.log(`Poziv kreiran: telefon=${phoneNumber}, ponudaId=${ponudaId}`)
+      logs.push(`Insert success: ${JSON.stringify(data)}`)
+      processed++
     }
 
     return NextResponse.json({ 
       status: 'ok', 
-      processed: messages.length 
+      processed,
+      logs 
     })
 
   } catch (error) {
-    console.error('Whapi webhook error:', error)
-    // Uvek vraćamo 200 da Whapi ne bi ponavljao request
+    logs.push(`Catch error: ${error instanceof Error ? error.message : String(error)}`)
     return NextResponse.json({ 
       status: 'error', 
-      message: error instanceof Error ? error.message : 'Unknown error' 
+      message: error instanceof Error ? error.message : 'Unknown error',
+      logs
     })
   }
 }
 
-// GET endpoint za verifikaciju i health check
+// GET endpoint za health check
 export async function GET() {
+  // Test database connection
+  const { data, error } = await supabase.from('pozivi').select('id').limit(1)
+  
   return NextResponse.json({ 
     status: 'ok', 
     message: 'Whapi webhook endpoint is active',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    dbConnection: error ? `Error: ${error.message}` : 'OK',
+    supabaseUrl: supabaseUrl ? 'Set' : 'Missing',
+    serviceKey: supabaseServiceKey ? 'Set' : 'Missing'
   })
 }
