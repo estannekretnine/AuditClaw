@@ -93,10 +93,38 @@ Password: admin123
 
 ## Deployment na Vercel
 
+### Brzi pregled
+
 1. Push-ujte kod na GitHub
 2. Povežite repozitorijum sa Vercel-om
 3. Dodajte environment varijable u Vercel Dashboard
 4. Deploy!
+
+### Produkcija
+
+Aplikacija je dostupna na: **https://auditclaw.io**
+
+### Detaljno uputstvo
+
+Za kompletno uputstvo za deployment, pogledajte [DEPLOYMENT.md](DEPLOYMENT.md).
+
+### Environment varijable za Vercel
+
+Dodajte sledeće varijable u Vercel Dashboard → Settings → Environment Variables:
+
+| Varijabla | Opis |
+|-----------|------|
+| `NEXT_PUBLIC_SUPABASE_URL` | URL vašeg Supabase projekta |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public key |
+
+### DNS Podešavanja
+
+Za custom domen `auditclaw.io`:
+
+| Tip | Ime | Vrednost |
+|-----|-----|----------|
+| A | @ | `76.76.21.21` |
+| CNAME | www | `cname.vercel-dns.com` |
 
 ## Licenca
 
