@@ -417,3 +417,40 @@ export async function savePonudaFotografije(ponudaId: number, photos: PhotoItemI
   revalidatePath('/dashboard/ponude')
   return { error: null }
 }
+
+// Ažuriranje webstrana konfiguracije za ponudu
+export async function updatePonudaWebstrana(ponudaId: number, webstranaConfig: string) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('ponuda')
+    .update({ webstrana: webstranaConfig })
+    .eq('id', ponudaId)
+
+  if (error) {
+    console.error('Error updating ponuda webstrana:', error)
+    return { error: error.message }
+  }
+
+  revalidatePath('/dashboard/ponude')
+  revalidatePath(`/p/${ponudaId}`)
+  return { error: null }
+}
+
+// Dohvatanje webstrana konfiguracije za ponudu
+export async function getPonudaWebstrana(ponudaId: number) {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('ponuda')
+    .select('webstrana')
+    .eq('id', ponudaId)
+    .single()
+
+  if (error) {
+    console.error('Error fetching ponuda webstrana:', error)
+    return { data: null, error: error.message }
+  }
+
+  return { data: data?.webstrana, error: null }
+}

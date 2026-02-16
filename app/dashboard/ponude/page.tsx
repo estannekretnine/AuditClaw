@@ -5,7 +5,7 @@ import {
   Plus, Home, ArrowUp, ArrowDown, X, 
   Check, ChevronLeft, ChevronRight,
   Filter, LayoutGrid, LayoutList, Pencil, MoreVertical, Edit,
-  Archive, ArchiveRestore, Megaphone, Phone
+  Archive, ArchiveRestore, Megaphone, Phone, Globe
 } from 'lucide-react'
 import { getPonude, togglePonudaStatus, arhivirajPonuda, dearhivirajPonuda } from '@/lib/actions/ponude'
 import type { Ponuda } from '@/lib/types/ponuda'
@@ -13,6 +13,7 @@ import type { Korisnik } from '@/lib/types/database'
 import PonudaForm from '@/components/ponuda-form'
 import KampanjaModal from '@/components/kampanja-modal'
 import PoziviModal from '@/components/pozivi-modal'
+import WebStranaModal from '@/components/webstrana-modal'
 
 export default function PonudePage() {
   const [ponude, setPonude] = useState<Ponuda[]>([])
@@ -29,6 +30,8 @@ export default function PonudePage() {
   const [selectedPonudaForKampanja, setSelectedPonudaForKampanja] = useState<Ponuda | null>(null)
   const [showPoziviModal, setShowPoziviModal] = useState(false)
   const [selectedPonudaForPozivi, setSelectedPonudaForPozivi] = useState<Ponuda | null>(null)
+  const [showWebStranaModal, setShowWebStranaModal] = useState(false)
+  const [selectedPonudaForWebStrana, setSelectedPonudaForWebStrana] = useState<Ponuda | null>(null)
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null)
   
   // Paginacija
@@ -136,6 +139,12 @@ export default function PonudePage() {
     setOpenActionMenu(null)
     setSelectedPonudaForPozivi(ponuda)
     setShowPoziviModal(true)
+  }
+
+  const handleWebStrana = (ponuda: Ponuda) => {
+    setOpenActionMenu(null)
+    setSelectedPonudaForWebStrana(ponuda)
+    setShowWebStranaModal(true)
   }
 
   const formatDate = (dateString: string | null) => {
@@ -806,6 +815,17 @@ export default function PonudePage() {
         />
       )}
 
+      {/* WebStrana Modal */}
+      {showWebStranaModal && selectedPonudaForWebStrana && (
+        <WebStranaModal
+          ponuda={selectedPonudaForWebStrana}
+          onClose={() => {
+            setShowWebStranaModal(false)
+            setSelectedPonudaForWebStrana(null)
+          }}
+        />
+      )}
+
       {/* Action Menu Dropdown - fixed pozicioniranje pored dugmeta */}
       {openActionMenu && menuPosition && (
         <>
@@ -846,6 +866,16 @@ export default function PonudePage() {
             >
               <Phone className="w-3 h-3" />
               Pozivi
+            </button>
+            <button
+              onClick={() => {
+                const ponuda = ponude.find(p => p.id === openActionMenu)
+                if (ponuda) handleWebStrana(ponuda)
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-cyan-50 hover:text-cyan-700 transition-colors"
+            >
+              <Globe className="w-3 h-3" />
+              WebStrana-Kupac
             </button>
             <button
               onClick={() => {

@@ -37,6 +37,7 @@ export interface Ponuda {
   longitude: string | null
   naslovoglasa: string | null
   stsrentaprodaja: string | null
+  webstrana: string | null // JSON konfiguracija za javnu web stranicu
 }
 
 export interface PonudaInsert {
