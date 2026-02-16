@@ -16,6 +16,12 @@ interface WebStranaModalProps {
   onClose: () => void
 }
 
+// Struktura koja se čuva u ponuda.webstrana
+interface WebStranaData {
+  link: string // Javni link: www.auditclaw.io/p/{id}
+  config: WebStranaConfig
+}
+
 interface WebStranaConfig {
   // Osnovne opcije
   showPrice: boolean
@@ -64,17 +70,28 @@ const defaultConfig: WebStranaConfig = {
   ctaButtonText: 'Kontaktirajte nas'
 }
 
+// Bazni URL za javne stranice
+const BASE_URL = 'https://www.auditclaw.io'
+
 export default function WebStranaModal({ ponuda, onClose }: WebStranaModalProps) {
   const [copied, setCopied] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [activeTab, setActiveTab] = useState<'sections' | 'design' | 'contact'>('sections')
   
+  // Generisanje javnog linka
+  const publicLink = `${BASE_URL}/p/${ponuda.id}`
+  
   // Učitaj postojeću konfiguraciju ili koristi default
   const [config, setConfig] = useState<WebStranaConfig>(() => {
     if (ponuda.webstrana) {
       try {
-        const parsed = JSON.parse(ponuda.webstrana)
+        const parsed: WebStranaData = JSON.parse(ponuda.webstrana)
+        // Ako ima config polje, koristi ga
+        if (parsed.config) {
+          return { ...defaultConfig, ...parsed.config }
+        }
+        // Backward compatibility - ako je stari format (direktno config)
         return { ...defaultConfig, ...parsed }
       } catch {
         return {
@@ -93,15 +110,23 @@ export default function WebStranaModal({ ponuda, onClose }: WebStranaModalProps)
 
   // Da li postoji sačuvana konfiguracija
   const hasSavedConfig = !!ponuda.webstrana
-
-  // Generisanje URL-a za javnu stranicu
-  const publicUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/p/${ponuda.id}`
-    : `/p/${ponuda.id}`
+  
+  // Izvuci sačuvani link ako postoji
+  const savedLink = (() => {
+    if (ponuda.webstrana) {
+      try {
+        const parsed: WebStranaData = JSON.parse(ponuda.webstrana)
+        return parsed.link || null
+      } catch {
+        return null
+      }
+    }
+    return null
+  })()
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(publicUrl)
+      await navigator.clipboard.writeText(publicLink)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
@@ -110,14 +135,23 @@ export default function WebStranaModal({ ponuda, onClose }: WebStranaModalProps)
   }
 
   const handleOpenPreview = () => {
-    window.open(publicUrl, '_blank')
+    // Za preview koristimo lokalni URL
+    const previewUrl = typeof window !== 'undefined' 
+      ? `${window.location.origin}/p/${ponuda.id}`
+      : `/p/${ponuda.id}`
+    window.open(previewUrl, '_blank')
   }
 
-  // Sačuvaj konfiguraciju
+  // Sačuvaj konfiguraciju sa linkom
   const handleSave = async () => {
     setSaving(true)
     try {
-      const result = await updatePonudaWebstrana(ponuda.id, JSON.stringify(config))
+      // Kreiraj strukturu sa linkom i konfiguracijom
+      const webStranaData: WebStranaData = {
+        link: publicLink,
+        config: config
+      }
+      const result = await updatePonudaWebstrana(ponuda.id, JSON.stringify(webStranaData))
       if (result.error) {
         alert('Greška pri čuvanju: ' + result.error)
       } else {
@@ -708,7 +742,7 @@ export default function WebStranaModal({ ponuda, onClose }: WebStranaModalProps)
             {hasSavedConfig ? (
               <span className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                Stranica je aktivna: <code className="bg-gray-200 px-2 py-0.5 rounded text-xs">{publicUrl}</code>
+                Stranica je aktivna: <code className="bg-gray-200 px-2 py-0.5 rounded text-xs">{savedLink || publicLink}</code>
               </span>
             ) : (
               <span className="text-amber-600">Stranica još nije objavljena</span>

@@ -2,6 +2,51 @@
 
 export type Language = 'sr' | 'en' | 'de'
 
+// Prevodi za tipove grejanja
+export const heatingTranslations: Record<string, Record<Language, string>> = {
+  'centralno': { sr: 'Centralno grejanje', en: 'Central heating', de: 'Zentralheizung' },
+  'etažno': { sr: 'Etažno grejanje', en: 'Floor heating', de: 'Etagenheizung' },
+  'gas': { sr: 'Gas', en: 'Gas', de: 'Gas' },
+  'struja': { sr: 'Električno', en: 'Electric', de: 'Elektrisch' },
+  'ta peć': { sr: 'TA peć', en: 'Storage heater', de: 'Nachtspeicherheizung' },
+  'klima': { sr: 'Klima uređaj', en: 'Air conditioning', de: 'Klimaanlage' },
+  'podno': { sr: 'Podno grejanje', en: 'Underfloor heating', de: 'Fußbodenheizung' },
+  'toplotna pumpa': { sr: 'Toplotna pumpa', en: 'Heat pump', de: 'Wärmepumpe' },
+  'drva': { sr: 'Drva', en: 'Wood', de: 'Holz' },
+  'pelet': { sr: 'Pelet', en: 'Pellet', de: 'Pellet' },
+  'norveski radijatori': { sr: 'Norveski radijatori', en: 'Norwegian radiators', de: 'Norwegische Heizkörper' },
+}
+
+// Prevodi za tipove objekata
+export const propertyTypeTranslations: Record<string, Record<Language, string>> = {
+  'stan': { sr: 'Stan', en: 'Apartment', de: 'Wohnung' },
+  'kuća': { sr: 'Kuća', en: 'House', de: 'Haus' },
+  'lokal': { sr: 'Lokal', en: 'Commercial space', de: 'Geschäftsraum' },
+  'poslovni prostor': { sr: 'Poslovni prostor', en: 'Office space', de: 'Bürofläche' },
+  'plac': { sr: 'Plac', en: 'Land', de: 'Grundstück' },
+  'garaža': { sr: 'Garaža', en: 'Garage', de: 'Garage' },
+  'vikendica': { sr: 'Vikendica', en: 'Cottage', de: 'Ferienhaus' },
+}
+
+// Funkcija za prevod grejanja
+export function translateHeating(heating: string | null, lang: Language): string {
+  if (!heating) return ''
+  const lowerHeating = heating.toLowerCase()
+  for (const [key, translations] of Object.entries(heatingTranslations)) {
+    if (lowerHeating.includes(key)) {
+      return translations[lang]
+    }
+  }
+  return heating // Vrati original ako nema prevoda
+}
+
+// Funkcija za prevod tipa objekta
+export function translatePropertyType(type: string | null, lang: Language): string {
+  if (!type) return ''
+  const lowerType = type.toLowerCase()
+  return propertyTypeTranslations[lowerType]?.[lang] || type
+}
+
 export const translations = {
   sr: {
     // Hero

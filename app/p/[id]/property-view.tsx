@@ -7,12 +7,18 @@ import {
   FileText, Phone, MessageCircle, Check, X, Play, Box,
   ThermometerSun, Wifi, TreePine
 } from 'lucide-react'
-import { translations, type Language } from '@/lib/translations'
+import { translations, translateHeating, translatePropertyType, type Language } from '@/lib/translations'
 import type { Ponuda, PonudaFoto } from '@/lib/types/ponuda'
 
 interface PropertyViewProps {
   ponuda: Ponuda
   photos: PonudaFoto[]
+}
+
+// Struktura koja se čuva u ponuda.webstrana
+interface WebStranaData {
+  link: string
+  config: WebStranaConfig
 }
 
 interface WebStranaConfig {
@@ -60,11 +66,16 @@ const defaultConfig: WebStranaConfig = {
 }
 
 export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
-  // Parsiraj sačuvanu konfiguraciju
+  // Parsiraj sačuvanu konfiguraciju (novi format sa link i config)
   const config = useMemo<WebStranaConfig>(() => {
     if (ponuda.webstrana) {
       try {
-        const parsed = JSON.parse(ponuda.webstrana)
+        const parsed: WebStranaData = JSON.parse(ponuda.webstrana)
+        // Novi format - ima config polje
+        if (parsed.config) {
+          return { ...defaultConfig, ...parsed.config }
+        }
+        // Backward compatibility - stari format (direktno config)
         return { ...defaultConfig, ...parsed }
       } catch {
         return {
@@ -257,7 +268,7 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
 
             {/* Title */}
             <h1 className="text-3xl md:text-5xl font-bold mb-4">
-              {config.heroTitle || ponuda.naslovoglasa || `${ponuda.vrstaobjekta_ag} - ${ponuda.lokacija_ag}`}
+              {config.heroTitle || ponuda.naslovoglasa || `${translatePropertyType(ponuda.vrstaobjekta_ag, lang)} - ${ponuda.lokacija_ag}`}
             </h1>
 
             {/* Location */}
@@ -314,36 +325,36 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
           
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {/* Kvadratura */}
-            <div className="bg-gray-800 rounded-2xl p-5 text-center">
-              <Ruler className="w-8 h-8 text-amber-500 mx-auto mb-3" />
+            <div className={`${isDarkTheme ? 'bg-gray-800' : 'bg-white shadow'} rounded-2xl p-5 text-center`}>
+              <Ruler className={`w-8 h-8 ${accent.text} mx-auto mb-3`} />
               <div className="text-2xl font-bold">{formatNumber(ponuda.kvadratura_ag)}</div>
-              <div className="text-sm text-gray-400">{t.sqm}</div>
+              <div className={`text-sm ${isDarkTheme ? 'text-gray-400' : 'text-gray-500'}`}>{t.sqm}</div>
             </div>
 
             {/* Sobe */}
-            <div className="bg-gray-800 rounded-2xl p-5 text-center">
-              <BedDouble className="w-8 h-8 text-amber-500 mx-auto mb-3" />
+            <div className={`${isDarkTheme ? 'bg-gray-800' : 'bg-white shadow'} rounded-2xl p-5 text-center`}>
+              <BedDouble className={`w-8 h-8 ${accent.text} mx-auto mb-3`} />
               <div className="text-2xl font-bold">{ponuda.struktura_ag || '-'}</div>
-              <div className="text-sm text-gray-400">{t.rooms}</div>
+              <div className={`text-sm ${isDarkTheme ? 'text-gray-400' : 'text-gray-500'}`}>{t.rooms}</div>
             </div>
 
             {/* Sprat */}
-            <div className="bg-gray-800 rounded-2xl p-5 text-center">
-              <Building2 className="w-8 h-8 text-amber-500 mx-auto mb-3" />
+            <div className={`${isDarkTheme ? 'bg-gray-800' : 'bg-white shadow'} rounded-2xl p-5 text-center`}>
+              <Building2 className={`w-8 h-8 ${accent.text} mx-auto mb-3`} />
               <div className="text-2xl font-bold">{ponuda.sprat || '-'}</div>
-              <div className="text-sm text-gray-400">{t.floor}</div>
+              <div className={`text-sm ${isDarkTheme ? 'text-gray-400' : 'text-gray-500'}`}>{t.floor}</div>
             </div>
 
             {/* Grejanje */}
-            <div className="bg-gray-800 rounded-2xl p-5 text-center">
-              <Flame className="w-8 h-8 text-amber-500 mx-auto mb-3" />
-              <div className="text-lg font-bold truncate">{ponuda.grejanje || '-'}</div>
-              <div className="text-sm text-gray-400">{t.heating}</div>
+            <div className={`${isDarkTheme ? 'bg-gray-800' : 'bg-white shadow'} rounded-2xl p-5 text-center`}>
+              <Flame className={`w-8 h-8 ${accent.text} mx-auto mb-3`} />
+              <div className="text-lg font-bold truncate">{translateHeating(ponuda.grejanje, lang) || '-'}</div>
+              <div className={`text-sm ${isDarkTheme ? 'text-gray-400' : 'text-gray-500'}`}>{t.heating}</div>
             </div>
 
             {/* Lift */}
-            <div className="bg-gray-800 rounded-2xl p-5 text-center">
-              <Building2 className="w-8 h-8 text-amber-500 mx-auto mb-3" />
+            <div className={`${isDarkTheme ? 'bg-gray-800' : 'bg-white shadow'} rounded-2xl p-5 text-center`}>
+              <Building2 className={`w-8 h-8 ${accent.text} mx-auto mb-3`} />
               <div className="text-2xl font-bold">
                 {ponuda.lift === 'Da' || ponuda.lift === 'da' ? (
                   <Check className="w-6 h-6 text-green-500 mx-auto" />
@@ -351,12 +362,12 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
                   <X className="w-6 h-6 text-red-500 mx-auto" />
                 )}
               </div>
-              <div className="text-sm text-gray-400">{t.elevator}</div>
+              <div className={`text-sm ${isDarkTheme ? 'text-gray-400' : 'text-gray-500'}`}>{t.elevator}</div>
             </div>
 
             {/* Parking */}
-            <div className="bg-gray-800 rounded-2xl p-5 text-center">
-              <Car className="w-8 h-8 text-amber-500 mx-auto mb-3" />
+            <div className={`${isDarkTheme ? 'bg-gray-800' : 'bg-white shadow'} rounded-2xl p-5 text-center`}>
+              <Car className={`w-8 h-8 ${accent.text} mx-auto mb-3`} />
               <div className="text-2xl font-bold">
                 {ponuda.stsparking ? (
                   <Check className="w-6 h-6 text-green-500 mx-auto" />
@@ -364,7 +375,7 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
                   <X className="w-6 h-6 text-red-500 mx-auto" />
                 )}
               </div>
-              <div className="text-sm text-gray-400">{t.parking}</div>
+              <div className={`text-sm ${isDarkTheme ? 'text-gray-400' : 'text-gray-500'}`}>{t.parking}</div>
             </div>
           </div>
         </div>
