@@ -97,6 +97,9 @@ export const translations = {
     poweredBy: 'Powered by AuditClaw',
     allRightsReserved: 'Sva prava zadržana',
     
+    // CTA
+    ctaTitle: 'Zainteresovani ste?',
+    
     // Misc
     yes: 'Da',
     no: 'Ne',
@@ -154,6 +157,9 @@ export const translations = {
     // Footer
     poweredBy: 'Powered by AuditClaw',
     allRightsReserved: 'All rights reserved',
+    
+    // CTA
+    ctaTitle: 'Interested?',
     
     // Misc
     yes: 'Yes',
@@ -213,6 +219,9 @@ export const translations = {
     poweredBy: 'Powered by AuditClaw',
     allRightsReserved: 'Alle Rechte vorbehalten',
     
+    // CTA
+    ctaTitle: 'Interessiert?',
+    
     // Misc
     yes: 'Ja',
     no: 'Nein',
@@ -221,6 +230,144 @@ export const translations = {
     price: 'Preis',
     id: 'ID',
   },
+}
+
+// Mapa za prevod uobičajenih reči/fraza u opisima nekretnina
+const descriptionTranslations: Record<string, Record<Language, string>> = {
+  // Prostorije
+  'dnevna soba': { sr: 'dnevna soba', en: 'living room', de: 'Wohnzimmer' },
+  'spavaća soba': { sr: 'spavaća soba', en: 'bedroom', de: 'Schlafzimmer' },
+  'kupatilo': { sr: 'kupatilo', en: 'bathroom', de: 'Badezimmer' },
+  'kuhinja': { sr: 'kuhinja', en: 'kitchen', de: 'Küche' },
+  'trpezarija': { sr: 'trpezarija', en: 'dining room', de: 'Esszimmer' },
+  'hodnik': { sr: 'hodnik', en: 'hallway', de: 'Flur' },
+  'predsoblje': { sr: 'predsoblje', en: 'entrance hall', de: 'Eingangsbereich' },
+  'terasa': { sr: 'terasa', en: 'terrace', de: 'Terrasse' },
+  'balkon': { sr: 'balkon', en: 'balcony', de: 'Balkon' },
+  'garaža': { sr: 'garaža', en: 'garage', de: 'Garage' },
+  'podrum': { sr: 'podrum', en: 'basement', de: 'Keller' },
+  'tavan': { sr: 'tavan', en: 'attic', de: 'Dachboden' },
+  'ostava': { sr: 'ostava', en: 'storage room', de: 'Abstellraum' },
+  
+  // Karakteristike
+  'centralno grejanje': { sr: 'centralno grejanje', en: 'central heating', de: 'Zentralheizung' },
+  'klima': { sr: 'klima', en: 'air conditioning', de: 'Klimaanlage' },
+  'lift': { sr: 'lift', en: 'elevator', de: 'Aufzug' },
+  'parking': { sr: 'parking', en: 'parking', de: 'Parkplatz' },
+  'internet': { sr: 'internet', en: 'internet', de: 'Internet' },
+  'kablovska': { sr: 'kablovska', en: 'cable TV', de: 'Kabelfernsehen' },
+  'interfon': { sr: 'interfon', en: 'intercom', de: 'Gegensprechanlage' },
+  'video nadzor': { sr: 'video nadzor', en: 'video surveillance', de: 'Videoüberwachung' },
+  'alarm': { sr: 'alarm', en: 'alarm system', de: 'Alarmanlage' },
+  
+  // Stanje
+  'renoviran': { sr: 'renoviran', en: 'renovated', de: 'renoviert' },
+  'novogradnja': { sr: 'novogradnja', en: 'new construction', de: 'Neubau' },
+  'useljiv': { sr: 'useljiv', en: 'move-in ready', de: 'bezugsfertig' },
+  'namešten': { sr: 'namešten', en: 'furnished', de: 'möbliert' },
+  'polunamešten': { sr: 'polunamešten', en: 'partially furnished', de: 'teilmöbliert' },
+  'prazan': { sr: 'prazan', en: 'unfurnished', de: 'unmöbliert' },
+  
+  // Lokacija
+  'centar': { sr: 'centar', en: 'city center', de: 'Stadtzentrum' },
+  'mirna ulica': { sr: 'mirna ulica', en: 'quiet street', de: 'ruhige Straße' },
+  'blizu': { sr: 'blizu', en: 'near', de: 'in der Nähe von' },
+  'u blizini': { sr: 'u blizini', en: 'nearby', de: 'in der Nähe' },
+  
+  // Opšte
+  'na prodaju': { sr: 'na prodaju', en: 'for sale', de: 'zu verkaufen' },
+  'izdavanje': { sr: 'izdavanje', en: 'for rent', de: 'zu vermieten' },
+  'kvadrata': { sr: 'kvadrata', en: 'square meters', de: 'Quadratmeter' },
+  'sprat': { sr: 'sprat', en: 'floor', de: 'Etage' },
+  'prizemlje': { sr: 'prizemlje', en: 'ground floor', de: 'Erdgeschoss' },
+  'potkrovlje': { sr: 'potkrovlje', en: 'attic apartment', de: 'Dachgeschoss' },
+  'dupleks': { sr: 'dupleks', en: 'duplex', de: 'Maisonette' },
+  'stan': { sr: 'stan', en: 'apartment', de: 'Wohnung' },
+  'kuća': { sr: 'kuća', en: 'house', de: 'Haus' },
+  
+  // Dodatno
+  'odlična lokacija': { sr: 'odlična lokacija', en: 'excellent location', de: 'ausgezeichnete Lage' },
+  'pogodan za': { sr: 'pogodan za', en: 'suitable for', de: 'geeignet für' },
+  'idealan za': { sr: 'idealan za', en: 'ideal for', de: 'ideal für' },
+  'svetao': { sr: 'svetao', en: 'bright', de: 'hell' },
+  'prostran': { sr: 'prostran', en: 'spacious', de: 'geräumig' },
+  'moderan': { sr: 'moderan', en: 'modern', de: 'modern' },
+  'luksuzno': { sr: 'luksuzno', en: 'luxurious', de: 'luxuriös' },
+  
+  // Površina
+  'stvarna površina': { sr: 'Stvarna površina', en: 'Actual area', de: 'Tatsächliche Fläche' },
+  'ugovorna površina': { sr: 'ugovorna površina', en: 'contractual area', de: 'Vertragsfläche' },
+  
+  // Grejanje detaljno
+  'etažno': { sr: 'etažno', en: 'floor heating', de: 'Etagenheizung' },
+  'inverter klime': { sr: 'inverter klime', en: 'inverter air conditioners', de: 'Inverter-Klimaanlagen' },
+  'radijatori': { sr: 'radijatori', en: 'radiators', de: 'Heizkörper' },
+  
+  // Prozori/vrata
+  'prozor': { sr: 'prozor', en: 'window', de: 'Fenster' },
+  'komarnici': { sr: 'komarnici', en: 'mosquito nets', de: 'Fliegengitter' },
+  'roletne': { sr: 'roletne', en: 'blinds', de: 'Rollläden' },
+  'vrata': { sr: 'vrata', en: 'door', de: 'Tür' },
+  
+  // Stepenice
+  'stepenice': { sr: 'stepenice', en: 'stairs', de: 'Treppe' },
+  'spiralne stepenice': { sr: 'spiralne stepenice', en: 'spiral staircase', de: 'Wendeltreppe' },
+  
+  // Nameštaj
+  'garnitura': { sr: 'garnitura', en: 'furniture set', de: 'Möbelgarnitur' },
+  'ugaona garnitura': { sr: 'ugaona garnitura', en: 'corner sofa', de: 'Ecksofa' },
+  'američki plakar': { sr: 'američki plakar', en: 'walk-in closet', de: 'begehbarer Kleiderschrank' },
+  
+  // Osvetljenje
+  'osvetljenje': { sr: 'osvetljenje', en: 'lighting', de: 'Beleuchtung' },
+  'ambijentalno': { sr: 'ambijentalno', en: 'ambient', de: 'Ambiente' },
+  'dnevne svetlosti': { sr: 'dnevne svetlosti', en: 'natural light', de: 'Tageslicht' },
+  'prirodne svetlosti': { sr: 'prirodne svetlosti', en: 'natural light', de: 'natürliches Licht' },
+  
+  // Izolacija
+  'izolacija': { sr: 'izolacija', en: 'insulation', de: 'Isolierung' },
+  'kamena vuna': { sr: 'kamena vuna', en: 'rock wool', de: 'Steinwolle' },
+  
+  // Zidovi
+  'zidovi': { sr: 'zidovi', en: 'walls', de: 'Wände' },
+  'dupli zidovi': { sr: 'dupli zidovi', en: 'double walls', de: 'Doppelwände' },
+  
+  // Provizija
+  'provizija': { sr: 'provizija', en: 'commission', de: 'Provision' },
+  'agencijska provizija': { sr: 'agencijska provizija', en: 'agency commission', de: 'Maklerprovision' },
+  
+  // Mapa
+  'mapa': { sr: 'mapa', en: 'map', de: 'Karte' },
+  'lokaciju': { sr: 'lokaciju', en: 'location', de: 'Standort' },
+  'adresu': { sr: 'adresu', en: 'address', de: 'Adresse' },
+  'tačnu adresu': { sr: 'tačnu adresu', en: 'exact address', de: 'genaue Adresse' },
+}
+
+// Funkcija za prevod opisa nekretnine
+export function translateDescription(description: string | null, lang: Language): string {
+  if (!description || lang === 'sr') return description || ''
+  
+  let translated = description
+  
+  // Sortiraj ključeve po dužini (duži prvo) da bi se izbeglo delimično zamenjivanje
+  const sortedKeys = Object.keys(descriptionTranslations).sort((a, b) => b.length - a.length)
+  
+  for (const key of sortedKeys) {
+    const translations = descriptionTranslations[key]
+    if (translations[lang]) {
+      // Case-insensitive zamena
+      const regex = new RegExp(key, 'gi')
+      translated = translated.replace(regex, (match) => {
+        // Zadrži kapitalizaciju prvog slova ako je original bio kapitalizovan
+        if (match[0] === match[0].toUpperCase()) {
+          return translations[lang].charAt(0).toUpperCase() + translations[lang].slice(1)
+        }
+        return translations[lang]
+      })
+    }
+  }
+  
+  return translated
 }
 
 export function getTranslation(lang: Language) {

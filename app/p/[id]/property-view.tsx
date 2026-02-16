@@ -7,7 +7,7 @@ import {
   FileText, Phone, MessageCircle, Check, X, Play, Box,
   ThermometerSun, Wifi, TreePine
 } from 'lucide-react'
-import { translations, translateHeating, translatePropertyType, type Language } from '@/lib/translations'
+import { translations, translateHeating, translatePropertyType, translateDescription, type Language } from '@/lib/translations'
 import type { Ponuda, PonudaFoto } from '@/lib/types/ponuda'
 
 interface PropertyViewProps {
@@ -535,7 +535,7 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
                     {advantages.map((adv, idx) => (
                       <li key={idx} className="flex items-start gap-2">
                         <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-gray-300">{adv}</span>
+                        <span className="text-gray-300">{translateDescription(adv, lang)}</span>
                       </li>
                     ))}
                   </ul>
@@ -550,7 +550,7 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
                     {notes.map((note, idx) => (
                       <li key={idx} className="flex items-start gap-2">
                         <ThermometerSun className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-gray-300">{note}</span>
+                        <span className="text-gray-300">{translateDescription(note, lang)}</span>
                       </li>
                     ))}
                   </ul>
@@ -560,8 +560,10 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
 
             {/* Full description if no parsing */}
             {advantages.length === 0 && notes.length === 0 && (
-              <div className="bg-gray-800 rounded-2xl p-6">
-                <p className="text-gray-300 whitespace-pre-wrap">{ponuda.opis_ag}</p>
+              <div className={`${isDarkTheme ? 'bg-gray-800' : 'bg-gray-100'} rounded-2xl p-6`}>
+                <p className={`${isDarkTheme ? 'text-gray-300' : 'text-gray-700'} whitespace-pre-wrap`}>
+                  {translateDescription(ponuda.opis_ag, lang)}
+                </p>
               </div>
             )}
           </div>
@@ -600,7 +602,7 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
       }`}>
         <div className="max-w-4xl mx-auto text-center">
           <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${config.accentColor === 'amber' ? 'text-black' : 'text-white'}`}>
-            {config.ctaButtonText || 'Zainteresovani ste?'}
+            {t.ctaTitle}
           </h2>
           <div className="flex flex-wrap justify-center gap-4">
             <button
