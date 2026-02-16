@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 
-// Whapi webhook payload struktura
+// Kreiraj Supabase client sa service role (za API routes bez auth)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+// Whapi webhook payload struktura - prilagođeno Whapi formatu
 interface WhapiMessage {
   id: string
-  from: string // Broj telefona pošiljaoca
-  to: string
-  body: string // Tekst poruke
+  from: string
+  chat_id: string
+  text?: {
+    body: string
+  }
+  from_me: boolean
   timestamp: number
   type: string
 }
@@ -14,10 +23,13 @@ interface WhapiMessage {
 interface WhapiWebhookPayload {
   messages?: WhapiMessage[]
   event?: string
+  // Alternativni format
+  message?: WhapiMessage
 }
 
 // Parsiranje ID ponude iz teksta poruke
 function extractPonudaId(text: string): number | null {
+  if (!text) return null
   // Traži pattern "(ID: 123)" ili "ID: 123" ili "id:123"
   const match = text.match(/\(?\s*ID\s*:\s*(\d+)\s*\)?/i)
   if (match && match[1]) {
@@ -28,45 +40,58 @@ function extractPonudaId(text: string): number | null {
 
 // Formatiranje broja telefona
 function formatPhoneNumber(phone: string): string {
-  // Ukloni sve osim brojeva
-  const cleaned = phone.replace(/\D/g, '')
-  // Dodaj + ako počinje sa brojem
+  if (!phone) return ''
+  // Ukloni sve osim brojeva i +
+  const cleaned = phone.replace(/[^\d+]/g, '')
+  // Dodaj + ako nema
   return cleaned.startsWith('+') ? cleaned : `+${cleaned}`
 }
 
 export async function POST(request: NextRequest) {
   try {
-    // Verifikuj Whapi token (opciono, za dodatnu sigurnost)
-    const authHeader = request.headers.get('authorization')
-    const expectedToken = process.env.WHAPI_TOKEN
+    let payload: WhapiWebhookPayload
     
-    // Whapi može slati token u headeru
-    if (expectedToken && authHeader && !authHeader.includes(expectedToken)) {
-      console.warn('Whapi webhook: Invalid token')
-      // Ne vraćamo 401 jer Whapi možda ne šalje token u headeru
+    try {
+      payload = await request.json()
+    } catch {
+      // Ako nije validan JSON, vrati OK (možda je test)
+      return NextResponse.json({ status: 'ok', message: 'Invalid JSON' })
     }
-
-    const payload: WhapiWebhookPayload = await request.json()
     
     console.log('Whapi webhook received:', JSON.stringify(payload, null, 2))
 
-    // Proveri da li ima poruka
-    if (!payload.messages || payload.messages.length === 0) {
-      // Možda je test ping ili drugi event
+    // Proveri različite formate koje Whapi može slati
+    const messages: WhapiMessage[] = []
+    
+    if (payload.messages && Array.isArray(payload.messages)) {
+      messages.push(...payload.messages)
+    }
+    if (payload.message) {
+      messages.push(payload.message)
+    }
+
+    // Ako nema poruka, vrati OK (možda je test ping)
+    if (messages.length === 0) {
       return NextResponse.json({ status: 'ok', message: 'No messages to process' })
     }
 
-    const supabase = await createClient()
-
     // Obradi svaku poruku
-    for (const message of payload.messages) {
-      // Preskoči ako nije tekstualna poruka
-      if (message.type !== 'text' && !message.body) {
+    for (const message of messages) {
+      // Preskoči poruke koje smo mi poslali
+      if (message.from_me) {
         continue
       }
 
-      const ponudaId = extractPonudaId(message.body)
-      const phoneNumber = formatPhoneNumber(message.from)
+      // Izvuci tekst poruke
+      const messageText = message.text?.body || ''
+      
+      // Preskoči prazne poruke
+      if (!messageText) {
+        continue
+      }
+
+      const ponudaId = extractPonudaId(messageText)
+      const phoneNumber = formatPhoneNumber(message.from || message.chat_id)
 
       // Kreiraj zapis u pozivi tabeli
       const { error } = await supabase
@@ -74,13 +99,11 @@ export async function POST(request: NextRequest) {
         .insert({
           mobtel: phoneNumber,
           ponudaid: ponudaId,
-          validacija_ag: message.body, // Čuvamo celu poruku
-          // created_at se automatski popunjava
+          validacija_ag: messageText,
         })
 
       if (error) {
         console.error('Error inserting poziv:', error)
-        // Nastavi sa sledećom porukom
         continue
       }
 
@@ -89,30 +112,24 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ 
       status: 'ok', 
-      processed: payload.messages.length 
+      processed: messages.length 
     })
 
   } catch (error) {
     console.error('Whapi webhook error:', error)
-    return NextResponse.json(
-      { status: 'error', message: 'Internal server error' },
-      { status: 500 }
-    )
+    // Uvek vraćamo 200 da Whapi ne bi ponavljao request
+    return NextResponse.json({ 
+      status: 'error', 
+      message: error instanceof Error ? error.message : 'Unknown error' 
+    })
   }
 }
 
-// GET endpoint za verifikaciju webhooks (neki servisi to zahtevaju)
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams
-  const challenge = searchParams.get('hub.challenge')
-  
-  // Ako je verifikacioni request, vrati challenge
-  if (challenge) {
-    return new NextResponse(challenge, { status: 200 })
-  }
-  
+// GET endpoint za verifikaciju i health check
+export async function GET() {
   return NextResponse.json({ 
     status: 'ok', 
-    message: 'Whapi webhook endpoint is active' 
+    message: 'Whapi webhook endpoint is active',
+    timestamp: new Date().toISOString()
   })
 }
