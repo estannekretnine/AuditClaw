@@ -523,29 +523,18 @@ export default function WebStranaModal({ ponuda, onClose }: WebStranaModalProps)
                     />
                   </div>
 
-                  {/* CTA dugme tekst */}
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <h4 className="font-semibold text-gray-900 mb-3">Tekst na CTA dugmetu</h4>
-                    <input
-                      type="text"
-                      value={config.ctaButtonText}
-                      onChange={(e) => setConfig({...config, ctaButtonText: e.target.value})}
-                      placeholder="Kontaktirajte nas"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                    />
                   </div>
-                </div>
               )}
 
               {activeTab === 'contact' && (
                 <div className="space-y-4">
-                  <p className="text-sm text-gray-500 mb-4">Podesite kontakt informacije za lead generation:</p>
+                  <p className="text-sm text-gray-500 mb-4">Podesite WhatsApp broj za kontakt:</p>
                   
                   {/* WhatsApp */}
                   <div className="bg-green-50 rounded-xl p-4 border border-green-200">
                     <h4 className="font-semibold text-green-900 mb-3 flex items-center gap-2">
                       <MessageCircle className="w-4 h-4 text-green-600" />
-                      WhatsApp
+                      WhatsApp broj
                     </h4>
                     <input
                       type="text"
@@ -555,35 +544,21 @@ export default function WebStranaModal({ ponuda, onClose }: WebStranaModalProps)
                       className="w-full px-4 py-3 border border-green-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     />
                     <p className="text-xs text-green-700 mt-2">
-                      Kupci će vas kontaktirati na ovaj broj sa predefinisanom porukom
+                      Kupci će kliknuti "Zatraži detalje" i poslati vam poruku na ovaj broj
                     </p>
                   </div>
 
-                  {/* Email */}
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-amber-500" />
-                      Email
-                    </h4>
-                    <input
-                      type="email"
-                      value={config.contactEmail}
-                      onChange={(e) => setConfig({...config, contactEmail: e.target.value})}
-                      placeholder="info@auditclaw.com"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  {/* Lead info */}
-                  <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
-                    <h4 className="font-semibold text-amber-900 mb-2">Lead Generation</h4>
+                  {/* Whapi info */}
+                  <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
+                    <h4 className="font-semibold text-cyan-900 mb-2">Automatsko beleženje poziva</h4>
                     <p className="text-sm text-amber-800">
-                      Sledeći podaci su skriveni i zahtevaju WhatsApp kontakt:
+                      Kada kupac pošalje poruku, automatski se beleži u sistem:
                     </p>
-                    <ul className="mt-2 space-y-1 text-sm text-amber-700">
-                      <li>• Tačna adresa nekretnine</li>
-                      <li>• PDF Audit izveštaj</li>
-                      <li>• Direktan kontakt agenta</li>
+                    <ul className="mt-2 space-y-1 text-sm text-cyan-700">
+                      <li>• Broj telefona kupca</li>
+                      <li>• ID ponude</li>
+                      <li>• Tekst poruke</li>
+                      <li>• Vreme kontakta</li>
                     </ul>
                   </div>
                 </div>
@@ -718,8 +693,9 @@ export default function WebStranaModal({ ponuda, onClose }: WebStranaModalProps)
                   </div>
 
                   {/* CTA */}
-                  <button className={`w-full py-2 rounded-lg text-sm font-bold ${accentColors[config.accentColor]}`}>
-                    {config.ctaButtonText || 'Kontaktirajte nas'}
+                  <button className="w-full py-2 rounded-lg text-sm font-bold bg-green-600 text-white flex items-center justify-center gap-2">
+                    <MessageCircle className="w-4 h-4" />
+                    Zatraži detalje
                   </button>
                 </div>
               </div>

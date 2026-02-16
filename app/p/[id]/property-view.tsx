@@ -94,8 +94,6 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
 
   const [lang, setLang] = useState<Language>(config.primaryLanguage)
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
-  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false)
-  const [whatsAppAction, setWhatsAppAction] = useState<'pdf' | 'address' | 'contact'>('contact')
 
   const t = translations[lang]
   
@@ -112,23 +110,11 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
     return num.toLocaleString('sr-RS')
   }
 
-  const handleWhatsAppClick = (action: 'pdf' | 'address' | 'contact') => {
-    setWhatsAppAction(action)
-    setShowWhatsAppModal(true)
-  }
-
+  // Generisanje WhatsApp URL-a za "Zatraži detalje"
   const getWhatsAppUrl = () => {
-    // Koristi broj iz konfiguracije, ukloni + i razmake
     const phone = config.whatsappNumber.replace(/[+\s-]/g, '')
     const title = ponuda.naslovoglasa || `${ponuda.vrstaobjekta_ag} - ${ponuda.lokacija_ag}`
-    let message = `${t.whatsappMessage} "${title}" (ID: ${ponuda.id}).`
-    
-    if (whatsAppAction === 'pdf') {
-      message += ` ${t.whatsappPdfRequest}`
-    } else if (whatsAppAction === 'address') {
-      message += ` Molim vas za tačnu adresu.`
-    }
-    
+    const message = `${t.whatsappMessage} "${title}" (ID: ${ponuda.id}).\n${t.requestDetails}`
     return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
   }
 
@@ -604,76 +590,24 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
           <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${config.accentColor === 'amber' ? 'text-black' : 'text-white'}`}>
             {t.ctaTitle}
           </h2>
-          <div className="flex flex-wrap justify-center gap-4">
-            <button
-              onClick={() => handleWhatsAppClick('pdf')}
-              className="px-6 py-3 bg-black text-white rounded-xl font-bold hover:bg-gray-900 transition-colors flex items-center gap-2"
-            >
-              <FileText className="w-5 h-5" />
-              {t.getFullReport}
-            </button>
-            <button
-              onClick={() => handleWhatsAppClick('address')}
-              className="px-6 py-3 bg-white text-black rounded-xl font-bold hover:bg-gray-100 transition-colors flex items-center gap-2"
-            >
-              <MapPin className="w-5 h-5" />
-              {t.showExactAddress}
-            </button>
-            <button
-              onClick={() => handleWhatsAppClick('contact')}
-              className="px-6 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-colors flex items-center gap-2"
-            >
-              <MessageCircle className="w-5 h-5" />
-              {t.contactAgent}
-            </button>
-          </div>
+          <a
+            href={getWhatsAppUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 px-8 py-4 bg-green-600 text-white rounded-2xl font-bold text-lg hover:bg-green-700 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+          >
+            <MessageCircle className="w-6 h-6" />
+            {t.requestDetails}
+          </a>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-6 bg-gray-950 border-t border-gray-800">
-        <div className="max-w-6xl mx-auto text-center text-gray-500 text-sm">
+      <footer className={`py-8 px-6 ${isDarkTheme ? 'bg-gray-950 border-t border-gray-800' : 'bg-gray-100 border-t border-gray-200'}`}>
+        <div className={`max-w-6xl mx-auto text-center text-sm ${isDarkTheme ? 'text-gray-500' : 'text-gray-600'}`}>
           <p>{t.poweredBy} © {new Date().getFullYear()}. {t.allRightsReserved}</p>
         </div>
       </footer>
-
-      {/* WhatsApp Modal */}
-      {showWhatsAppModal && (
-        <div 
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          onClick={() => setShowWhatsAppModal(false)}
-        >
-          <div 
-            className="bg-gray-900 rounded-3xl p-8 max-w-md w-full text-center"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <MessageCircle className="w-10 h-10 text-white" />
-            </div>
-            <h3 className="text-2xl font-bold mb-4">Kontaktirajte nas</h3>
-            <p className="text-gray-400 mb-6">
-              {whatsAppAction === 'pdf' && 'Zatražite kompletan PDF Audit izveštaj putem WhatsApp-a.'}
-              {whatsAppAction === 'address' && 'Zatražite tačnu adresu nekretnine putem WhatsApp-a.'}
-              {whatsAppAction === 'contact' && 'Kontaktirajte našeg agenta putem WhatsApp-a.'}
-            </p>
-            <a
-              href={getWhatsAppUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition-colors"
-            >
-              <MessageCircle className="w-5 h-5" />
-              Otvori WhatsApp
-            </a>
-            <button
-              onClick={() => setShowWhatsAppModal(false)}
-              className="block w-full mt-4 text-gray-500 hover:text-white transition-colors"
-            >
-              Zatvori
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

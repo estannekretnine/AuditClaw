@@ -85,13 +85,10 @@ export const translations = {
     quietArea: 'Mirno okruženje',
     
     // Lead generation
-    getFullReport: 'Preuzmi kompletan PDF Audit',
-    showExactAddress: 'Prikaži tačnu adresu',
-    contactAgent: 'Kontaktiraj agenta',
+    requestDetails: 'Zatraži detalje',
     
     // WhatsApp
     whatsappMessage: 'Zdravo, zanima me oglas',
-    whatsappPdfRequest: 'Možete li mi poslati PDF?',
     
     // Footer
     poweredBy: 'Powered by AuditClaw',
@@ -146,13 +143,10 @@ export const translations = {
     quietArea: 'Quiet Environment',
     
     // Lead generation
-    getFullReport: 'Download Full PDF Audit',
-    showExactAddress: 'Show Exact Address',
-    contactAgent: 'Contact Agent',
+    requestDetails: 'Request Details',
     
     // WhatsApp
     whatsappMessage: 'Hello, I am interested in the listing',
-    whatsappPdfRequest: 'Can you send me the PDF?',
     
     // Footer
     poweredBy: 'Powered by AuditClaw',
@@ -207,13 +201,10 @@ export const translations = {
     quietArea: 'Ruhige Umgebung',
     
     // Lead generation
-    getFullReport: 'Vollständiges PDF-Audit herunterladen',
-    showExactAddress: 'Genaue Adresse anzeigen',
-    contactAgent: 'Agent kontaktieren',
+    requestDetails: 'Details anfordern',
     
     // WhatsApp
     whatsappMessage: 'Hallo, ich interessiere mich für das Angebot',
-    whatsappPdfRequest: 'Können Sie mir das PDF schicken?',
     
     // Footer
     poweredBy: 'Powered by AuditClaw',
