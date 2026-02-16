@@ -117,10 +117,27 @@ export async function POST(request: NextRequest) {
       
       logs.push(`Extracted: phone=${phoneNumber}, ponudaId=${ponudaId}`)
 
+      // Proveri da li ponuda postoji (foreign key constraint)
+      let validPonudaId: number | null = null
+      if (ponudaId) {
+        const { data: ponudaExists } = await supabase
+          .from('ponuda')
+          .select('id')
+          .eq('id', ponudaId)
+          .single()
+        
+        if (ponudaExists) {
+          validPonudaId = ponudaId
+          logs.push(`Ponuda ${ponudaId} exists`)
+        } else {
+          logs.push(`Ponuda ${ponudaId} NOT found, setting to null`)
+        }
+      }
+
       // Kreiraj zapis u pozivi tabeli
       const insertData = {
         mobtel: phoneNumber || null,
-        ponudaid: ponudaId,
+        ponudaid: validPonudaId, // Koristi null ako ponuda ne postoji
         validacija_ag: messageText.substring(0, 500), // Ograniči dužinu
         created_at: new Date().toISOString(),
       }
