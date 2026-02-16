@@ -22,10 +22,19 @@ interface WebStranaConfig {
   showAuditScore: boolean
   showInvestorSection: boolean
   showItSection: boolean
+  showGallery: boolean
+  showTechnicalDrawing: boolean
+  showVideo: boolean
+  show3DTour: boolean
+  showDescription: boolean
+  showTechSpecs: boolean
   primaryLanguage: 'sr' | 'en' | 'de'
   theme: 'dark' | 'light'
+  accentColor: 'amber' | 'cyan' | 'violet' | 'emerald'
   whatsappNumber: string
   contactEmail: string
+  heroTitle: string
+  ctaButtonText: string
 }
 
 const defaultConfig: WebStranaConfig = {
@@ -35,10 +44,19 @@ const defaultConfig: WebStranaConfig = {
   showAuditScore: true,
   showInvestorSection: false,
   showItSection: false,
+  showGallery: true,
+  showTechnicalDrawing: true,
+  showVideo: true,
+  show3DTour: true,
+  showDescription: true,
+  showTechSpecs: true,
   primaryLanguage: 'sr',
   theme: 'dark',
+  accentColor: 'amber',
   whatsappNumber: '+381601234567',
-  contactEmail: 'info@auditclaw.com'
+  contactEmail: 'info@auditclaw.com',
+  heroTitle: '',
+  ctaButtonText: 'Kontaktirajte nas'
 }
 
 export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
@@ -145,18 +163,27 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
 
   const auditScore = calculateAuditScore()
 
+  // Accent color classes
+  const accentColorClasses = {
+    amber: { bg: 'bg-amber-500', text: 'text-amber-500', textLight: 'text-amber-400' },
+    cyan: { bg: 'bg-cyan-500', text: 'text-cyan-500', textLight: 'text-cyan-400' },
+    violet: { bg: 'bg-violet-500', text: 'text-violet-500', textLight: 'text-violet-400' },
+    emerald: { bg: 'bg-emerald-500', text: 'text-emerald-500', textLight: 'text-emerald-400' }
+  }
+  const accent = accentColorClasses[config.accentColor] || accentColorClasses.amber
+
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className={`min-h-screen ${isDarkTheme ? 'bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
       {/* Language Toggle */}
-      <div className="fixed top-4 right-4 z-50 flex items-center gap-1 bg-black/80 backdrop-blur-sm rounded-full p-1">
+      <div className={`fixed top-4 right-4 z-50 flex items-center gap-1 ${isDarkTheme ? 'bg-black/80' : 'bg-white/90 shadow-lg'} backdrop-blur-sm rounded-full p-1`}>
         {(['sr', 'en', 'de'] as Language[]).map((l) => (
           <button
             key={l}
             onClick={() => setLang(l)}
             className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase transition-all ${
               lang === l 
-                ? 'bg-amber-500 text-black' 
-                : 'text-gray-400 hover:text-white'
+                ? `${accent.bg} ${config.accentColor === 'amber' ? 'text-black' : 'text-white'}` 
+                : isDarkTheme ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'
             }`}
           >
             {l}
@@ -230,7 +257,7 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
 
             {/* Title */}
             <h1 className="text-3xl md:text-5xl font-bold mb-4">
-              {ponuda.naslovoglasa || `${ponuda.vrstaobjekta_ag} - ${ponuda.lokacija_ag}`}
+              {config.heroTitle || ponuda.naslovoglasa || `${ponuda.vrstaobjekta_ag} - ${ponuda.lokacija_ag}`}
             </h1>
 
             {/* Location */}
@@ -242,7 +269,7 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
             {/* Price & Audit Score */}
             <div className="flex flex-wrap items-center gap-6">
               {config.showPrice && (
-                <div className="text-4xl md:text-5xl font-bold text-amber-500">
+                <div className={`text-4xl md:text-5xl font-bold ${accent.textLight}`}>
                   {formatNumber(ponuda.cena_ag)} €
                 </div>
               )}
@@ -277,7 +304,8 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
       </section>
 
       {/* Technical Specs Grid */}
-      <section className="py-12 px-6 md:px-12 bg-gray-900">
+      {config.showTechSpecs && (
+      <section className={`py-12 px-6 md:px-12 ${isDarkTheme ? 'bg-gray-900' : 'bg-gray-100'}`}>
         <div className="max-w-6xl mx-auto">
           <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
             <Ruler className="w-6 h-6 text-amber-500" />
@@ -341,9 +369,10 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
           </div>
         </div>
       </section>
+      )}
 
       {/* Gallery Section */}
-      {regularPhotos.length > 0 && (
+      {config.showGallery && regularPhotos.length > 0 && (
         <section className="py-12 px-6 md:px-12">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-2xl font-bold mb-8">{t.gallery}</h2>
@@ -369,7 +398,7 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
       )}
 
       {/* Technical Drawing (Skice) */}
-      {sketchPhotos.length > 0 && (
+      {config.showTechnicalDrawing && sketchPhotos.length > 0 && (
         <section className="py-12 px-6 md:px-12 bg-gray-900">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-2xl font-bold mb-8">{t.technicalDrawing}</h2>
@@ -392,10 +421,10 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
       )}
 
       {/* Video & 3D Tour */}
-      {(ponuda.videolink || ponuda['3dture']) && (
+      {((config.showVideo && ponuda.videolink) || (config.show3DTour && ponuda['3dture'])) && (
         <section className="py-12 px-6 md:px-12">
           <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-            {ponuda.videolink && (
+            {config.showVideo && ponuda.videolink && (
               <a 
                 href={ponuda.videolink}
                 target="_blank"
@@ -411,7 +440,7 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
                 </div>
               </a>
             )}
-            {ponuda['3dture'] && (
+            {config.show3DTour && ponuda['3dture'] && (
               <a 
                 href={ponuda['3dture']}
                 target="_blank"
@@ -478,7 +507,7 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
       )}
 
       {/* AuditClaw Analysis */}
-      {ponuda.opis_ag && (
+      {config.showDescription && ponuda.opis_ag && (
         <section className="py-12 px-6 md:px-12 bg-gray-900">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
@@ -552,10 +581,15 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
       )}
 
       {/* CTA Section */}
-      <section className="py-16 px-6 md:px-12 bg-gradient-to-r from-amber-600 to-amber-500">
+      <section className={`py-16 px-6 md:px-12 ${
+        config.accentColor === 'amber' ? 'bg-gradient-to-r from-amber-600 to-amber-500' :
+        config.accentColor === 'cyan' ? 'bg-gradient-to-r from-cyan-600 to-cyan-500' :
+        config.accentColor === 'violet' ? 'bg-gradient-to-r from-violet-600 to-violet-500' :
+        'bg-gradient-to-r from-emerald-600 to-emerald-500'
+      }`}>
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-black mb-6">
-            Zainteresovani ste?
+          <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${config.accentColor === 'amber' ? 'text-black' : 'text-white'}`}>
+            {config.ctaButtonText || 'Zainteresovani ste?'}
           </h2>
           <div className="flex flex-wrap justify-center gap-4">
             <button
