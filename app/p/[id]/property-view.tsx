@@ -198,7 +198,7 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
             >
               <ChevronRight className="w-6 h-6" />
             </button>
-            <div className="absolute bottom-32 left-1/2 -translate-x-1/2 flex items-center gap-2">
+            <div className="absolute bottom-48 md:bottom-32 left-1/2 -translate-x-1/2 flex items-center gap-2">
               {regularPhotos.map((_, idx) => (
                 <button
                   key={idx}
@@ -231,7 +231,7 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
 
             {/* Title */}
             <h1 className="text-3xl md:text-5xl font-bold mb-4">
-              {config.heroTitle || kampanja?.naslov_ai || ponuda.naslovoglasa || `${translatePropertyType(ponuda.vrstaobjekta_ag, lang)} - ${ponuda.lokacija_ag}`}
+              {config.heroTitle || translateDescription(kampanja?.naslov_ai, lang) || ponuda.naslovoglasa || `${translatePropertyType(ponuda.vrstaobjekta_ag, lang)} - ${ponuda.lokacija_ag}`}
             </h1>
 
             {/* Location */}
@@ -489,14 +489,10 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
               {t.auditAnalysis}
             </h2>
             
-            {/* AI Opis iz kampanje */}
+            {/* Opis iz kampanje */}
             <div className={`${isDarkTheme ? 'bg-gradient-to-r from-amber-900/30 to-orange-900/30 border border-amber-700' : 'bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200'} rounded-2xl p-6`}>
-              <h3 className="font-bold text-amber-400 mb-3 flex items-center gap-2">
-                <Sparkles className="w-5 h-5" />
-                AI Opis
-              </h3>
               <p className={`${isDarkTheme ? 'text-gray-300' : 'text-gray-700'} text-lg leading-relaxed`}>
-                {kampanja.opis_ai}
+                {translateDescription(kampanja.opis_ai, lang)}
               </p>
             </div>
           </div>
