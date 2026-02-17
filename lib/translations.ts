@@ -351,6 +351,7 @@ const descriptionTranslations: Record<string, Record<Language, string>> = {
   'iz dijaspore': { sr: 'iz dijaspore', en: 'from the diaspora', de: 'aus der Diaspora' },
   
   // Tehničke karakteristike
+  'termička izvrsnost': { sr: 'Termička Izvrsnost', en: 'Thermal Excellence', de: 'Thermische Exzellenz' },
   'termička': { sr: 'termička', en: 'thermal', de: 'thermisch' },
   'termički': { sr: 'termički', en: 'thermal', de: 'thermisch' },
   'energetska efikasnost': { sr: 'energetska efikasnost', en: 'energy efficiency', de: 'Energieeffizienz' },

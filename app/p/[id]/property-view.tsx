@@ -232,7 +232,7 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
             >
               <ChevronRight className="w-6 h-6" />
             </button>
-            <div className="absolute bottom-48 md:bottom-32 left-1/2 -translate-x-1/2 flex items-center gap-2">
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/30 backdrop-blur-sm rounded-full px-3 py-2">
               {regularPhotos.map((_, idx) => (
                 <button
                   key={idx}
