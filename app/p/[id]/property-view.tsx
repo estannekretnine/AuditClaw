@@ -356,7 +356,7 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
                 {ponuda.lift === 'Da' || ponuda.lift === 'da' ? (
                   <Check className="w-6 h-6 text-green-500 mx-auto" />
                 ) : (
-                  <X className="w-6 h-6 text-red-500 mx-auto" />
+                  <XIcon className="w-6 h-6 text-red-500 mx-auto" />
                 )}
               </div>
               <div className={`text-sm ${isDarkTheme ? 'text-gray-400' : 'text-gray-500'}`}>{t.elevator}</div>
@@ -369,7 +369,7 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
                 {ponuda.stsparking ? (
                   <Check className="w-6 h-6 text-green-500 mx-auto" />
                 ) : (
-                  <X className="w-6 h-6 text-red-500 mx-auto" />
+                  <XIcon className="w-6 h-6 text-red-500 mx-auto" />
                 )}
               </div>
               <div className={`text-sm ${isDarkTheme ? 'text-gray-400' : 'text-gray-500'}`}>{t.parking}</div>
