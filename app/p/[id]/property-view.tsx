@@ -231,7 +231,7 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
 
             {/* Title */}
             <h1 className="text-3xl md:text-5xl font-bold mb-4">
-              {config.heroTitle || translateDescription(kampanja?.naslov_ai, lang) || ponuda.naslovoglasa || `${translatePropertyType(ponuda.vrstaobjekta_ag, lang)} - ${ponuda.lokacija_ag}`}
+              {config.heroTitle || translateDescription(kampanja?.naslov_ai ?? null, lang) || ponuda.naslovoglasa || `${translatePropertyType(ponuda.vrstaobjekta_ag, lang)} - ${ponuda.lokacija_ag}`}
             </h1>
 
             {/* Location */}
