@@ -293,6 +293,8 @@ const descriptionTranslations: Record<string, Record<Language, string>> = {
   'etažno': { sr: 'etažno', en: 'floor heating', de: 'Etagenheizung' },
   'inverter klime': { sr: 'inverter klime', en: 'inverter air conditioners', de: 'Inverter-Klimaanlagen' },
   'radijatori': { sr: 'radijatori', en: 'radiators', de: 'Heizkörper' },
+  'predimenzionisani radijatori': { sr: 'predimenzionisani radijatori', en: 'oversized radiators', de: 'überdimensionierte Heizkörper' },
+  'predimenzionisani': { sr: 'predimenzionisani', en: 'oversized', de: 'überdimensioniert' },
   
   // Prozori/vrata
   'prozor': { sr: 'prozor', en: 'window', de: 'Fenster' },
@@ -322,6 +324,9 @@ const descriptionTranslations: Record<string, Record<Language, string>> = {
   // Zidovi
   'zidovi': { sr: 'zidovi', en: 'walls', de: 'Wände' },
   'dupli zidovi': { sr: 'dupli zidovi', en: 'double walls', de: 'Doppelwände' },
+  'dupli spoljni zidovi': { sr: 'dupli spoljni zidovi', en: 'double exterior walls', de: 'doppelte Außenwände' },
+  'spoljni zidovi': { sr: 'spoljni zidovi', en: 'exterior walls', de: 'Außenwände' },
+  'dupli spoljni': { sr: 'dupli spoljni', en: 'double exterior', de: 'doppelte Außen-' },
   
   // Provizija
   'provizija': { sr: 'provizija', en: 'commission', de: 'Provision' },
@@ -332,6 +337,46 @@ const descriptionTranslations: Record<string, Record<Language, string>> = {
   'lokaciju': { sr: 'lokaciju', en: 'location', de: 'Standort' },
   'adresu': { sr: 'adresu', en: 'address', de: 'Adresse' },
   'tačnu adresu': { sr: 'tačnu adresu', en: 'exact address', de: 'genaue Adresse' },
+  
+  // Tehnička izvrsnost / Kvalitet
+  'tehnička izvrsnost': { sr: 'tehnička izvrsnost', en: 'technical excellence', de: 'technische Exzellenz' },
+  'tehničku izvrsnost': { sr: 'tehničku izvrsnost', en: 'technical excellence', de: 'technische Exzellenz' },
+  'izvrsnost': { sr: 'izvrsnost', en: 'excellence', de: 'Exzellenz' },
+  'zahtevne investitore': { sr: 'zahtevne investitore', en: 'discerning investors', de: 'anspruchsvolle Investoren' },
+  'zahtevni investitori': { sr: 'zahtevni investitori', en: 'discerning investors', de: 'anspruchsvolle Investoren' },
+  'investitore': { sr: 'investitore', en: 'investors', de: 'Investoren' },
+  'investitori': { sr: 'investitori', en: 'investors', de: 'Investoren' },
+  'dijaspore': { sr: 'dijaspore', en: 'diaspora', de: 'Diaspora' },
+  'dijaspora': { sr: 'dijaspora', en: 'diaspora', de: 'Diaspora' },
+  'iz dijaspore': { sr: 'iz dijaspore', en: 'from the diaspora', de: 'aus der Diaspora' },
+  
+  // Tehničke karakteristike
+  'termička': { sr: 'termička', en: 'thermal', de: 'thermisch' },
+  'termički': { sr: 'termički', en: 'thermal', de: 'thermisch' },
+  'energetska efikasnost': { sr: 'energetska efikasnost', en: 'energy efficiency', de: 'Energieeffizienz' },
+  'energetski efikasan': { sr: 'energetski efikasan', en: 'energy efficient', de: 'energieeffizient' },
+  'toplotna izolacija': { sr: 'toplotna izolacija', en: 'thermal insulation', de: 'Wärmedämmung' },
+  'zvučna izolacija': { sr: 'zvučna izolacija', en: 'sound insulation', de: 'Schalldämmung' },
+  
+  // Kvalitet gradnje
+  'vrhunski kvalitet': { sr: 'vrhunski kvalitet', en: 'premium quality', de: 'Premium-Qualität' },
+  'visok kvalitet': { sr: 'visok kvalitet', en: 'high quality', de: 'hohe Qualität' },
+  'kvalitetna gradnja': { sr: 'kvalitetna gradnja', en: 'quality construction', de: 'Qualitätsbau' },
+  'solidna gradnja': { sr: 'solidna gradnja', en: 'solid construction', de: 'solide Bauweise' },
+  
+  // Investicioni termini
+  'investiciona vrednost': { sr: 'investiciona vrednost', en: 'investment value', de: 'Investitionswert' },
+  'investicioni potencijal': { sr: 'investicioni potencijal', en: 'investment potential', de: 'Investitionspotenzial' },
+  'povrat investicije': { sr: 'povrat investicije', en: 'return on investment', de: 'Kapitalrendite' },
+  'rentabilnost': { sr: 'rentabilnost', en: 'profitability', de: 'Rentabilität' },
+  
+  // Dodatne fraze
+  'u svakoj sobi': { sr: 'u svakoj sobi', en: 'in every room', de: 'in jedem Zimmer' },
+  'na svim': { sr: 'na svim', en: 'on all', de: 'an allen' },
+  'krovnim prozorima': { sr: 'krovnim prozorima', en: 'skylights', de: 'Dachfenstern' },
+  'krovni prozori': { sr: 'krovni prozori', en: 'skylights', de: 'Dachfenster' },
+  'daljinsko': { sr: 'daljinsko', en: 'remote', de: 'Fernbedienung' },
+  'ambijentalno osvetljenje': { sr: 'ambijentalno osvetljenje', en: 'ambient lighting', de: 'Ambientebeleuchtung' },
 }
 
 // Funkcija za prevod opisa nekretnine

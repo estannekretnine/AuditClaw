@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { 
   Home, MapPin, Ruler, BedDouble, Building2, Flame, 
   Car, Warehouse, TrendingUp, Laptop, ChevronLeft, ChevronRight,
-  FileText, Phone, MessageCircle, Check, X, Play, Box,
-  ThermometerSun, Wifi, TreePine, Sparkles
+  FileText, Phone, MessageCircle, Check, X as XIcon, Play, Box,
+  ThermometerSun, Wifi, TreePine, Sparkles, ZoomIn
 } from 'lucide-react'
 import { translations, translateHeating, translatePropertyType, translateDescription, type Language } from '@/lib/translations'
 import type { Ponuda, PonudaFoto } from '@/lib/types/ponuda'
@@ -96,6 +96,8 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
 
   const [lang, setLang] = useState<Language>(config.primaryLanguage)
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
 
   const t = translations[lang]
   
@@ -136,6 +138,38 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
   }
 
   const auditScore = calculateAuditScore()
+
+  // Lightbox handlers
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index)
+    setLightboxOpen(true)
+  }
+
+  const closeLightbox = useCallback(() => {
+    setLightboxOpen(false)
+  }, [])
+
+  const nextLightboxPhoto = useCallback(() => {
+    setLightboxIndex(i => i < regularPhotos.length - 1 ? i + 1 : 0)
+  }, [regularPhotos.length])
+
+  const prevLightboxPhoto = useCallback(() => {
+    setLightboxIndex(i => i > 0 ? i - 1 : regularPhotos.length - 1)
+  }, [regularPhotos.length])
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (!lightboxOpen) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeLightbox()
+      if (e.key === 'ArrowRight') nextLightboxPhoto()
+      if (e.key === 'ArrowLeft') prevLightboxPhoto()
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [lightboxOpen, closeLightbox, nextLightboxPhoto, prevLightboxPhoto])
 
   // Accent color classes
   const accentColorClasses = {
@@ -354,16 +388,20 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
               {regularPhotos.map((photo, idx) => (
                 <button
                   key={photo.id}
-                  onClick={() => setCurrentPhotoIndex(idx)}
-                  className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${
+                  onClick={() => openLightbox(idx)}
+                  className={`group relative aspect-square rounded-xl overflow-hidden border-2 transition-all ${
                     idx === currentPhotoIndex ? 'border-amber-500' : 'border-transparent hover:border-gray-600'
                   }`}
                 >
                   <img 
                     src={photo.url || ''} 
                     alt={photo.opis || `Photo ${idx + 1}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
+                  {/* Zoom overlay on hover */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                    <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
                 </button>
               ))}
             </div>
@@ -562,6 +600,80 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
           <div className={`absolute inset-x-0 bottom-0 h-20 -z-10 ${isDarkTheme ? 'bg-gradient-to-t from-gray-950 via-gray-950/95 to-transparent' : 'bg-gradient-to-t from-white via-white/95 to-transparent'}`}></div>
         </div>
       </div>
+
+      {/* Lightbox Modal */}
+      {lightboxOpen && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center"
+          onClick={closeLightbox}
+        >
+          {/* Close button */}
+          <button
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors z-10"
+          >
+            <XIcon className="w-6 h-6 text-white" />
+          </button>
+
+          {/* Photo counter */}
+          <div className="absolute top-4 left-4 px-4 py-2 bg-white/10 rounded-full text-white text-sm">
+            {lightboxIndex + 1} / {regularPhotos.length}
+          </div>
+
+          {/* Previous button */}
+          {regularPhotos.length > 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); prevLightboxPhoto(); }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-14 h-14 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
+            >
+              <ChevronLeft className="w-8 h-8 text-white" />
+            </button>
+          )}
+
+          {/* Main image */}
+          <div 
+            className="max-w-[90vw] max-h-[85vh] flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={regularPhotos[lightboxIndex]?.url || ''}
+              alt={regularPhotos[lightboxIndex]?.opis || `Photo ${lightboxIndex + 1}`}
+              className="max-w-full max-h-[85vh] object-contain rounded-lg"
+            />
+          </div>
+
+          {/* Next button */}
+          {regularPhotos.length > 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); nextLightboxPhoto(); }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-14 h-14 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
+            >
+              <ChevronRight className="w-8 h-8 text-white" />
+            </button>
+          )}
+
+          {/* Thumbnail strip */}
+          {regularPhotos.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-black/50 rounded-full max-w-[90vw] overflow-x-auto">
+              {regularPhotos.map((photo, idx) => (
+                <button
+                  key={photo.id}
+                  onClick={(e) => { e.stopPropagation(); setLightboxIndex(idx); }}
+                  className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${
+                    idx === lightboxIndex ? 'border-amber-500' : 'border-transparent hover:border-white/50'
+                  }`}
+                >
+                  <img
+                    src={photo.url || ''}
+                    alt={photo.opis || `Thumbnail ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
