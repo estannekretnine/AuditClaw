@@ -17,7 +17,7 @@ async function getPonudaWithPhotos(id: number) {
     .single()
 
   if (ponudaError || !ponuda) {
-    return { ponuda: null, photos: [] }
+    return { ponuda: null, photos: [], kampanja: null }
   }
 
   // Dohvati fotografije
@@ -27,7 +27,17 @@ async function getPonudaWithPhotos(id: number) {
     .eq('idponude', id)
     .order('redosled', { ascending: true })
 
-  return { ponuda, photos: photos || [] }
+  // Dohvati aktivnu kampanju za ovu ponudu
+  const { data: kampanja } = await supabase
+    .from('kampanja')
+    .select('*')
+    .eq('ponudaid', id)
+    .eq('stsaktivan', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  return { ponuda, photos: photos || [], kampanja: kampanja || null }
 }
 
 export default async function PropertyPage({ params }: PageProps) {
@@ -38,13 +48,13 @@ export default async function PropertyPage({ params }: PageProps) {
     notFound()
   }
 
-  const { ponuda, photos } = await getPonudaWithPhotos(ponudaId)
+  const { ponuda, photos, kampanja } = await getPonudaWithPhotos(ponudaId)
 
   if (!ponuda) {
     notFound()
   }
 
-  return <PropertyView ponuda={ponuda} photos={photos} />
+  return <PropertyView ponuda={ponuda} photos={photos} kampanja={kampanja} />
 }
 
 export async function generateMetadata({ params }: PageProps) {
@@ -55,14 +65,15 @@ export async function generateMetadata({ params }: PageProps) {
     return { title: 'Nekretnina nije pronađena' }
   }
 
-  const { ponuda } = await getPonudaWithPhotos(ponudaId)
+  const { ponuda, kampanja } = await getPonudaWithPhotos(ponudaId)
 
   if (!ponuda) {
     return { title: 'Nekretnina nije pronađena' }
   }
 
-  const title = ponuda.naslovoglasa || `${ponuda.vrstaobjekta_ag} - ${ponuda.lokacija_ag}`
-  const description = `${ponuda.kvadratura_ag}m² | ${ponuda.struktura_ag} soba | ${ponuda.cena_ag?.toLocaleString('sr-RS')}€ | ${ponuda.lokacija_ag}, ${ponuda.opstina_ag}`
+  // Koristi naslov i opis iz kampanje ako postoje
+  const title = kampanja?.naslov_ai || ponuda.naslovoglasa || `${ponuda.vrstaobjekta_ag} - ${ponuda.lokacija_ag}`
+  const description = kampanja?.opis_ai || `${ponuda.kvadratura_ag}m² | ${ponuda.struktura_ag} soba | ${ponuda.cena_ag?.toLocaleString('sr-RS')}€ | ${ponuda.lokacija_ag}, ${ponuda.opstina_ag}`
 
   return {
     title: `${title} | AuditClaw`,

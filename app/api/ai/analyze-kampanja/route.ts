@@ -27,7 +27,9 @@ Odgovori ISKLJUČIVO u JSON formatu sa sledećim poljima (bez markdown formatira
   "tekst_linkedin": "Napiši LinkedIn outreach poruku (max 300 karaktera) na engleskom jeziku. Fokus na ROI, tehničku preciznost i ekskluzivnost. Pozovi na preuzimanje tehničkog izveštaja. Primer: 'Hi [Name], noticed your background in [Industry]. We're offering a pre-vetted Belgrade property with full technical audit. ROI 8%+, prime location. Download report: [link]'",
   "tekst_email_naslov": "Napiši email subject line (max 60 karaktera) koji privlači pažnju. Primer: 'Belgrade Investment: 8% ROI + Full Technical Report'",
   "tekst_email_telo": "Napiši email telo (max 500 karaktera) sa strukturom: 1) Problem/prilika, 2) Rešenje (AuditClaw audit), 3) Poziv na akciju. Može biti na engleskom.",
-  "tekst_whatsapp": "Napiši WhatsApp poruku (max 250 karaktera) na srpskom jeziku. Direktan, prijateljski ton. Pozovi na razgovor ili preuzimanje izveštaja."
+  "tekst_whatsapp": "Napiši WhatsApp poruku (max 250 karaktera) na srpskom jeziku. Direktan, prijateljski ton. Pozovi na razgovor ili preuzimanje izveštaja.",
+  "naslov_ai": "Napiši atraktivan naslov za web stranu (max 80 karaktera) na srpskom jeziku. Fokusiraj se na lokaciju, tip nekretnine i ključne prednosti. Primer: 'Luksuzni stan na Vračaru - 120m² sa garažom i pogledom'",
+  "opis_ai": "Napiši kratak opis za web stranu (max 200 karaktera) na srpskom jeziku. Istakni ključne karakteristike i prednosti nekretnine. Primer: 'Renoviran trosoban stan u mirnoj ulici, blizina parka i škole. Centralno grejanje, lift, parking. Idealno za porodicu ili investiciju.'"
 }`
 
 interface PonudaData {

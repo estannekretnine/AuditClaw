@@ -5,14 +5,16 @@ import {
   Home, MapPin, Ruler, BedDouble, Building2, Flame, 
   Car, Warehouse, TrendingUp, Laptop, ChevronLeft, ChevronRight,
   FileText, Phone, MessageCircle, Check, X, Play, Box,
-  ThermometerSun, Wifi, TreePine
+  ThermometerSun, Wifi, TreePine, Sparkles
 } from 'lucide-react'
 import { translations, translateHeating, translatePropertyType, translateDescription, type Language } from '@/lib/translations'
 import type { Ponuda, PonudaFoto } from '@/lib/types/ponuda'
+import type { Kampanja } from '@/lib/types/kampanja'
 
 interface PropertyViewProps {
   ponuda: Ponuda
   photos: PonudaFoto[]
+  kampanja: Kampanja | null
 }
 
 // Struktura koja se čuva u ponuda.webstrana
@@ -65,7 +67,7 @@ const defaultConfig: WebStranaConfig = {
   ctaButtonText: 'Kontaktirajte nas'
 }
 
-export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
+export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewProps) {
   // Parsiraj sačuvanu konfiguraciju (novi format sa link i config)
   const config = useMemo<WebStranaConfig>(() => {
     if (ponuda.webstrana) {
@@ -254,7 +256,7 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
 
             {/* Title */}
             <h1 className="text-3xl md:text-5xl font-bold mb-4">
-              {config.heroTitle || ponuda.naslovoglasa || `${translatePropertyType(ponuda.vrstaobjekta_ag, lang)} - ${ponuda.lokacija_ag}`}
+              {config.heroTitle || kampanja?.naslov_ai || ponuda.naslovoglasa || `${translatePropertyType(ponuda.vrstaobjekta_ag, lang)} - ${ponuda.lokacija_ag}`}
             </h1>
 
             {/* Location */}
@@ -504,7 +506,7 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
       )}
 
       {/* AuditClaw Analysis */}
-      {config.showDescription && ponuda.opis_ag && (
+      {config.showDescription && (ponuda.opis_ag || kampanja?.opis_ai) && (
         <section className="py-12 px-6 md:px-12 bg-gray-900">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
@@ -512,6 +514,19 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
               {t.auditAnalysis}
             </h2>
             
+            {/* Ako postoji opis iz kampanje, prikaži ga kao glavni opis */}
+            {kampanja?.opis_ai && (
+              <div className={`${isDarkTheme ? 'bg-gradient-to-r from-amber-900/30 to-orange-900/30 border border-amber-700' : 'bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200'} rounded-2xl p-6 mb-6`}>
+                <h3 className="font-bold text-amber-400 mb-3 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5" />
+                  AI Opis
+                </h3>
+                <p className={`${isDarkTheme ? 'text-gray-300' : 'text-gray-700'} text-lg leading-relaxed`}>
+                  {kampanja.opis_ai}
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Prednosti */}
               {advantages.length > 0 && (
@@ -544,8 +559,8 @@ export default function PropertyView({ ponuda, photos }: PropertyViewProps) {
               )}
             </div>
 
-            {/* Full description if no parsing */}
-            {advantages.length === 0 && notes.length === 0 && (
+            {/* Full description if no parsing and no kampanja opis */}
+            {!kampanja?.opis_ai && advantages.length === 0 && notes.length === 0 && ponuda.opis_ag && (
               <div className={`${isDarkTheme ? 'bg-gray-800' : 'bg-gray-100'} rounded-2xl p-6`}>
                 <p className={`${isDarkTheme ? 'text-gray-300' : 'text-gray-700'} whitespace-pre-wrap`}>
                   {translateDescription(ponuda.opis_ag, lang)}

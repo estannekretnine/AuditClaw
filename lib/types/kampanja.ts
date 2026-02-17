@@ -19,6 +19,8 @@ export interface Kampanja {
   tekst_email_naslov: string | null
   tekst_email_telo: string | null
   tekst_whatsapp: string | null
+  naslov_ai: string | null
+  opis_ai: string | null
 }
 
 export interface KampanjaInsert {
@@ -38,6 +40,8 @@ export interface KampanjaInsert {
   tekst_email_naslov?: string | null
   tekst_email_telo?: string | null
   tekst_whatsapp?: string | null
+  naslov_ai?: string | null
+  opis_ai?: string | null
 }
 
 export interface KampanjaUpdate extends KampanjaInsert {

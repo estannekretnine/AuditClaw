@@ -97,6 +97,8 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
     budzet: kampanja?.budzet?.toString() || '',
     stsaktivan: kampanja?.stsaktivan !== false, // Default true
     kodkampanje: kampanja?.kodkampanje || '',
+    naslov_ai: kampanja?.naslov_ai || '',
+    opis_ai: kampanja?.opis_ai || '',
   })
 
   // Zatvori dropdown kada se klikne izvan
@@ -175,6 +177,8 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
         { key: 'tekst_email_naslov', value: data.tekst_email_naslov },
         { key: 'tekst_email_telo', value: data.tekst_email_telo },
         { key: 'tekst_whatsapp', value: data.tekst_whatsapp },
+        { key: 'naslov_ai', value: data.naslov_ai },
+        { key: 'opis_ai', value: data.opis_ai },
       ]
 
       for (const field of fields) {
@@ -244,6 +248,8 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
         formDataObj.append('tekst_email_naslov', formData.tekst_email_naslov)
         formDataObj.append('tekst_email_telo', formData.tekst_email_telo)
         formDataObj.append('tekst_whatsapp', formData.tekst_whatsapp)
+        formDataObj.append('naslov_ai', formData.naslov_ai)
+        formDataObj.append('opis_ai', formData.opis_ai)
 
         let result
         if (isEditing) {
@@ -577,6 +583,46 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="Tekst za WhatsApp poruku..."
                 />
+              </div>
+
+              {/* Naslov za web stranu */}
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4">
+                <label className="block text-sm font-medium text-amber-900 mb-1.5 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Naslov za web stranu (AI)
+                </label>
+                <input
+                  type="text"
+                  name="naslov_ai"
+                  value={formData.naslov_ai}
+                  onChange={handleInputChange}
+                  disabled={!isAdmin}
+                  className="w-full px-4 py-2.5 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  placeholder="Atraktivan naslov za web stranu (max 80 karaktera)..."
+                />
+                <p className="text-xs text-amber-700 mt-1.5">
+                  Ovaj naslov će se koristiti na javnoj web strani ponude/akcije
+                </p>
+              </div>
+
+              {/* Opis za web stranu */}
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4">
+                <label className="block text-sm font-medium text-amber-900 mb-1.5 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Opis za web stranu (AI)
+                </label>
+                <textarea
+                  name="opis_ai"
+                  value={formData.opis_ai}
+                  onChange={handleInputChange}
+                  disabled={!isAdmin}
+                  rows={4}
+                  className="w-full px-4 py-2.5 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  placeholder="Kratak opis za web stranu (max 200 karaktera)..."
+                />
+                <p className="text-xs text-amber-700 mt-1.5">
+                  Ovaj opis će se koristiti na javnoj web strani ponude/akcije i u meta tagovima za SEO
+                </p>
               </div>
               </div>
             )}
