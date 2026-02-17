@@ -123,31 +123,6 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
   // Određivanje teme
   const isDarkTheme = config.theme === 'dark'
 
-  // Parsiranje opisa za AI analizu (prednosti i napomene)
-  const parseDescription = (desc: string | null) => {
-    if (!desc) return { advantages: [], notes: [] }
-    
-    const lines = desc.split('\n').filter(l => l.trim())
-    const advantages: string[] = []
-    const notes: string[] = []
-    
-    lines.forEach(line => {
-      const trimmed = line.trim()
-      if (trimmed.startsWith('+') || trimmed.startsWith('•') || trimmed.toLowerCase().includes('prednost')) {
-        advantages.push(trimmed.replace(/^[+•]\s*/, ''))
-      } else if (trimmed.startsWith('-') || trimmed.startsWith('!') || trimmed.toLowerCase().includes('napomena')) {
-        notes.push(trimmed.replace(/^[-!]\s*/, ''))
-      } else if (advantages.length === 0 && notes.length === 0) {
-        // Ako nema formatiranja, stavi u prednosti
-        advantages.push(trimmed)
-      }
-    })
-    
-    return { advantages, notes }
-  }
-
-  const { advantages, notes } = parseDescription(ponuda.opis_ag)
-
   // Generisanje Audit Score-a (simulacija)
   const calculateAuditScore = () => {
     let score = 70
@@ -506,7 +481,7 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
       )}
 
       {/* AuditClaw Analysis */}
-      {config.showDescription && (ponuda.opis_ag || kampanja?.opis_ai) && (
+      {config.showDescription && kampanja?.opis_ai && (
         <section className="py-12 px-6 md:px-12 bg-gray-900">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
@@ -514,59 +489,16 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
               {t.auditAnalysis}
             </h2>
             
-            {/* Ako postoji opis iz kampanje, prikaži ga kao glavni opis */}
-            {kampanja?.opis_ai && (
-              <div className={`${isDarkTheme ? 'bg-gradient-to-r from-amber-900/30 to-orange-900/30 border border-amber-700' : 'bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200'} rounded-2xl p-6 mb-6`}>
-                <h3 className="font-bold text-amber-400 mb-3 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5" />
-                  AI Opis
-                </h3>
-                <p className={`${isDarkTheme ? 'text-gray-300' : 'text-gray-700'} text-lg leading-relaxed`}>
-                  {kampanja.opis_ai}
-                </p>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Prednosti */}
-              {advantages.length > 0 && (
-                <div className="bg-green-900/30 border border-green-800 rounded-2xl p-6">
-                  <h3 className="font-bold text-green-400 mb-4">{t.advantages}</h3>
-                  <ul className="space-y-2">
-                    {advantages.map((adv, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-gray-300">{translateDescription(adv, lang)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Napomene */}
-              {notes.length > 0 && (
-                <div className="bg-amber-900/30 border border-amber-800 rounded-2xl p-6">
-                  <h3 className="font-bold text-amber-400 mb-4">{t.technicalNotes}</h3>
-                  <ul className="space-y-2">
-                    {notes.map((note, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <ThermometerSun className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-gray-300">{translateDescription(note, lang)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+            {/* AI Opis iz kampanje */}
+            <div className={`${isDarkTheme ? 'bg-gradient-to-r from-amber-900/30 to-orange-900/30 border border-amber-700' : 'bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200'} rounded-2xl p-6`}>
+              <h3 className="font-bold text-amber-400 mb-3 flex items-center gap-2">
+                <Sparkles className="w-5 h-5" />
+                AI Opis
+              </h3>
+              <p className={`${isDarkTheme ? 'text-gray-300' : 'text-gray-700'} text-lg leading-relaxed`}>
+                {kampanja.opis_ai}
+              </p>
             </div>
-
-            {/* Full description if no parsing and no kampanja opis */}
-            {!kampanja?.opis_ai && advantages.length === 0 && notes.length === 0 && ponuda.opis_ag && (
-              <div className={`${isDarkTheme ? 'bg-gray-800' : 'bg-gray-100'} rounded-2xl p-6`}>
-                <p className={`${isDarkTheme ? 'text-gray-300' : 'text-gray-700'} whitespace-pre-wrap`}>
-                  {translateDescription(ponuda.opis_ag, lang)}
-                </p>
-              </div>
-            )}
           </div>
         </section>
       )}
