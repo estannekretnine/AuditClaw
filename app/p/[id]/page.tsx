@@ -27,15 +27,37 @@ async function getPonudaWithPhotos(id: number) {
     .eq('idponude', id)
     .order('redosled', { ascending: true })
 
-  // Dohvati aktivnu kampanju za ovu ponudu
-  const { data: kampanja } = await supabase
-    .from('kampanja')
-    .select('*')
-    .eq('ponudaid', id)
-    .eq('stsaktivan', true)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single()
+  // Dohvati kampanju na osnovu webstrana konfiguracije
+  let kampanja = null
+  if (ponuda.webstrana) {
+    try {
+      const webStranaData = JSON.parse(ponuda.webstrana)
+      if (webStranaData.kampanjaId) {
+        // Dohvati specifičnu kampanju iz konfiguracije
+        const { data: selectedKampanja } = await supabase
+          .from('kampanja')
+          .select('*')
+          .eq('id', webStranaData.kampanjaId)
+          .single()
+        kampanja = selectedKampanja
+      }
+    } catch (err) {
+      console.error('Error parsing webstrana config:', err)
+    }
+  }
+  
+  // Fallback: ako nema izabrane kampanje, dohvati prvu aktivnu
+  if (!kampanja) {
+    const { data: aktivnaKampanja } = await supabase
+      .from('kampanja')
+      .select('*')
+      .eq('ponudaid', id)
+      .eq('stsaktivan', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+    kampanja = aktivnaKampanja
+  }
 
   return { ponuda, photos: photos || [], kampanja: kampanja || null }
 }

@@ -1,15 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   X, Globe, Copy, ExternalLink, Check, 
   Eye, Settings, Save, Loader2, ChevronDown, ChevronUp,
   Home, MapPin, Ruler, BedDouble, Building2, Flame, Car,
   TrendingUp, Laptop, MessageCircle, FileText, Image,
-  Type, Palette, Phone, Mail, LayoutTemplate
+  Type, Palette, Phone, Mail, LayoutTemplate, Megaphone, Sparkles
 } from 'lucide-react'
 import type { Ponuda } from '@/lib/types/ponuda'
+import type { Kampanja } from '@/lib/types/kampanja'
 import { updatePonudaWebstrana } from '@/lib/actions/ponude'
+import { getKampanjeByPonuda } from '@/lib/actions/kampanje'
 
 interface WebStranaModalProps {
   ponuda: Ponuda
@@ -20,6 +22,7 @@ interface WebStranaModalProps {
 interface WebStranaData {
   link: string // Javni link: www.auditclaw.io/p/{id}
   config: WebStranaConfig
+  kampanjaId?: number | null // ID izabrane kampanje
 }
 
 interface WebStranaConfig {
@@ -77,10 +80,57 @@ export default function WebStranaModal({ ponuda, onClose }: WebStranaModalProps)
   const [copied, setCopied] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [activeTab, setActiveTab] = useState<'sections' | 'design' | 'contact'>('sections')
+  const [activeTab, setActiveTab] = useState<'sections' | 'design' | 'contact' | 'kampanja'>('kampanja')
+  const [kampanje, setKampanje] = useState<Kampanja[]>([])
+  const [loadingKampanje, setLoadingKampanje] = useState(true)
+  const [selectedKampanjaId, setSelectedKampanjaId] = useState<number | null>(null)
   
   // Generisanje javnog linka
   const publicLink = `${BASE_URL}/p/${ponuda.id}`
+  
+  // Učitaj kampanje za ponudu
+  useEffect(() => {
+    loadKampanje()
+  }, [ponuda.id])
+  
+  const loadKampanje = async () => {
+    setLoadingKampanje(true)
+    try {
+      const result = await getKampanjeByPonuda(ponuda.id)
+      if (!result.error && result.data) {
+        setKampanje(result.data)
+        
+        // Učitaj prethodno izabranu kampanju ako postoji
+        if (ponuda.webstrana) {
+          try {
+            const parsed: WebStranaData = JSON.parse(ponuda.webstrana)
+            if (parsed.kampanjaId) {
+              setSelectedKampanjaId(parsed.kampanjaId)
+            } else {
+              // Ako nema izabrane, automatski izaberi prvu aktivnu
+              const aktivna = result.data.find(k => k.stsaktivan)
+              if (aktivna) setSelectedKampanjaId(aktivna.id)
+            }
+          } catch {
+            // Automatski izaberi prvu aktivnu kampanju
+            const aktivna = result.data.find(k => k.stsaktivan)
+            if (aktivna) setSelectedKampanjaId(aktivna.id)
+          }
+        } else {
+          // Automatski izaberi prvu aktivnu kampanju
+          const aktivna = result.data.find(k => k.stsaktivan)
+          if (aktivna) setSelectedKampanjaId(aktivna.id)
+        }
+      }
+    } catch (err) {
+      console.error('Error loading kampanje:', err)
+    } finally {
+      setLoadingKampanje(false)
+    }
+  }
+  
+  // Dohvati izabranu kampanju
+  const selectedKampanja = kampanje.find(k => k.id === selectedKampanjaId) || null
   
   // Učitaj postojeću konfiguraciju ili koristi default
   const [config, setConfig] = useState<WebStranaConfig>(() => {
@@ -142,14 +192,15 @@ export default function WebStranaModal({ ponuda, onClose }: WebStranaModalProps)
     window.open(previewUrl, '_blank')
   }
 
-  // Sačuvaj konfiguraciju sa linkom
+  // Sačuvaj konfiguraciju sa linkom i kampanjom
   const handleSave = async () => {
     setSaving(true)
     try {
-      // Kreiraj strukturu sa linkom i konfiguracijom
+      // Kreiraj strukturu sa linkom, konfiguracijom i kampanjom
       const webStranaData: WebStranaData = {
         link: publicLink,
-        config: config
+        config: config,
+        kampanjaId: selectedKampanjaId
       }
       const result = await updatePonudaWebstrana(ponuda.id, JSON.stringify(webStranaData))
       if (result.error) {
@@ -218,6 +269,17 @@ export default function WebStranaModal({ ponuda, onClose }: WebStranaModalProps)
             {/* Tabs */}
             <div className="flex border-b border-gray-200 bg-gray-50">
               <button
+                onClick={() => setActiveTab('kampanja')}
+                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                  activeTab === 'kampanja' 
+                    ? 'text-violet-600 border-b-2 border-violet-500 bg-white' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Megaphone className="w-4 h-4" />
+                Kampanja
+              </button>
+              <button
                 onClick={() => setActiveTab('sections')}
                 className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
                   activeTab === 'sections' 
@@ -254,6 +316,116 @@ export default function WebStranaModal({ ponuda, onClose }: WebStranaModalProps)
 
             {/* Tab Content */}
             <div className="flex-1 overflow-y-auto p-4">
+              {activeTab === 'kampanja' && (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-500 mb-4">
+                    Izaberite kampanju koja će se koristiti za naslov i opis na web strani:
+                  </p>
+                  
+                  {loadingKampanje ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+                    </div>
+                  ) : kampanje.length === 0 ? (
+                    <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+                      <Megaphone className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500 mb-2">Nema kampanja za ovu ponudu</p>
+                      <p className="text-sm text-gray-400">
+                        Kreirajte kampanju da biste mogli da koristite AI generisani naslov i opis
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {kampanje.map((kampanja) => (
+                        <button
+                          key={kampanja.id}
+                          onClick={() => setSelectedKampanjaId(kampanja.id)}
+                          className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                            selectedKampanjaId === kampanja.id
+                              ? 'border-violet-500 bg-violet-50'
+                              : 'border-gray-200 hover:border-gray-300 bg-white'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              {selectedKampanjaId === kampanja.id && (
+                                <div className="w-5 h-5 bg-violet-500 rounded-full flex items-center justify-center">
+                                  <Check className="w-3 h-3 text-white" />
+                                </div>
+                              )}
+                              <span className="font-semibold text-gray-900">
+                                Kampanja #{kampanja.id}
+                              </span>
+                            </div>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              kampanja.stsaktivan
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {kampanja.stsaktivan ? 'Aktivna' : 'Neaktivna'}
+                            </span>
+                          </div>
+                          
+                          {/* Naslov AI */}
+                          {kampanja.naslov_ai && (
+                            <div className="mb-2">
+                              <div className="flex items-center gap-1 mb-1">
+                                <Sparkles className="w-3 h-3 text-amber-500" />
+                                <span className="text-xs font-medium text-gray-500">Naslov:</span>
+                              </div>
+                              <p className="text-sm text-gray-900 font-medium">
+                                {kampanja.naslov_ai}
+                              </p>
+                            </div>
+                          )}
+                          
+                          {/* Opis AI */}
+                          {kampanja.opis_ai && (
+                            <div>
+                              <div className="flex items-center gap-1 mb-1">
+                                <Sparkles className="w-3 h-3 text-amber-500" />
+                                <span className="text-xs font-medium text-gray-500">Opis:</span>
+                              </div>
+                              <p className="text-xs text-gray-600 line-clamp-2">
+                                {kampanja.opis_ai}
+                              </p>
+                            </div>
+                          )}
+                          
+                          {/* Ako nema naslova/opisa */}
+                          {!kampanja.naslov_ai && !kampanja.opis_ai && (
+                            <p className="text-xs text-gray-400 italic">
+                              Nema AI generisanog naslova i opisa
+                            </p>
+                          )}
+                          
+                          <div className="mt-2 text-xs text-gray-400">
+                            Kreirana: {new Date(kampanja.created_at).toLocaleDateString('sr-RS')}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Info box */}
+                  <div className="bg-violet-50 border border-violet-200 rounded-xl p-4 mt-6">
+                    <div className="flex items-start gap-3">
+                      <Sparkles className="w-5 h-5 text-violet-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-semibold text-violet-900 mb-1">
+                          Kako funkcioniše?
+                        </h4>
+                        <p className="text-sm text-violet-700">
+                          Izabrana kampanja će se koristiti za prikaz naslova i opisa na javnoj 
+                          web strani ponude. Naslov i opis su AI generisani u "AuditClaw" stilu - 
+                          inženjerski precizni, fokusirani na tehničku superiornost i investicionu vrednost.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               {activeTab === 'sections' && (
                 <div className="space-y-4">
                   <p className="text-sm text-gray-500 mb-4">Izaberite koje sekcije želite da prikažete na stranici:</p>
@@ -616,7 +788,7 @@ export default function WebStranaModal({ ponuda, onClose }: WebStranaModalProps)
                       {ponuda.stsrentaprodaja === 'R' ? 'IZDAVANJE' : 'PRODAJA'}
                     </div>
                     <h3 className="text-white text-sm font-bold truncate">
-                      {config.heroTitle || ponuda.naslovoglasa || `${ponuda.vrstaobjekta_ag} - ${ponuda.lokacija_ag}`}
+                      {config.heroTitle || selectedKampanja?.naslov_ai || ponuda.naslovoglasa || `${ponuda.vrstaobjekta_ag} - ${ponuda.lokacija_ag}`}
                     </h3>
                     <div className="flex items-center gap-2 mt-1">
                       {config.showPrice && (
@@ -699,6 +871,23 @@ export default function WebStranaModal({ ponuda, onClose }: WebStranaModalProps)
                   </button>
                 </div>
               </div>
+
+              {/* Kampanja info */}
+              {selectedKampanja && (
+                <div className="mt-4 p-3 bg-violet-50 border border-violet-200 rounded-xl">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Sparkles className="w-4 h-4 text-violet-600" />
+                    <span className="text-xs font-semibold text-violet-900">
+                      Koristi se Kampanja #{selectedKampanja.id}
+                    </span>
+                  </div>
+                  {selectedKampanja.naslov_ai && (
+                    <p className="text-xs text-violet-700 truncate">
+                      {selectedKampanja.naslov_ai}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {!hasSavedConfig && (
                 <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
