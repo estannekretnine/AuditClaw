@@ -17,10 +17,10 @@ Tvoj zadatak je da analiziraš nekretninu i generišeš sadržaj za marketing ka
 Odgovori ISKLJUČIVO u JSON formatu sa sledećim poljima (bez markdown formatiranja, samo čist JSON):
 
 {
-  "analizaoglasa_ai": "Oceni trenutni opis ocenom 1-10. Navedi šta nedostaje od tehničkih detalja (npr. stanje vertikala, izolacija, specifikacija prozora, elektro-instalacije, vodovod).",
+  "analizaoglasa_ai": "Generiši 'AUDIT HIGHLIGHTS' - 3-4 najbitnija tehnička bulleta koja opravdavaju cenu. Format: '+ [Tehnički detalj] - [Konkretna prednost/ocena]'. Fokus na: izolaciju (termičku/zvučnu), instalacije (grejanje/hlađenje/elektro), strukturu (zidovi/plafoni), završnu obradu. Primer: '+ Dupli spoljni zidovi + kamena vuna - Termička izolacija 8/10\n+ Predimenzionisani radijatori - 30% bolja efikasnost\n+ Inverter klime u svakoj sobi - Energetska klasa A++'. Bez marketinških fraza.",
   "ciljnagrupa_ai": "Definiši 3 precizna profila iz dijaspore. Format: '1. [Pozicija] u [Grad], poreklom sa [Lokacija u Srbiji] - [Zašto bi kupio]'. Primer: 'Senior Software Architect u Cirihu, poreklom sa Vračara - traži investiciju za roditelje'.",
   "ciljaniregion_ai": "Specifični gradovi i kompanije gde rade idealni kupci. Format lista: 'Minhen (Siemens, BMW), Cirih (Google, UBS), Beč (Erste Bank), Frankfurt (Deutsche Bank)'.",
-  "kljucnereci_ai": "Generiši listu ključnih reči za LinkedIn Outreach i meta-tagove. Kombinuj lokaciju, tip nekretnine i investicione termine na engleskom i srpskom. Primer: 'Vračar Heritage investment, Technical Due Diligence Belgrade, Private Parking Krunska, Stan Beograd dijaspora'.",
+  "kljucnereci_ai": "Generiši SEO optimizovanu listu ključnih reči (10-15 fraza). Kombinuj: 1) Specifičnu lokaciju (ulica + opština), 2) Tip nekretnine, 3) Tehničke termine, 4) Investicione fraze. Format: '[Lokacija] [tip] [tehnika]'. Primer: 'Dorćol dupleks investicija, Gundulićev venac premium, Šantićeva tehnička izvrsnost, Belgrade duplex thermal efficiency, Dorćol heritage investment, Stari Grad technical audit, Beograd centar izolacija'.",
   "psiholoskiprofil_ai": "Identifikuj 3 glavna straha kupca iz dijaspore i kako ih AuditClaw tehnički izveštaj rešava. Format: 'STRAH: [opis] → REŠENJE: [kako Audit pomaže]'.",
   "predlogkampanje_ai": "Napravi plan za direktan Outreach. Uključi: 1) Apollo.io filtere (Job titles, Years of experience, Industry, Location), 2) LinkedIn Search String, 3) Jednu 'Cold' poruku (max 300 karaktera) koja poziva na preuzimanje tehničkog izveštaja.",
   "zakljucak_ai": "Sumiraj investicioni potencijal u 2-3 rečenice. Na kraju dodaj 'AuditClaw Score: [X]/100' gde X odražava investicioni potencijal na osnovu lokacije, cene po m², tehničkog stanja i potražnje iz dijaspore.",
@@ -28,8 +28,8 @@ Odgovori ISKLJUČIVO u JSON formatu sa sledećim poljima (bez markdown formatira
   "tekst_email_naslov": "Napiši email subject line (max 60 karaktera) koji privlači pažnju. Primer: 'Belgrade Investment: 8% ROI + Full Technical Report'",
   "tekst_email_telo": "Napiši email telo (max 500 karaktera) sa strukturom: 1) Problem/prilika, 2) Rešenje (AuditClaw audit), 3) Poziv na akciju. Može biti na engleskom.",
   "tekst_whatsapp": "Napiši WhatsApp poruku (max 250 karaktera) na srpskom jeziku. Direktan, prijateljski ton. Pozovi na razgovor ili preuzimanje izveštaja.",
-  "naslov_ai": "Napiši atraktivan naslov za web stranu (max 80 karaktera) na srpskom jeziku. Fokusiraj se na lokaciju, tip nekretnine i ključne prednosti. Primer: 'Luksuzni stan na Vračaru - 120m² sa garažom i pogledom'",
-  "opis_ai": "Napiši kratak opis za web stranu (max 200 karaktera) na srpskom jeziku. Istakni ključne karakteristike i prednosti nekretnine. Primer: 'Renoviran trosoban stan u mirnoj ulici, blizina parka i škole. Centralno grejanje, lift, parking. Idealno za porodicu ili investiciju.'"
+  "naslov_ai": "Napiši inženjerski precizan H1 naslov (max 80 karaktera) na srpskom jeziku. Format: '[Lokacija] [Tip] - [Kvadratura]m² [Ključna Tehnička Prednost]'. Izbegavaj marketinške pridev poput 'luksuzni', 'prelep'. Fokus na tehničku superiornost i investicionu vrednost. Primer: 'Gundulićev Venac Dupleks - 104m² Termička Izvrsnost'",
+  "opis_ai": "Napiši profesionalan marketing opis (max 200 karaktera) na srpskom jeziku u AuditClaw stilu. Fokusiraj se na tehničke specifikacije, izolaciju, instalacije, energetsku efikasnost. Bez agencijskih fraza ('prelep pogled', 'jedinstvena prilika'). Direktan, autoritativan ton. Primer: 'Dupli spoljni zidovi + kamena vuna, predimenzionisani radijatori, inverter klime. Tehnička izvrsnost za zahtevne investitore iz dijaspore.'"
 }`
 
 interface PonudaData {
