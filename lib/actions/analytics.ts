@@ -282,3 +282,123 @@ export async function getKampanjeForFilter() {
 
   return data || []
 }
+
+export type PeriodType = 'daily' | 'weekly' | 'monthly'
+
+export interface PeriodData {
+  period: string
+  label: string
+  pageViews: number
+  uniqueVisitors: number
+  whatsappClicks: number
+  photoClicks: number
+}
+
+export async function getAnalyticsByPeriod(
+  periodType: PeriodType,
+  filter?: { ponudaId?: number; dateFrom?: string; dateTo?: string }
+): Promise<PeriodData[]> {
+  const supabase = await createClient()
+
+  let query = supabase.from('webstrana_log').select('*')
+
+  if (filter?.ponudaId) {
+    query = query.eq('ponuda_id', filter.ponudaId)
+  }
+  if (filter?.dateFrom) {
+    query = query.gte('created_at', filter.dateFrom)
+  }
+  if (filter?.dateTo) {
+    query = query.lte('created_at', filter.dateTo)
+  }
+
+  const { data: logs, error } = await query
+
+  if (error || !logs) {
+    console.error('Error fetching logs for period:', error)
+    return []
+  }
+
+  const periodMap: Record<string, {
+    pageViews: number
+    sessions: Set<string>
+    whatsappClicks: number
+    photoClicks: number
+  }> = {}
+
+  logs.forEach(log => {
+    const date = new Date(log.created_at)
+    let periodKey: string
+    let label: string
+
+    if (periodType === 'daily') {
+      periodKey = date.toISOString().split('T')[0]
+      label = date.toLocaleDateString('sr-RS', { day: '2-digit', month: '2-digit' })
+    } else if (periodType === 'weekly') {
+      const weekStart = new Date(date)
+      weekStart.setDate(date.getDate() - date.getDay() + 1)
+      periodKey = weekStart.toISOString().split('T')[0]
+      const weekEnd = new Date(weekStart)
+      weekEnd.setDate(weekStart.getDate() + 6)
+      label = `${weekStart.toLocaleDateString('sr-RS', { day: '2-digit', month: '2-digit' })} - ${weekEnd.toLocaleDateString('sr-RS', { day: '2-digit', month: '2-digit' })}`
+    } else {
+      periodKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      label = date.toLocaleDateString('sr-RS', { month: 'long', year: 'numeric' })
+    }
+
+    if (!periodMap[periodKey]) {
+      periodMap[periodKey] = {
+        pageViews: 0,
+        sessions: new Set(),
+        whatsappClicks: 0,
+        photoClicks: 0
+      }
+    }
+
+    periodMap[periodKey].sessions.add(log.session_id)
+
+    if (log.event_type === 'page_view') {
+      periodMap[periodKey].pageViews++
+    } else if (log.event_type === 'whatsapp_click') {
+      periodMap[periodKey].whatsappClicks++
+    } else if (log.event_type === 'photo_click') {
+      periodMap[periodKey].photoClicks++
+    }
+  })
+
+  const monthNames: Record<string, string> = {
+    'january': 'Januar', 'february': 'Februar', 'march': 'Mart',
+    'april': 'April', 'may': 'Maj', 'june': 'Jun',
+    'july': 'Jul', 'august': 'Avgust', 'september': 'Septembar',
+    'october': 'Oktobar', 'november': 'Novembar', 'december': 'Decembar'
+  }
+
+  return Object.entries(periodMap)
+    .map(([period, data]) => {
+      let displayLabel = period
+      if (periodType === 'daily') {
+        const d = new Date(period)
+        displayLabel = d.toLocaleDateString('sr-RS', { day: '2-digit', month: '2-digit' })
+      } else if (periodType === 'weekly') {
+        const weekStart = new Date(period)
+        const weekEnd = new Date(weekStart)
+        weekEnd.setDate(weekStart.getDate() + 6)
+        displayLabel = `${weekStart.toLocaleDateString('sr-RS', { day: '2-digit', month: '2-digit' })} - ${weekEnd.toLocaleDateString('sr-RS', { day: '2-digit', month: '2-digit' })}`
+      } else {
+        const [year, month] = period.split('-')
+        const d = new Date(parseInt(year), parseInt(month) - 1, 1)
+        const monthName = d.toLocaleDateString('en-US', { month: 'long' }).toLowerCase()
+        displayLabel = `${monthNames[monthName] || monthName} ${year}`
+      }
+
+      return {
+        period,
+        label: displayLabel,
+        pageViews: data.pageViews,
+        uniqueVisitors: data.sessions.size,
+        whatsappClicks: data.whatsappClicks,
+        photoClicks: data.photoClicks
+      }
+    })
+    .sort((a, b) => a.period.localeCompare(b.period))
+}
