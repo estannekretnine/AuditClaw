@@ -292,21 +292,21 @@ export default function AnalitikaPage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-3 md:p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-8 gap-3">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <BarChart3 className="w-8 h-8 text-amber-500" />
+          <h1 className="text-xl md:text-3xl font-bold flex items-center gap-2 md:gap-3">
+            <BarChart3 className="w-6 h-6 md:w-8 md:h-8 text-amber-500" />
             Analiza Logovanja
           </h1>
-          <p className="text-slate-200 mt-1">Praćenje aktivnosti korisnika na web stranicama</p>
+          <p className="text-slate-200 mt-1 text-sm md:text-base hidden md:block">Praćenje aktivnosti korisnika na web stranicama</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           <button
             onClick={exportToPDF}
             disabled={exportingPDF}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+            className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 rounded-lg transition-colors text-sm md:text-base ${
               exportingPDF 
                 ? 'bg-slate-600 text-slate-300 cursor-wait' 
                 : 'bg-slate-700 text-white hover:bg-slate-600'
@@ -317,7 +317,7 @@ export default function AnalitikaPage() {
             ) : (
               <Download className="w-4 h-4" />
             )}
-            {exportingPDF ? 'Generisanje...' : 'PDF'}
+            <span className="hidden md:inline">{exportingPDF ? 'Generisanje...' : 'PDF'}</span>
           </button>
         <button
           onClick={() => {
@@ -328,35 +328,36 @@ export default function AnalitikaPage() {
             else if (activeTab === 'pozivi') loadPozivi()
             else if (activeTab === 'logovi') loadRecentLogs()
           }}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-black rounded-lg hover:bg-amber-400 transition-colors"
+            className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 bg-amber-500 text-black rounded-lg hover:bg-amber-400 transition-colors text-sm md:text-base"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Osveži
+            <span className="hidden md:inline">Osveži</span>
           </button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-slate-600 pb-4 flex-wrap">
+      <div className="flex gap-1.5 md:gap-2 mb-4 md:mb-6 border-b border-slate-600 pb-3 md:pb-4 flex-wrap overflow-x-auto">
         {[
-          { id: 'izvestaj', label: 'Sintetički Izveštaj', icon: BarChart3 },
-          { id: 'pregled', label: 'Pregled', icon: TrendingUp },
-          { id: 'grafikoni', label: 'Grafikoni', icon: BarChart3 },
-          { id: 'ponude', label: 'Po Ponudama', icon: Eye },
-          { id: 'pozivi', label: 'Pozivi (WhatsApp)', icon: Phone },
-          { id: 'logovi', label: 'Svi Logovi', icon: Clock }
+          { id: 'izvestaj', label: 'Izveštaj', labelFull: 'Sintetički Izveštaj', icon: BarChart3 },
+          { id: 'pregled', label: 'Pregled', labelFull: 'Pregled', icon: TrendingUp },
+          { id: 'grafikoni', label: 'Grafici', labelFull: 'Grafikoni', icon: BarChart3 },
+          { id: 'ponude', label: 'Ponude', labelFull: 'Po Ponudama', icon: Eye },
+          { id: 'pozivi', label: 'Pozivi', labelFull: 'Pozivi (WhatsApp)', icon: Phone },
+          { id: 'logovi', label: 'Logovi', labelFull: 'Svi Logovi', icon: Clock }
         ].map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as TabType)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${
+            className={`flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1.5 md:py-2 rounded-lg transition-colors font-medium text-xs md:text-sm whitespace-nowrap ${
               activeTab === tab.id
                 ? 'bg-amber-400 text-black'
                 : 'bg-slate-700 text-white hover:bg-slate-600'
             }`}
           >
-            <tab.icon className="w-4 h-4" />
-            {tab.label}
+            <tab.icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            <span className="md:hidden">{tab.label}</span>
+            <span className="hidden md:inline">{tab.labelFull}</span>
           </button>
         ))}
       </div>
@@ -485,121 +486,134 @@ export default function AnalitikaPage() {
         <>
           {/* Sintetički Izveštaj Tab */}
           {activeTab === 'izvestaj' && syntheticReport && (
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
               {/* Glavni KPI */}
-              <div className="bg-slate-800 border border-slate-600 rounded-2xl p-6 shadow-lg">
-                <h2 className="text-xl font-bold mb-6 text-amber-300">Ključni pokazatelji</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  <div className="text-center p-4 bg-slate-700/50 rounded-xl">
-                    <div className="text-5xl font-bold text-white">{syntheticReport.totalVisits.toLocaleString()}</div>
-                    <div className="text-slate-200 mt-2 font-medium">Ukupno poseta</div>
-                    <div className="text-sm text-slate-300 mt-1">(sa ponavljanjem)</div>
+              <div className="bg-slate-800 border border-slate-600 rounded-xl md:rounded-2xl p-3 md:p-6 shadow-lg">
+                <h2 className="text-base md:text-xl font-bold mb-3 md:mb-6 text-amber-300">Ključni pokazatelji</h2>
+                <div className="grid grid-cols-2 gap-2 md:gap-6">
+                  <div className="text-center p-2 md:p-4 bg-slate-700/50 rounded-lg md:rounded-xl">
+                    <div className="text-2xl md:text-5xl font-bold text-white">{syntheticReport.totalVisits.toLocaleString()}</div>
+                    <div className="text-slate-200 mt-1 md:mt-2 text-xs md:text-base font-medium">Ukupno poseta</div>
+                    <div className="text-xs text-slate-300 hidden md:block mt-1">(sa ponavljanjem)</div>
                   </div>
-                  <div className="text-center p-4 bg-slate-700/50 rounded-xl">
-                    <div className="text-5xl font-bold text-blue-300">{syntheticReport.uniqueVisitors.toLocaleString()}</div>
-                    <div className="text-slate-200 mt-2 font-medium">Jedinstvenih posetilaca</div>
-                    <div className="text-sm text-slate-300 mt-1">(bez ponavljanja)</div>
+                  <div className="text-center p-2 md:p-4 bg-slate-700/50 rounded-lg md:rounded-xl">
+                    <div className="text-2xl md:text-5xl font-bold text-blue-300">{syntheticReport.uniqueVisitors.toLocaleString()}</div>
+                    <div className="text-slate-200 mt-1 md:mt-2 text-xs md:text-base font-medium">Jedinstveni</div>
+                    <div className="text-xs text-slate-300 hidden md:block mt-1">(bez ponavljanja)</div>
                   </div>
-                  <div className="text-center p-4 bg-slate-700/50 rounded-xl">
-                    <div className="text-5xl font-bold text-green-300">{syntheticReport.totalWhatsappClicks.toLocaleString()}</div>
-                    <div className="text-slate-200 mt-2 font-medium">WhatsApp poruka</div>
-                    <div className="text-sm text-green-300 mt-1 font-semibold">{syntheticReport.whatsappConversionRate}% konverzija</div>
+                  <div className="text-center p-2 md:p-4 bg-slate-700/50 rounded-lg md:rounded-xl">
+                    <div className="text-2xl md:text-5xl font-bold text-green-300">{syntheticReport.totalWhatsappClicks.toLocaleString()}</div>
+                    <div className="text-slate-200 mt-1 md:mt-2 text-xs md:text-base font-medium">WhatsApp</div>
+                    <div className="text-xs text-green-300 font-semibold">{syntheticReport.whatsappConversionRate}%</div>
                   </div>
-                  <div className="text-center p-4 bg-slate-700/50 rounded-xl">
-                    <div className="text-5xl font-bold text-purple-300">{syntheticReport.totalPozivi.toLocaleString()}</div>
-                    <div className="text-slate-200 mt-2 font-medium">Poziva/Kontakata</div>
-                    <div className="text-sm text-purple-300 mt-1 font-semibold">{syntheticReport.poziviConversionRate}% konverzija</div>
+                  <div className="text-center p-2 md:p-4 bg-slate-700/50 rounded-lg md:rounded-xl">
+                    <div className="text-2xl md:text-5xl font-bold text-purple-300">{syntheticReport.totalPozivi.toLocaleString()}</div>
+                    <div className="text-slate-200 mt-1 md:mt-2 text-xs md:text-base font-medium">Pozivi</div>
+                    <div className="text-xs text-purple-300 font-semibold">{syntheticReport.poziviConversionRate}%</div>
                   </div>
                 </div>
               </div>
 
               {/* Dodatne metrike */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-slate-800 border border-slate-600 rounded-xl p-5 shadow-lg">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-100 font-medium">Povratni posetioci</span>
-                    <span className="text-2xl font-bold text-cyan-300">{syntheticReport.returningVisitors}</span>
+              <div className="grid grid-cols-3 gap-2 md:gap-4">
+                <div className="bg-slate-800 border border-slate-600 rounded-lg md:rounded-xl p-2 md:p-5 shadow-lg">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <span className="text-slate-100 text-xs md:text-base font-medium">Povratni</span>
+                    <span className="text-lg md:text-2xl font-bold text-cyan-300">{syntheticReport.returningVisitors}</span>
                   </div>
-                  <div className="text-sm text-slate-300 mt-1">Posetili više od jednom</div>
+                  <div className="text-xs text-slate-300 mt-1 hidden md:block">Posetili više od jednom</div>
                 </div>
-                <div className="bg-slate-800 border border-slate-600 rounded-xl p-5 shadow-lg">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-100 font-medium">Prosek poseta po korisniku</span>
-                    <span className="text-2xl font-bold text-amber-300">{syntheticReport.avgVisitsPerUser}</span>
+                <div className="bg-slate-800 border border-slate-600 rounded-lg md:rounded-xl p-2 md:p-5 shadow-lg">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <span className="text-slate-100 text-xs md:text-base font-medium">Prosek</span>
+                    <span className="text-lg md:text-2xl font-bold text-amber-300">{syntheticReport.avgVisitsPerUser}</span>
                   </div>
-                  <div className="text-sm text-slate-300 mt-1">Ukupno / Jedinstveni</div>
+                  <div className="text-xs text-slate-300 mt-1 hidden md:block">Poseta po korisniku</div>
                 </div>
-                <div className="bg-slate-800 border border-slate-600 rounded-xl p-5 shadow-lg">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-100 font-medium">Prosečno vreme na stranici</span>
-                    <span className="text-2xl font-bold text-pink-300">{formatDuration(syntheticReport.avgTimeOnPage)}</span>
+                <div className="bg-slate-800 border border-slate-600 rounded-lg md:rounded-xl p-2 md:p-5 shadow-lg">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <span className="text-slate-100 text-xs md:text-base font-medium">Vreme</span>
+                    <span className="text-lg md:text-2xl font-bold text-pink-300">{formatDuration(syntheticReport.avgTimeOnPage)}</span>
                   </div>
-                  <div className="text-sm text-slate-300 mt-1">Prosek svih sesija</div>
+                  <div className="text-xs text-slate-300 mt-1 hidden md:block">Prosek sesije</div>
                 </div>
               </div>
 
               {/* Poređenje perioda */}
-              <div className="bg-slate-800 border border-slate-600 rounded-xl p-6 shadow-lg">
-                <h3 className="text-lg font-semibold mb-4 text-white">Poređenje: Poslednjih 30 dana vs. Prethodnih 30 dana</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="text-center p-4 bg-slate-700/70 rounded-lg">
-                    <div className="text-slate-200 text-sm mb-2 font-medium">Posete</div>
-                    <div className="flex items-center justify-center gap-4">
-                      <div>
-                        <div className="text-2xl font-bold text-white">{syntheticReport.periodComparison.currentPeriod.visits}</div>
-                        <div className="text-xs text-slate-300">Trenutno</div>
-                      </div>
-                      <div className={`text-lg font-bold ${syntheticReport.periodComparison.changePercent.visits >= 0 ? 'text-green-300' : 'text-red-300'}`}>
-                        {syntheticReport.periodComparison.changePercent.visits >= 0 ? '+' : ''}{syntheticReport.periodComparison.changePercent.visits}%
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-slate-400">{syntheticReport.periodComparison.previousPeriod.visits}</div>
-                        <div className="text-xs text-slate-300">Prethodno</div>
-                      </div>
+              <div className="bg-slate-800 border border-slate-600 rounded-lg md:rounded-xl p-3 md:p-6 shadow-lg">
+                <h3 className="text-sm md:text-lg font-semibold mb-3 md:mb-4 text-white">30 dana: Trenutno vs. Prethodno</h3>
+                <div className="grid grid-cols-3 gap-2 md:gap-6">
+                  <div className="text-center p-2 md:p-4 bg-slate-700/70 rounded-lg">
+                    <div className="text-slate-200 text-xs md:text-sm mb-1 md:mb-2 font-medium">Posete</div>
+                    <div className="text-lg md:text-2xl font-bold text-white">{syntheticReport.periodComparison.currentPeriod.visits}</div>
+                    <div className={`text-xs md:text-lg font-bold ${syntheticReport.periodComparison.changePercent.visits >= 0 ? 'text-green-300' : 'text-red-300'}`}>
+                      {syntheticReport.periodComparison.changePercent.visits >= 0 ? '+' : ''}{syntheticReport.periodComparison.changePercent.visits}%
                     </div>
+                    <div className="text-xs text-slate-400 hidden md:block">{syntheticReport.periodComparison.previousPeriod.visits} pre</div>
                   </div>
-                  <div className="text-center p-4 bg-slate-700/70 rounded-lg">
-                    <div className="text-slate-200 text-sm mb-2 font-medium">WhatsApp</div>
-                    <div className="flex items-center justify-center gap-4">
-                      <div>
-                        <div className="text-2xl font-bold text-green-300">{syntheticReport.periodComparison.currentPeriod.whatsapp}</div>
-                        <div className="text-xs text-slate-300">Trenutno</div>
-                      </div>
-                      <div className={`text-lg font-bold ${syntheticReport.periodComparison.changePercent.whatsapp >= 0 ? 'text-green-300' : 'text-red-300'}`}>
-                        {syntheticReport.periodComparison.changePercent.whatsapp >= 0 ? '+' : ''}{syntheticReport.periodComparison.changePercent.whatsapp}%
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-slate-400">{syntheticReport.periodComparison.previousPeriod.whatsapp}</div>
-                        <div className="text-xs text-slate-300">Prethodno</div>
-                      </div>
+                  <div className="text-center p-2 md:p-4 bg-slate-700/70 rounded-lg">
+                    <div className="text-slate-200 text-xs md:text-sm mb-1 md:mb-2 font-medium">WhatsApp</div>
+                    <div className="text-lg md:text-2xl font-bold text-green-300">{syntheticReport.periodComparison.currentPeriod.whatsapp}</div>
+                    <div className={`text-xs md:text-lg font-bold ${syntheticReport.periodComparison.changePercent.whatsapp >= 0 ? 'text-green-300' : 'text-red-300'}`}>
+                      {syntheticReport.periodComparison.changePercent.whatsapp >= 0 ? '+' : ''}{syntheticReport.periodComparison.changePercent.whatsapp}%
                     </div>
+                    <div className="text-xs text-slate-400 hidden md:block">{syntheticReport.periodComparison.previousPeriod.whatsapp} pre</div>
                   </div>
-                  <div className="text-center p-4 bg-slate-700/70 rounded-lg">
-                    <div className="text-slate-200 text-sm mb-2 font-medium">Pozivi</div>
-                    <div className="flex items-center justify-center gap-4">
-                      <div>
-                        <div className="text-2xl font-bold text-purple-300">{syntheticReport.periodComparison.currentPeriod.pozivi}</div>
-                        <div className="text-xs text-slate-300">Trenutno</div>
-                      </div>
-                      <div className={`text-lg font-bold ${syntheticReport.periodComparison.changePercent.pozivi >= 0 ? 'text-green-300' : 'text-red-300'}`}>
-                        {syntheticReport.periodComparison.changePercent.pozivi >= 0 ? '+' : ''}{syntheticReport.periodComparison.changePercent.pozivi}%
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-slate-400">{syntheticReport.periodComparison.previousPeriod.pozivi}</div>
-                        <div className="text-xs text-slate-300">Prethodno</div>
-                      </div>
+                  <div className="text-center p-2 md:p-4 bg-slate-700/70 rounded-lg">
+                    <div className="text-slate-200 text-xs md:text-sm mb-1 md:mb-2 font-medium">Pozivi</div>
+                    <div className="text-lg md:text-2xl font-bold text-purple-300">{syntheticReport.periodComparison.currentPeriod.pozivi}</div>
+                    <div className={`text-xs md:text-lg font-bold ${syntheticReport.periodComparison.changePercent.pozivi >= 0 ? 'text-green-300' : 'text-red-300'}`}>
+                      {syntheticReport.periodComparison.changePercent.pozivi >= 0 ? '+' : ''}{syntheticReport.periodComparison.changePercent.pozivi}%
                     </div>
+                    <div className="text-xs text-slate-400 hidden md:block">{syntheticReport.periodComparison.previousPeriod.pozivi} pre</div>
                   </div>
                 </div>
               </div>
 
-              {/* Top ponude sa korelacijama */}
+              {/* Top ponude sa korelacijama - Mobile Cards / Desktop Table */}
               {syntheticReport.topPonude.length > 0 && (
-                <div className="bg-slate-800 border border-slate-600 rounded-xl overflow-hidden shadow-lg">
-                  <div className="p-4 border-b border-slate-600 bg-slate-700/50">
-                    <h3 className="font-semibold text-white">Top ponude - Korelacija poseta i konverzija</h3>
+                <div className="bg-slate-800 border border-slate-600 rounded-lg md:rounded-xl overflow-hidden shadow-lg">
+                  <div className="p-3 md:p-4 border-b border-slate-600 bg-slate-700/50">
+                    <h3 className="font-semibold text-white text-sm md:text-base">Top ponude</h3>
                   </div>
-                  <div className="overflow-x-auto">
+                  {/* Mobile view - Cards */}
+                  <div className="md:hidden divide-y divide-slate-600">
+                    {syntheticReport.topPonude.slice(0, 5).map((p, idx) => (
+                      <div key={p.id} className="p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-amber-300 font-bold">#{idx + 1}</span>
+                          <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                            p.conversionRate >= 10 ? 'bg-green-600/30 text-green-200' :
+                            p.conversionRate >= 5 ? 'bg-amber-600/30 text-amber-200' :
+                            'bg-slate-600/50 text-slate-200'
+                          }`}>
+                            {p.conversionRate}%
+                          </span>
+                        </div>
+                        <div className="text-white text-sm font-medium mb-2 truncate">{p.naslov}</div>
+                        <div className="grid grid-cols-4 gap-1 text-center text-xs">
+                          <div>
+                            <div className="text-white font-bold">{p.visits}</div>
+                            <div className="text-slate-400">Posete</div>
+                          </div>
+                          <div>
+                            <div className="text-blue-300 font-bold">{p.uniqueVisitors}</div>
+                            <div className="text-slate-400">Jedin.</div>
+                          </div>
+                          <div>
+                            <div className="text-green-300 font-bold">{p.whatsappClicks}</div>
+                            <div className="text-slate-400">WA</div>
+                          </div>
+                          <div>
+                            <div className="text-purple-300 font-bold">{p.pozivi}</div>
+                            <div className="text-slate-400">Pozivi</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Desktop view - Table */}
+                  <div className="hidden md:block overflow-x-auto">
                     <table className="w-full">
                       <thead className="bg-slate-700">
                         <tr>
@@ -640,24 +654,28 @@ export default function AnalitikaPage() {
               )}
 
               {/* Po jeziku i zemlji */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
                 {/* Po jeziku */}
                 {syntheticReport.byLanguage.length > 0 && (
-                  <div className="bg-slate-800 border border-slate-600 rounded-xl p-6 shadow-lg">
-                    <h3 className="font-semibold mb-4 text-white flex items-center gap-2">
-                      <Globe className="w-5 h-5 text-cyan-300" />
-                      Konverzija po jeziku
+                  <div className="bg-slate-800 border border-slate-600 rounded-lg md:rounded-xl p-3 md:p-6 shadow-lg">
+                    <h3 className="font-semibold mb-3 md:mb-4 text-white flex items-center gap-2 text-sm md:text-base">
+                      <Globe className="w-4 h-4 md:w-5 md:h-5 text-cyan-300" />
+                      Po jeziku
                     </h3>
-                    <div className="space-y-3">
+                    <div className="space-y-2 md:space-y-3">
                       {syntheticReport.byLanguage.map(item => {
-                        const langNames: Record<string, string> = { sr: 'Srpski', en: 'Engleski', de: 'Nemački', unknown: 'Nepoznat' }
+                        const langNames: Record<string, string> = { sr: 'SR', en: 'EN', de: 'DE', unknown: '?' }
+                        const langNamesFull: Record<string, string> = { sr: 'Srpski', en: 'Engleski', de: 'Nemački', unknown: 'Nepoznat' }
                         return (
-                          <div key={item.language} className="flex items-center justify-between p-3 bg-slate-700/70 rounded-lg">
-                            <span className="text-white font-medium">{langNames[item.language] || item.language}</span>
-                            <div className="flex items-center gap-4">
-                              <span className="text-slate-200">{item.visits} poseta</span>
+                          <div key={item.language} className="flex items-center justify-between p-2 md:p-3 bg-slate-700/70 rounded-lg">
+                            <span className="text-white font-medium text-sm md:text-base">
+                              <span className="md:hidden">{langNames[item.language] || item.language}</span>
+                              <span className="hidden md:inline">{langNamesFull[item.language] || item.language}</span>
+                            </span>
+                            <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm">
+                              <span className="text-slate-200">{item.visits}</span>
                               <span className="text-green-300 font-medium">{item.whatsappClicks} WA</span>
-                              <span className={`px-2 py-1 rounded text-xs font-bold ${
+                              <span className={`px-1.5 md:px-2 py-0.5 md:py-1 rounded text-xs font-bold ${
                                 item.conversionRate >= 10 ? 'bg-green-600/30 text-green-200' : 'bg-slate-600/50 text-slate-200'
                               }`}>
                                 {item.conversionRate}%
@@ -672,18 +690,18 @@ export default function AnalitikaPage() {
 
                 {/* Po zemlji */}
                 {syntheticReport.byCountry.length > 0 && (
-                  <div className="bg-slate-800 border border-slate-600 rounded-xl p-6 shadow-lg">
-                    <h3 className="font-semibold mb-4 text-white flex items-center gap-2">
-                      <MapPin className="w-5 h-5 text-amber-300" />
-                      Pozivi po zemlji
+                  <div className="bg-slate-800 border border-slate-600 rounded-lg md:rounded-xl p-3 md:p-6 shadow-lg">
+                    <h3 className="font-semibold mb-3 md:mb-4 text-white flex items-center gap-2 text-sm md:text-base">
+                      <MapPin className="w-4 h-4 md:w-5 md:h-5 text-amber-300" />
+                      Po zemlji
                     </h3>
-                    <div className="space-y-3">
+                    <div className="space-y-2 md:space-y-3">
                       {syntheticReport.byCountry.map(item => (
-                        <div key={item.country} className="flex items-center justify-between p-3 bg-slate-700/70 rounded-lg">
-                          <span className="text-white font-medium">{item.country}</span>
-                          <div className="flex items-center gap-4">
-                            {item.visits > 0 && <span className="text-slate-200">{item.visits} poseta</span>}
-                            <span className="text-purple-300 font-bold">{item.pozivi} poziva</span>
+                        <div key={item.country} className="flex items-center justify-between p-2 md:p-3 bg-slate-700/70 rounded-lg">
+                          <span className="text-white font-medium text-sm md:text-base truncate max-w-[100px] md:max-w-none">{item.country}</span>
+                          <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm">
+                            {item.visits > 0 && <span className="text-slate-200">{item.visits}</span>}
+                            <span className="text-purple-300 font-bold">{item.pozivi} poz.</span>
                           </div>
                         </div>
                       ))}
