@@ -402,3 +402,213 @@ export async function getAnalyticsByPeriod(
     })
     .sort((a, b) => a.period.localeCompare(b.period))
 }
+
+export interface SyntheticReport {
+  totalVisits: number
+  uniqueVisitors: number
+  returningVisitors: number
+  avgVisitsPerUser: number
+  totalWhatsappClicks: number
+  whatsappConversionRate: number
+  totalPozivi: number
+  poziviConversionRate: number
+  avgTimeOnPage: number
+  topPonude: Array<{
+    id: number
+    naslov: string
+    visits: number
+    uniqueVisitors: number
+    whatsappClicks: number
+    pozivi: number
+    conversionRate: number
+  }>
+  byLanguage: Array<{
+    language: string
+    visits: number
+    whatsappClicks: number
+    conversionRate: number
+  }>
+  byCountry: Array<{
+    country: string
+    visits: number
+    pozivi: number
+  }>
+  periodComparison: {
+    currentPeriod: { visits: number; whatsapp: number; pozivi: number }
+    previousPeriod: { visits: number; whatsapp: number; pozivi: number }
+    changePercent: { visits: number; whatsapp: number; pozivi: number }
+  }
+}
+
+export async function getSyntheticReport(filter?: {
+  dateFrom?: string
+  dateTo?: string
+  ponudaId?: number
+}): Promise<SyntheticReport> {
+  const supabase = await createClient()
+
+  // Fetch all logs
+  let logsQuery = supabase.from('webstrana_log').select('*')
+  if (filter?.ponudaId) logsQuery = logsQuery.eq('ponuda_id', filter.ponudaId)
+  if (filter?.dateFrom) logsQuery = logsQuery.gte('created_at', filter.dateFrom)
+  if (filter?.dateTo) logsQuery = logsQuery.lte('created_at', filter.dateTo)
+  
+  const { data: logs } = await logsQuery
+
+  // Fetch pozivi
+  let poziviQuery = supabase.from('pozivi').select('*')
+  if (filter?.ponudaId) poziviQuery = poziviQuery.eq('ponudaid', filter.ponudaId)
+  if (filter?.dateFrom) poziviQuery = poziviQuery.gte('created_at', filter.dateFrom)
+  if (filter?.dateTo) poziviQuery = poziviQuery.lte('created_at', filter.dateTo)
+  
+  const { data: pozivi } = await poziviQuery
+
+  // Fetch ponude
+  const { data: ponude } = await supabase.from('ponuda').select('id, naslovoglasa').eq('stsaktivan', true)
+
+  const safeLog = logs || []
+  const safePozivi = pozivi || []
+  const safePonude = ponude || []
+
+  // Basic metrics
+  const pageViews = safeLog.filter(l => l.event_type === 'page_view')
+  const totalVisits = pageViews.length
+  const allSessions = new Set(safeLog.map(l => l.session_id))
+  const uniqueVisitors = allSessions.size
+  
+  // Sessions with multiple page views (returning)
+  const sessionVisits: Record<string, number> = {}
+  pageViews.forEach(l => {
+    sessionVisits[l.session_id] = (sessionVisits[l.session_id] || 0) + 1
+  })
+  const returningVisitors = Object.values(sessionVisits).filter(v => v > 1).length
+  const avgVisitsPerUser = uniqueVisitors > 0 ? Math.round((totalVisits / uniqueVisitors) * 100) / 100 : 0
+
+  // WhatsApp metrics
+  const whatsappClicks = safeLog.filter(l => l.event_type === 'whatsapp_click')
+  const totalWhatsappClicks = whatsappClicks.length
+  const whatsappConversionRate = uniqueVisitors > 0 ? Math.round((totalWhatsappClicks / uniqueVisitors) * 10000) / 100 : 0
+
+  // Pozivi metrics
+  const totalPozivi = safePozivi.length
+  const poziviConversionRate = uniqueVisitors > 0 ? Math.round((totalPozivi / uniqueVisitors) * 10000) / 100 : 0
+
+  // Average time on page
+  const pageLeaves = safeLog.filter(l => l.event_type === 'page_leave' && l.time_spent_seconds)
+  const avgTimeOnPage = pageLeaves.length > 0 
+    ? Math.round(pageLeaves.reduce((sum, l) => sum + (l.time_spent_seconds || 0), 0) / pageLeaves.length)
+    : 0
+
+  // Top ponude with correlations
+  const topPonude = safePonude.map(p => {
+    const ponudaLogs = safeLog.filter(l => l.ponuda_id === p.id)
+    const ponudaPageViews = ponudaLogs.filter(l => l.event_type === 'page_view')
+    const ponudaUnique = new Set(ponudaLogs.map(l => l.session_id)).size
+    const ponudaWhatsapp = ponudaLogs.filter(l => l.event_type === 'whatsapp_click').length
+    const ponudaPozivi = safePozivi.filter(pz => pz.ponudaid === p.id).length
+    
+    return {
+      id: p.id,
+      naslov: p.naslovoglasa || `Ponuda #${p.id}`,
+      visits: ponudaPageViews.length,
+      uniqueVisitors: ponudaUnique,
+      whatsappClicks: ponudaWhatsapp,
+      pozivi: ponudaPozivi,
+      conversionRate: ponudaUnique > 0 ? Math.round(((ponudaWhatsapp + ponudaPozivi) / ponudaUnique) * 10000) / 100 : 0
+    }
+  }).filter(p => p.visits > 0).sort((a, b) => b.visits - a.visits).slice(0, 10)
+
+  // By language
+  const languageMap: Record<string, { visits: number; whatsapp: number }> = {}
+  pageViews.forEach(l => {
+    const lang = l.language || 'unknown'
+    if (!languageMap[lang]) languageMap[lang] = { visits: 0, whatsapp: 0 }
+    languageMap[lang].visits++
+  })
+  whatsappClicks.forEach(l => {
+    const lang = l.language || 'unknown'
+    if (!languageMap[lang]) languageMap[lang] = { visits: 0, whatsapp: 0 }
+    languageMap[lang].whatsapp++
+  })
+  const byLanguage = Object.entries(languageMap).map(([language, data]) => ({
+    language,
+    visits: data.visits,
+    whatsappClicks: data.whatsapp,
+    conversionRate: data.visits > 0 ? Math.round((data.whatsapp / data.visits) * 10000) / 100 : 0
+  })).sort((a, b) => b.visits - a.visits)
+
+  // By country (from pozivi)
+  const countryMap: Record<string, { visits: number; pozivi: number }> = {}
+  safePozivi.forEach(p => {
+    const country = p.drzava || 'Nepoznato'
+    if (!countryMap[country]) countryMap[country] = { visits: 0, pozivi: 0 }
+    countryMap[country].pozivi++
+  })
+  // Add country from logs if available
+  safeLog.filter(l => l.country).forEach(l => {
+    const country = l.country || 'Nepoznato'
+    if (!countryMap[country]) countryMap[country] = { visits: 0, pozivi: 0 }
+    if (l.event_type === 'page_view') countryMap[country].visits++
+  })
+  const byCountry = Object.entries(countryMap).map(([country, data]) => ({
+    country,
+    visits: data.visits,
+    pozivi: data.pozivi
+  })).sort((a, b) => b.pozivi - a.pozivi).slice(0, 10)
+
+  // Period comparison (last 30 days vs previous 30 days)
+  const now = new Date()
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
+
+  const currentLogs = safeLog.filter(l => new Date(l.created_at) >= thirtyDaysAgo)
+  const previousLogs = safeLog.filter(l => {
+    const d = new Date(l.created_at)
+    return d >= sixtyDaysAgo && d < thirtyDaysAgo
+  })
+  const currentPozivi = safePozivi.filter(p => new Date(p.created_at) >= thirtyDaysAgo)
+  const previousPozivi = safePozivi.filter(p => {
+    const d = new Date(p.created_at)
+    return d >= sixtyDaysAgo && d < thirtyDaysAgo
+  })
+
+  const currentPeriod = {
+    visits: currentLogs.filter(l => l.event_type === 'page_view').length,
+    whatsapp: currentLogs.filter(l => l.event_type === 'whatsapp_click').length,
+    pozivi: currentPozivi.length
+  }
+  const previousPeriod = {
+    visits: previousLogs.filter(l => l.event_type === 'page_view').length,
+    whatsapp: previousLogs.filter(l => l.event_type === 'whatsapp_click').length,
+    pozivi: previousPozivi.length
+  }
+
+  const calcChange = (curr: number, prev: number) => {
+    if (prev === 0) return curr > 0 ? 100 : 0
+    return Math.round(((curr - prev) / prev) * 100)
+  }
+
+  return {
+    totalVisits,
+    uniqueVisitors,
+    returningVisitors,
+    avgVisitsPerUser,
+    totalWhatsappClicks,
+    whatsappConversionRate,
+    totalPozivi,
+    poziviConversionRate,
+    avgTimeOnPage,
+    topPonude,
+    byLanguage,
+    byCountry,
+    periodComparison: {
+      currentPeriod,
+      previousPeriod,
+      changePercent: {
+        visits: calcChange(currentPeriod.visits, previousPeriod.visits),
+        whatsapp: calcChange(currentPeriod.whatsapp, previousPeriod.whatsapp),
+        pozivi: calcChange(currentPeriod.pozivi, previousPeriod.pozivi)
+      }
+    }
+  }
+}

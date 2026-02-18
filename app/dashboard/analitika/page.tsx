@@ -16,8 +16,10 @@ import {
   getPonudeForFilter,
   getKampanjeForFilter,
   getAnalyticsByPeriod,
+  getSyntheticReport,
   type PeriodType,
-  type PeriodData
+  type PeriodData,
+  type SyntheticReport
 } from '@/lib/actions/analytics'
 import type { 
   AnalyticsSummary, 
@@ -27,7 +29,7 @@ import type {
   Language
 } from '@/lib/types/webstrana-log'
 
-type TabType = 'pregled' | 'grafikoni' | 'ponude' | 'pozivi' | 'logovi'
+type TabType = 'izvestaj' | 'pregled' | 'grafikoni' | 'ponude' | 'pozivi' | 'logovi'
 
 const CHART_COLORS = {
   primary: '#f59e0b',
@@ -38,7 +40,7 @@ const CHART_COLORS = {
 }
 
 export default function AnalitikaPage() {
-  const [activeTab, setActiveTab] = useState<TabType>('pregled')
+  const [activeTab, setActiveTab] = useState<TabType>('izvestaj')
   const [loading, setLoading] = useState(true)
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null)
   const [ponudeAnalytics, setPonudeAnalytics] = useState<PonudaAnalytics[]>([])
@@ -50,6 +52,7 @@ export default function AnalitikaPage() {
   const [periodData, setPeriodData] = useState<PeriodData[]>([])
   const [selectedPeriodType, setSelectedPeriodType] = useState<PeriodType>('daily')
   const [selectedMetric, setSelectedMetric] = useState<'pageViews' | 'uniqueVisitors' | 'whatsappClicks'>('pageViews')
+  const [syntheticReport, setSyntheticReport] = useState<SyntheticReport | null>(null)
   const reportRef = useRef<HTMLDivElement>(null)
 
   // Filteri
@@ -66,7 +69,9 @@ export default function AnalitikaPage() {
   }, [])
 
   useEffect(() => {
-    if (activeTab === 'pregled') {
+    if (activeTab === 'izvestaj') {
+      loadSyntheticReport()
+    } else if (activeTab === 'pregled') {
       loadSummary()
     } else if (activeTab === 'grafikoni') {
       loadPeriodData()
@@ -90,7 +95,7 @@ export default function AnalitikaPage() {
       setKorisnici(korisniciData)
       setPonudeFilter(ponudeData)
       setKampanjeFilter(kampanjeData)
-      await loadSummary()
+      await loadSyntheticReport()
     } finally {
       setLoading(false)
     }
@@ -156,6 +161,20 @@ export default function AnalitikaPage() {
         dateTo: dateTo || undefined
       })
       setPeriodData(data)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadSyntheticReport = async () => {
+    setLoading(true)
+    try {
+      const data = await getSyntheticReport({
+        ponudaId: selectedPonuda,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined
+      })
+      setSyntheticReport(data)
     } finally {
       setLoading(false)
     }
@@ -281,14 +300,15 @@ export default function AnalitikaPage() {
             <Download className="w-4 h-4" />
             PDF
           </button>
-          <button
-            onClick={() => {
-              if (activeTab === 'pregled') loadSummary()
-              else if (activeTab === 'grafikoni') loadPeriodData()
-              else if (activeTab === 'ponude') loadPonudeAnalytics()
-              else if (activeTab === 'pozivi') loadPozivi()
-              else if (activeTab === 'logovi') loadRecentLogs()
-            }}
+        <button
+          onClick={() => {
+            if (activeTab === 'izvestaj') loadSyntheticReport()
+            else if (activeTab === 'pregled') loadSummary()
+            else if (activeTab === 'grafikoni') loadPeriodData()
+            else if (activeTab === 'ponude') loadPonudeAnalytics()
+            else if (activeTab === 'pozivi') loadPozivi()
+            else if (activeTab === 'logovi') loadRecentLogs()
+          }}
             className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-black rounded-lg hover:bg-amber-400 transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -300,6 +320,7 @@ export default function AnalitikaPage() {
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-gray-700 pb-4 flex-wrap">
         {[
+          { id: 'izvestaj', label: 'Sintetički Izveštaj', icon: BarChart3 },
           { id: 'pregled', label: 'Pregled', icon: TrendingUp },
           { id: 'grafikoni', label: 'Grafikoni', icon: BarChart3 },
           { id: 'ponude', label: 'Po Ponudama', icon: Eye },
@@ -443,6 +464,217 @@ export default function AnalitikaPage() {
         </div>
       ) : (
         <>
+          {/* Sintetički Izveštaj Tab */}
+          {activeTab === 'izvestaj' && syntheticReport && (
+            <div className="space-y-6">
+              {/* Glavni KPI */}
+              <div className="bg-gradient-to-r from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6">
+                <h2 className="text-xl font-bold mb-6 text-amber-400">Ključni pokazatelji</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div className="text-center">
+                    <div className="text-5xl font-bold text-white">{syntheticReport.totalVisits.toLocaleString()}</div>
+                    <div className="text-gray-300 mt-2">Ukupno poseta</div>
+                    <div className="text-xs text-gray-400 mt-1">(sa ponavljanjem)</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-5xl font-bold text-blue-400">{syntheticReport.uniqueVisitors.toLocaleString()}</div>
+                    <div className="text-gray-300 mt-2">Jedinstvenih posetilaca</div>
+                    <div className="text-xs text-gray-400 mt-1">(bez ponavljanja)</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-5xl font-bold text-green-400">{syntheticReport.totalWhatsappClicks.toLocaleString()}</div>
+                    <div className="text-gray-300 mt-2">WhatsApp poruka</div>
+                    <div className="text-xs text-green-300 mt-1">{syntheticReport.whatsappConversionRate}% konverzija</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-5xl font-bold text-purple-400">{syntheticReport.totalPozivi.toLocaleString()}</div>
+                    <div className="text-gray-300 mt-2">Poziva/Kontakata</div>
+                    <div className="text-xs text-purple-300 mt-1">{syntheticReport.poziviConversionRate}% konverzija</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dodatne metrike */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-gray-800 border border-gray-700 rounded-xl p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-300">Povratni posetioci</span>
+                    <span className="text-2xl font-bold text-cyan-400">{syntheticReport.returningVisitors}</span>
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">Posetili više od jednom</div>
+                </div>
+                <div className="bg-gray-800 border border-gray-700 rounded-xl p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-300">Prosek poseta po korisniku</span>
+                    <span className="text-2xl font-bold text-amber-400">{syntheticReport.avgVisitsPerUser}</span>
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">Ukupno / Jedinstveni</div>
+                </div>
+                <div className="bg-gray-800 border border-gray-700 rounded-xl p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-300">Prosečno vreme na stranici</span>
+                    <span className="text-2xl font-bold text-pink-400">{formatDuration(syntheticReport.avgTimeOnPage)}</span>
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">Prosek svih sesija</div>
+                </div>
+              </div>
+
+              {/* Poređenje perioda */}
+              <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+                <h3 className="text-lg font-semibold mb-4 text-white">Poređenje: Poslednjih 30 dana vs. Prethodnih 30 dana</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center p-4 bg-gray-700/30 rounded-lg">
+                    <div className="text-gray-400 text-sm mb-2">Posete</div>
+                    <div className="flex items-center justify-center gap-4">
+                      <div>
+                        <div className="text-2xl font-bold text-white">{syntheticReport.periodComparison.currentPeriod.visits}</div>
+                        <div className="text-xs text-gray-400">Trenutno</div>
+                      </div>
+                      <div className={`text-lg font-bold ${syntheticReport.periodComparison.changePercent.visits >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {syntheticReport.periodComparison.changePercent.visits >= 0 ? '+' : ''}{syntheticReport.periodComparison.changePercent.visits}%
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-gray-500">{syntheticReport.periodComparison.previousPeriod.visits}</div>
+                        <div className="text-xs text-gray-400">Prethodno</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-center p-4 bg-gray-700/30 rounded-lg">
+                    <div className="text-gray-400 text-sm mb-2">WhatsApp</div>
+                    <div className="flex items-center justify-center gap-4">
+                      <div>
+                        <div className="text-2xl font-bold text-green-400">{syntheticReport.periodComparison.currentPeriod.whatsapp}</div>
+                        <div className="text-xs text-gray-400">Trenutno</div>
+                      </div>
+                      <div className={`text-lg font-bold ${syntheticReport.periodComparison.changePercent.whatsapp >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {syntheticReport.periodComparison.changePercent.whatsapp >= 0 ? '+' : ''}{syntheticReport.periodComparison.changePercent.whatsapp}%
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-gray-500">{syntheticReport.periodComparison.previousPeriod.whatsapp}</div>
+                        <div className="text-xs text-gray-400">Prethodno</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-center p-4 bg-gray-700/30 rounded-lg">
+                    <div className="text-gray-400 text-sm mb-2">Pozivi</div>
+                    <div className="flex items-center justify-center gap-4">
+                      <div>
+                        <div className="text-2xl font-bold text-purple-400">{syntheticReport.periodComparison.currentPeriod.pozivi}</div>
+                        <div className="text-xs text-gray-400">Trenutno</div>
+                      </div>
+                      <div className={`text-lg font-bold ${syntheticReport.periodComparison.changePercent.pozivi >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {syntheticReport.periodComparison.changePercent.pozivi >= 0 ? '+' : ''}{syntheticReport.periodComparison.changePercent.pozivi}%
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-gray-500">{syntheticReport.periodComparison.previousPeriod.pozivi}</div>
+                        <div className="text-xs text-gray-400">Prethodno</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top ponude sa korelacijama */}
+              {syntheticReport.topPonude.length > 0 && (
+                <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
+                  <div className="p-4 border-b border-gray-700">
+                    <h3 className="font-semibold text-white">Top ponude - Korelacija poseta i konverzija</h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-700/50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-200">Ponuda</th>
+                          <th className="px-4 py-3 text-right text-sm font-semibold text-gray-200">Posete</th>
+                          <th className="px-4 py-3 text-right text-sm font-semibold text-gray-200">Jedinstveni</th>
+                          <th className="px-4 py-3 text-right text-sm font-semibold text-gray-200">WhatsApp</th>
+                          <th className="px-4 py-3 text-right text-sm font-semibold text-gray-200">Pozivi</th>
+                          <th className="px-4 py-3 text-right text-sm font-semibold text-gray-200">Konverzija</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-700/50">
+                        {syntheticReport.topPonude.map((p, idx) => (
+                          <tr key={p.id} className="hover:bg-gray-700/30">
+                            <td className="px-4 py-3">
+                              <span className="text-amber-400 font-bold mr-2">#{idx + 1}</span>
+                              <span className="text-white">{p.naslov}</span>
+                            </td>
+                            <td className="px-4 py-3 text-right text-white font-semibold">{p.visits}</td>
+                            <td className="px-4 py-3 text-right text-blue-400">{p.uniqueVisitors}</td>
+                            <td className="px-4 py-3 text-right text-green-400">{p.whatsappClicks}</td>
+                            <td className="px-4 py-3 text-right text-purple-400">{p.pozivi}</td>
+                            <td className="px-4 py-3 text-right">
+                              <span className={`px-2 py-1 rounded text-sm font-bold ${
+                                p.conversionRate >= 10 ? 'bg-green-500/20 text-green-400' :
+                                p.conversionRate >= 5 ? 'bg-amber-500/20 text-amber-400' :
+                                'bg-gray-500/20 text-gray-400'
+                              }`}>
+                                {p.conversionRate}%
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Po jeziku i zemlji */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Po jeziku */}
+                {syntheticReport.byLanguage.length > 0 && (
+                  <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+                    <h3 className="font-semibold mb-4 text-white flex items-center gap-2">
+                      <Globe className="w-5 h-5 text-cyan-400" />
+                      Konverzija po jeziku
+                    </h3>
+                    <div className="space-y-3">
+                      {syntheticReport.byLanguage.map(item => {
+                        const langNames: Record<string, string> = { sr: 'Srpski', en: 'Engleski', de: 'Nemački', unknown: 'Nepoznat' }
+                        return (
+                          <div key={item.language} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+                            <span className="text-white font-medium">{langNames[item.language] || item.language}</span>
+                            <div className="flex items-center gap-4">
+                              <span className="text-gray-300">{item.visits} poseta</span>
+                              <span className="text-green-400">{item.whatsappClicks} WA</span>
+                              <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                item.conversionRate >= 10 ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
+                              }`}>
+                                {item.conversionRate}%
+                              </span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Po zemlji */}
+                {syntheticReport.byCountry.length > 0 && (
+                  <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+                    <h3 className="font-semibold mb-4 text-white flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-amber-400" />
+                      Pozivi po zemlji
+                    </h3>
+                    <div className="space-y-3">
+                      {syntheticReport.byCountry.map(item => (
+                        <div key={item.country} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+                          <span className="text-white font-medium">{item.country}</span>
+                          <div className="flex items-center gap-4">
+                            {item.visits > 0 && <span className="text-gray-300">{item.visits} poseta</span>}
+                            <span className="text-purple-400 font-bold">{item.pozivi} poziva</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Pregled Tab */}
           {activeTab === 'pregled' && summary && (
             <div className="space-y-6">
