@@ -170,9 +170,9 @@ export default function AnalitikaPage() {
     const opt = {
       margin: 10,
       filename: `analitika-${new Date().toISOString().split('T')[0]}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
+      image: { type: 'jpeg' as const, quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'landscape' as const }
     }
     
     html2pdf().set(opt).from(element).save()
@@ -271,7 +271,7 @@ export default function AnalitikaPage() {
             <BarChart3 className="w-8 h-8 text-amber-500" />
             Analiza Logovanja
           </h1>
-          <p className="text-gray-400 mt-1">Praćenje aktivnosti korisnika na web stranicama</p>
+          <p className="text-gray-300 mt-1">Praćenje aktivnosti korisnika na web stranicama</p>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -336,7 +336,7 @@ export default function AnalitikaPage() {
           <div className="mt-4 p-4 bg-gray-800 rounded-xl grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {/* Ponuda filter */}
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Ponuda</label>
+              <label className="block text-sm text-gray-200 mb-1 font-medium">Ponuda</label>
               <select
                 value={selectedPonuda || ''}
                 onChange={(e) => setSelectedPonuda(e.target.value ? parseInt(e.target.value) : undefined)}
@@ -353,7 +353,7 @@ export default function AnalitikaPage() {
 
             {/* Kampanja filter */}
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Kampanja</label>
+              <label className="block text-sm text-gray-200 mb-1 font-medium">Kampanja</label>
               <select
                 value={selectedKampanja || ''}
                 onChange={(e) => setSelectedKampanja(e.target.value ? parseInt(e.target.value) : undefined)}
@@ -370,7 +370,7 @@ export default function AnalitikaPage() {
 
             {/* Korisnik filter */}
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Korisnik</label>
+              <label className="block text-sm text-gray-200 mb-1 font-medium">Korisnik</label>
               <select
                 value={selectedKorisnik || ''}
                 onChange={(e) => setSelectedKorisnik(e.target.value ? parseInt(e.target.value) : undefined)}
@@ -387,7 +387,7 @@ export default function AnalitikaPage() {
 
             {/* Date from */}
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Od datuma</label>
+              <label className="block text-sm text-gray-200 mb-1 font-medium">Od datuma</label>
               <input
                 type="date"
                 value={dateFrom}
@@ -398,7 +398,7 @@ export default function AnalitikaPage() {
 
             {/* Date to */}
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Do datuma</label>
+              <label className="block text-sm text-gray-200 mb-1 font-medium">Do datuma</label>
               <input
                 type="date"
                 value={dateTo}
@@ -409,7 +409,7 @@ export default function AnalitikaPage() {
 
             {/* Language filter */}
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Jezik</label>
+              <label className="block text-sm text-gray-200 mb-1 font-medium">Jezik</label>
               <select
                 value={selectedLanguage || ''}
                 onChange={(e) => setSelectedLanguage(e.target.value as Language || undefined)}
@@ -555,7 +555,7 @@ export default function AnalitikaPage() {
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="text-center">
                             <div className="text-2xl font-bold">{summary.languageDistribution.reduce((sum, l) => sum + l.count, 0)}</div>
-                            <div className="text-xs text-gray-400">Ukupno</div>
+                            <div className="text-xs text-gray-300">Ukupno</div>
                           </div>
                         </div>
                       </div>
@@ -574,7 +574,7 @@ export default function AnalitikaPage() {
                                   <span className="text-gray-300">{langNames[item.language] || item.language.toUpperCase()}</span>
                                   <span className="font-semibold">{percentage}%</span>
                                 </div>
-                                <div className="text-xs text-gray-500">{item.count} poseta</div>
+                                <div className="text-xs text-gray-400">{item.count} poseta</div>
                               </div>
                             </div>
                           )
@@ -582,7 +582,7 @@ export default function AnalitikaPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-center h-40 text-gray-500">
+                    <div className="flex items-center justify-center h-40 text-gray-400">
                       Nema podataka o jezicima
                     </div>
                   )}
@@ -598,7 +598,7 @@ export default function AnalitikaPage() {
                   </h3>
                   <div className="relative h-64">
                     {/* Y-axis labels */}
-                    <div className="absolute left-0 top-0 bottom-8 w-12 flex flex-col justify-between text-xs text-gray-500">
+                    <div className="absolute left-0 top-0 bottom-8 w-12 flex flex-col justify-between text-xs text-gray-300">
                       <span>{Math.max(...summary.dailyViews.map(d => d.count))}</span>
                       <span>{Math.round(Math.max(...summary.dailyViews.map(d => d.count)) / 2)}</span>
                       <span>0</span>
@@ -628,7 +628,7 @@ export default function AnalitikaPage() {
                             </div>
                             {/* X-axis label - show every 5th */}
                             {idx % 5 === 0 && (
-                              <div className="absolute -bottom-6 text-xs text-gray-500 whitespace-nowrap">
+                              <div className="absolute -bottom-6 text-xs text-gray-300 whitespace-nowrap">
                                 {new Date(day.date).toLocaleDateString('sr-RS', { day: '2-digit', month: '2-digit' })}
                               </div>
                             )}
@@ -649,7 +649,7 @@ export default function AnalitikaPage() {
               <div className="bg-gray-800/50 backdrop-blur border border-gray-700 rounded-2xl p-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-gray-400">Period:</span>
+                    <span className="text-gray-200 font-medium">Period:</span>
                     <div className="flex bg-gray-700 rounded-lg p-1">
                       {[
                         { id: 'daily', label: 'Dnevno' },
@@ -671,7 +671,7 @@ export default function AnalitikaPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-gray-400">Metrika:</span>
+                    <span className="text-gray-200 font-medium">Metrika:</span>
                     <div className="flex bg-gray-700 rounded-lg p-1">
                       {[
                         { id: 'pageViews', label: 'Pregledi', color: 'amber' },
@@ -710,7 +710,7 @@ export default function AnalitikaPage() {
                     return (
                       <div key={metric} className={`bg-gradient-to-br ${colors[metric].bg} border ${colors[metric].border} rounded-2xl p-5`}>
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-gray-400 text-sm">{getMetricLabel(metric)}</span>
+                          <span className="text-gray-200 text-sm font-medium">{getMetricLabel(metric)}</span>
                           <div className={`flex items-center gap-1 text-sm ${
                             trend.direction === 'up' ? 'text-green-400' : 
                             trend.direction === 'down' ? 'text-red-400' : 'text-gray-400'
@@ -722,7 +722,7 @@ export default function AnalitikaPage() {
                           </div>
                         </div>
                         <div className={`text-3xl font-bold ${colors[metric].text}`}>{total.toLocaleString()}</div>
-                        <div className="text-xs text-gray-500 mt-1">Ukupno u periodu</div>
+                        <div className="text-xs text-gray-300 mt-1">Ukupno u periodu</div>
                       </div>
                     )
                   })}
@@ -739,7 +739,7 @@ export default function AnalitikaPage() {
                 {periodData.length > 0 ? (
                   <div className="relative h-80">
                     {/* Y-axis */}
-                    <div className="absolute left-0 top-0 bottom-12 w-16 flex flex-col justify-between text-xs text-gray-500 text-right pr-2">
+                    <div className="absolute left-0 top-0 bottom-12 w-16 flex flex-col justify-between text-xs text-gray-300 text-right pr-2">
                       <span>{Math.max(...periodData.map(d => d[selectedMetric])).toLocaleString()}</span>
                       <span>{Math.round(Math.max(...periodData.map(d => d[selectedMetric])) * 0.75).toLocaleString()}</span>
                       <span>{Math.round(Math.max(...periodData.map(d => d[selectedMetric])) * 0.5).toLocaleString()}</span>
@@ -778,7 +778,7 @@ export default function AnalitikaPage() {
                                 <div className="text-gray-400 mt-1">{item.label}</div>
                               </div>
                               {/* X-axis label */}
-                              <div className="absolute -bottom-10 text-xs text-gray-500 whitespace-nowrap transform -rotate-45 origin-top-left">
+                              <div className="absolute -bottom-10 text-xs text-gray-300 whitespace-nowrap transform -rotate-45 origin-top-left">
                                 {item.label.length > 10 ? item.label.substring(0, 10) + '...' : item.label}
                               </div>
                             </div>
@@ -788,7 +788,7 @@ export default function AnalitikaPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-64 text-gray-500">
+                  <div className="flex items-center justify-center h-64 text-gray-400">
                     Nema podataka za izabrani period
                   </div>
                 )}
@@ -881,7 +881,7 @@ export default function AnalitikaPage() {
                     <tr key={item.ponudaId} className="hover:bg-gray-700/50">
                       <td className="px-4 py-3">
                         <div className="font-medium">{item.ponudaNaslov}</div>
-                        <div className="text-sm text-gray-400">ID: {item.ponudaId}</div>
+                        <div className="text-sm text-gray-300">ID: {item.ponudaId}</div>
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded">
@@ -901,14 +901,14 @@ export default function AnalitikaPage() {
                           {item.whatsappClicks}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center text-sm text-gray-400">
+                      <td className="px-4 py-3 text-center text-sm text-gray-300">
                         {item.lastVisit ? formatDate(item.lastVisit) : '-'}
                       </td>
                     </tr>
                   ))}
                   {ponudeAnalytics.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
                         Nema podataka o posećenosti ponuda
                       </td>
                     </tr>
@@ -951,7 +951,7 @@ export default function AnalitikaPage() {
                             </span>
                           )}
                           {poziv.email && (
-                            <span className="flex items-center gap-1 text-sm text-gray-400">
+                            <span className="flex items-center gap-1 text-sm text-gray-300">
                               <Mail className="w-3 h-3" />
                               {poziv.email}
                             </span>
@@ -988,7 +988,7 @@ export default function AnalitikaPage() {
                   ))}
                   {pozivi.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
                         Nema zabeleženih poziva
                       </td>
                     </tr>
@@ -1033,10 +1033,10 @@ export default function AnalitikaPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-500 font-mono">
+                      <td className="px-4 py-3 text-xs text-gray-300 font-mono">
                         {log.session_id.substring(0, 12)}...
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-400">
+                      <td className="px-4 py-3 text-sm text-gray-300">
                         {log.time_spent_seconds && `${formatDuration(log.time_spent_seconds)}`}
                         {log.event_data && typeof log.event_data === 'object' && (
                           <span className="text-xs">
@@ -1048,7 +1048,7 @@ export default function AnalitikaPage() {
                   ))}
                   {recentLogs.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
                         Nema zabeleženih logova
                       </td>
                     </tr>
