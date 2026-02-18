@@ -363,30 +363,30 @@ export default function AnalitikaPage() {
       </div>
 
       {/* Filters */}
-      <div className="mb-6">
+      <div className="mb-4 md:mb-6">
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors font-medium"
+          className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors font-medium text-sm md:text-base"
         >
-          <Filter className="w-4 h-4" />
+          <Filter className="w-3.5 h-3.5 md:w-4 md:h-4" />
           Filteri
-          {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          {showFilters ? <ChevronUp className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <ChevronDown className="w-3.5 h-3.5 md:w-4 md:h-4" />}
         </button>
 
         {showFilters && (
-          <div className="mt-4 p-4 bg-slate-800 border border-slate-600 rounded-xl grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="mt-3 md:mt-4 p-3 md:p-4 bg-slate-800 border border-slate-600 rounded-xl grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-4">
             {/* Ponuda filter */}
             <div>
-              <label className="block text-sm text-white mb-1 font-medium">Ponuda</label>
+              <label className="block text-xs md:text-sm text-white mb-1 font-medium">Ponuda</label>
               <select
                 value={selectedPonuda || ''}
                 onChange={(e) => setSelectedPonuda(e.target.value ? parseInt(e.target.value) : undefined)}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-500 rounded-lg text-white"
+                className="w-full px-2 md:px-3 py-1.5 md:py-2 bg-slate-700 border border-slate-500 rounded-lg text-white text-xs md:text-sm"
               >
-                <option value="">Sve ponude</option>
+                <option value="">Sve</option>
                 {ponudeFilter.map(p => (
                   <option key={p.id} value={p.id}>
-                    {p.naslovoglasa || `Ponuda #${p.id}`}
+                    {p.naslovoglasa || `#${p.id}`}
                   </option>
                 ))}
               </select>
@@ -394,16 +394,16 @@ export default function AnalitikaPage() {
 
             {/* Kampanja filter */}
             <div>
-              <label className="block text-sm text-white mb-1 font-medium">Kampanja</label>
+              <label className="block text-xs md:text-sm text-white mb-1 font-medium">Kampanja</label>
               <select
                 value={selectedKampanja || ''}
                 onChange={(e) => setSelectedKampanja(e.target.value ? parseInt(e.target.value) : undefined)}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-500 rounded-lg text-white"
+                className="w-full px-2 md:px-3 py-1.5 md:py-2 bg-slate-700 border border-slate-500 rounded-lg text-white text-xs md:text-sm"
               >
-                <option value="">Sve kampanje</option>
+                <option value="">Sve</option>
                 {kampanjeFilter.map(k => (
                   <option key={k.id} value={k.id}>
-                    {k.kodkampanje || `Kampanja #${k.id}`}
+                    {k.kodkampanje || `#${k.id}`}
                   </option>
                 ))}
               </select>
@@ -411,16 +411,16 @@ export default function AnalitikaPage() {
 
             {/* Korisnik filter */}
             <div>
-              <label className="block text-sm text-white mb-1 font-medium">Korisnik</label>
+              <label className="block text-xs md:text-sm text-white mb-1 font-medium">Korisnik</label>
               <select
                 value={selectedKorisnik || ''}
                 onChange={(e) => setSelectedKorisnik(e.target.value ? parseInt(e.target.value) : undefined)}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-500 rounded-lg text-white"
+                className="w-full px-2 md:px-3 py-1.5 md:py-2 bg-slate-700 border border-slate-500 rounded-lg text-white text-xs md:text-sm"
               >
-                <option value="">Svi korisnici</option>
+                <option value="">Svi</option>
                 {korisnici.map(k => (
                   <option key={k.id} value={k.id}>
-                    {k.naziv} ({k.stsstatus})
+                    {k.naziv}
                   </option>
                 ))}
               </select>
@@ -428,48 +428,48 @@ export default function AnalitikaPage() {
 
             {/* Date from */}
             <div>
-              <label className="block text-sm text-white mb-1 font-medium">Od datuma</label>
+              <label className="block text-xs md:text-sm text-white mb-1 font-medium">Od</label>
               <input
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-500 rounded-lg text-white"
+                className="w-full px-2 md:px-3 py-1.5 md:py-2 bg-slate-700 border border-slate-500 rounded-lg text-white text-xs md:text-sm"
               />
             </div>
 
             {/* Date to */}
             <div>
-              <label className="block text-sm text-white mb-1 font-medium">Do datuma</label>
+              <label className="block text-xs md:text-sm text-white mb-1 font-medium">Do</label>
               <input
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-500 rounded-lg text-white"
+                className="w-full px-2 md:px-3 py-1.5 md:py-2 bg-slate-700 border border-slate-500 rounded-lg text-white text-xs md:text-sm"
               />
             </div>
 
             {/* Language filter */}
             <div>
-              <label className="block text-sm text-white mb-1 font-medium">Jezik</label>
+              <label className="block text-xs md:text-sm text-white mb-1 font-medium">Jezik</label>
               <select
                 value={selectedLanguage || ''}
                 onChange={(e) => setSelectedLanguage(e.target.value as Language || undefined)}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-500 rounded-lg text-white"
+                className="w-full px-2 md:px-3 py-1.5 md:py-2 bg-slate-700 border border-slate-500 rounded-lg text-white text-xs md:text-sm"
               >
-                <option value="">Svi jezici</option>
-                <option value="sr">Srpski</option>
-                <option value="en">Engleski</option>
-                <option value="de">Nemački</option>
+                <option value="">Svi</option>
+                <option value="sr">SR</option>
+                <option value="en">EN</option>
+                <option value="de">DE</option>
               </select>
             </div>
 
             {/* Reset button */}
-            <div className="flex items-end">
+            <div className="flex items-end col-span-2 md:col-span-1">
               <button
                 onClick={resetFilters}
-                className="w-full px-3 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition-colors font-medium"
+                className="w-full px-2 md:px-3 py-1.5 md:py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition-colors font-medium text-xs md:text-sm"
               >
-                Resetuj filtere
+                Reset
               </button>
             </div>
           </div>
@@ -714,65 +714,65 @@ export default function AnalitikaPage() {
 
           {/* Pregled Tab */}
           {activeTab === 'pregled' && summary && (
-            <div className="space-y-6">
-              {/* Summary Cards - Modern Design */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border border-blue-500/30 rounded-2xl p-5 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full -mr-10 -mt-10" />
-                  <Eye className="w-8 h-8 text-blue-400 mb-3" />
-                  <div className="text-4xl font-bold text-white">{summary.totalPageViews.toLocaleString()}</div>
-                  <div className="text-blue-300 text-sm mt-1">Pregledi stranica</div>
+            <div className="space-y-4 md:space-y-6">
+              {/* Summary Cards - Mobile optimized */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-4">
+                <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border border-blue-500/30 rounded-xl md:rounded-2xl p-3 md:p-5 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-12 md:w-20 h-12 md:h-20 bg-blue-500/10 rounded-full -mr-6 md:-mr-10 -mt-6 md:-mt-10" />
+                  <Eye className="w-5 h-5 md:w-8 md:h-8 text-blue-400 mb-1 md:mb-3" />
+                  <div className="text-xl md:text-4xl font-bold text-white">{summary.totalPageViews.toLocaleString()}</div>
+                  <div className="text-blue-300 text-xs md:text-sm mt-1">Pregledi</div>
                 </div>
 
-                <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border border-purple-500/30 rounded-2xl p-5 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full -mr-10 -mt-10" />
-                  <Users className="w-8 h-8 text-purple-400 mb-3" />
-                  <div className="text-4xl font-bold text-white">{summary.uniqueSessions.toLocaleString()}</div>
-                  <div className="text-purple-300 text-sm mt-1">Jedinstveni posetioci</div>
+                <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border border-purple-500/30 rounded-xl md:rounded-2xl p-3 md:p-5 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-12 md:w-20 h-12 md:h-20 bg-purple-500/10 rounded-full -mr-6 md:-mr-10 -mt-6 md:-mt-10" />
+                  <Users className="w-5 h-5 md:w-8 md:h-8 text-purple-400 mb-1 md:mb-3" />
+                  <div className="text-xl md:text-4xl font-bold text-white">{summary.uniqueSessions.toLocaleString()}</div>
+                  <div className="text-purple-300 text-xs md:text-sm mt-1">Posetioci</div>
                 </div>
 
-                <div className="bg-gradient-to-br from-cyan-600/20 to-cyan-800/20 border border-cyan-500/30 rounded-2xl p-5 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-cyan-500/10 rounded-full -mr-10 -mt-10" />
-                  <Clock className="w-8 h-8 text-cyan-400 mb-3" />
-                  <div className="text-4xl font-bold text-white">{formatDuration(summary.avgTimeSpent)}</div>
-                  <div className="text-cyan-300 text-sm mt-1">Prosečno vreme</div>
+                <div className="bg-gradient-to-br from-cyan-600/20 to-cyan-800/20 border border-cyan-500/30 rounded-xl md:rounded-2xl p-3 md:p-5 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-12 md:w-20 h-12 md:h-20 bg-cyan-500/10 rounded-full -mr-6 md:-mr-10 -mt-6 md:-mt-10" />
+                  <Clock className="w-5 h-5 md:w-8 md:h-8 text-cyan-400 mb-1 md:mb-3" />
+                  <div className="text-xl md:text-4xl font-bold text-white">{formatDuration(summary.avgTimeSpent)}</div>
+                  <div className="text-cyan-300 text-xs md:text-sm mt-1">Vreme</div>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-600/20 to-green-800/20 border border-green-500/30 rounded-2xl p-5 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/10 rounded-full -mr-10 -mt-10" />
-                  <MessageCircle className="w-8 h-8 text-green-400 mb-3" />
-                  <div className="text-4xl font-bold text-white">{summary.totalWhatsappClicks.toLocaleString()}</div>
-                  <div className="text-green-300 text-sm mt-1">WhatsApp klikovi</div>
+                <div className="bg-gradient-to-br from-green-600/20 to-green-800/20 border border-green-500/30 rounded-xl md:rounded-2xl p-3 md:p-5 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-12 md:w-20 h-12 md:h-20 bg-green-500/10 rounded-full -mr-6 md:-mr-10 -mt-6 md:-mt-10" />
+                  <MessageCircle className="w-5 h-5 md:w-8 md:h-8 text-green-400 mb-1 md:mb-3" />
+                  <div className="text-xl md:text-4xl font-bold text-white">{summary.totalWhatsappClicks.toLocaleString()}</div>
+                  <div className="text-green-300 text-xs md:text-sm mt-1">WhatsApp</div>
                 </div>
 
-                <div className="bg-gradient-to-br from-amber-600/20 to-amber-800/20 border border-amber-500/30 rounded-2xl p-5 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-amber-500/10 rounded-full -mr-10 -mt-10" />
-                  <Image className="w-8 h-8 text-amber-400 mb-3" />
-                  <div className="text-4xl font-bold text-white">{summary.totalPhotoClicks.toLocaleString()}</div>
-                  <div className="text-amber-300 text-sm mt-1">Foto klikovi</div>
+                <div className="bg-gradient-to-br from-amber-600/20 to-amber-800/20 border border-amber-500/30 rounded-xl md:rounded-2xl p-3 md:p-5 relative overflow-hidden col-span-2 md:col-span-1">
+                  <div className="absolute top-0 right-0 w-12 md:w-20 h-12 md:h-20 bg-amber-500/10 rounded-full -mr-6 md:-mr-10 -mt-6 md:-mt-10" />
+                  <Image className="w-5 h-5 md:w-8 md:h-8 text-amber-400 mb-1 md:mb-3" />
+                  <div className="text-xl md:text-4xl font-bold text-white">{summary.totalPhotoClicks.toLocaleString()}</div>
+                  <div className="text-amber-300 text-xs md:text-sm mt-1">Foto klikovi</div>
                 </div>
               </div>
 
               {/* Charts Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                 {/* Event Distribution - Horizontal Bar Chart */}
-                <div className="bg-slate-800 border border-slate-600 rounded-2xl p-6 shadow-lg">
-                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2 text-white">
-                    <BarChart3 className="w-5 h-5 text-amber-300" />
-                    Distribucija događaja
+                <div className="bg-slate-800 border border-slate-600 rounded-xl md:rounded-2xl p-3 md:p-6 shadow-lg">
+                  <h3 className="text-sm md:text-lg font-semibold mb-3 md:mb-6 flex items-center gap-2 text-white">
+                    <BarChart3 className="w-4 h-4 md:w-5 md:h-5 text-amber-300" />
+                    Događaji
                   </h3>
-                  <div className="space-y-4">
-                    {summary.eventDistribution.sort((a, b) => b.count - a.count).map((item, idx) => {
+                  <div className="space-y-2 md:space-y-4">
+                    {summary.eventDistribution.sort((a, b) => b.count - a.count).slice(0, 6).map((item, idx) => {
                       const maxCount = Math.max(...summary.eventDistribution.map(e => e.count))
                       const percentage = maxCount > 0 ? (item.count / maxCount) * 100 : 0
-                      const colors = ['bg-amber-400', 'bg-blue-400', 'bg-green-400', 'bg-purple-400', 'bg-cyan-400', 'bg-red-400', 'bg-pink-400', 'bg-indigo-400']
+                      const colors = ['bg-amber-400', 'bg-blue-400', 'bg-green-400', 'bg-purple-400', 'bg-cyan-400', 'bg-red-400']
                       return (
                         <div key={item.event_type}>
                           <div className="flex justify-between items-center mb-1">
-                            <span className="text-sm text-slate-100">{getEventTypeLabel(item.event_type)}</span>
-                            <span className="text-sm font-semibold text-white">{item.count}</span>
+                            <span className="text-xs md:text-sm text-slate-100 truncate max-w-[120px] md:max-w-none">{getEventTypeLabel(item.event_type)}</span>
+                            <span className="text-xs md:text-sm font-semibold text-white ml-2">{item.count}</span>
                           </div>
-                          <div className="h-3 bg-slate-600 rounded-full overflow-hidden">
+                          <div className="h-2 md:h-3 bg-slate-600 rounded-full overflow-hidden">
                             <div 
                               className={`h-full ${colors[idx % colors.length]} rounded-full transition-all duration-500`}
                               style={{ width: `${percentage}%` }}
@@ -785,15 +785,15 @@ export default function AnalitikaPage() {
                 </div>
 
                 {/* Language Distribution - Pie Chart Style */}
-                <div className="bg-slate-800 border border-slate-600 rounded-2xl p-6 shadow-lg">
-                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2 text-white">
-                    <Globe className="w-5 h-5 text-cyan-300" />
-                    Distribucija po jeziku
+                <div className="bg-slate-800 border border-slate-600 rounded-xl md:rounded-2xl p-3 md:p-6 shadow-lg">
+                  <h3 className="text-sm md:text-lg font-semibold mb-3 md:mb-6 flex items-center gap-2 text-white">
+                    <Globe className="w-4 h-4 md:w-5 md:h-5 text-cyan-300" />
+                    Po jeziku
                   </h3>
                   {summary.languageDistribution.length > 0 ? (
-                    <div className="flex items-center gap-8">
+                    <div className="flex items-center gap-4 md:gap-8">
                       {/* Donut Chart */}
-                      <div className="relative w-40 h-40">
+                      <div className="relative w-24 h-24 md:w-40 md:h-40 flex-shrink-0">
                         <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                           {(() => {
                             const total = summary.languageDistribution.reduce((sum, l) => sum + l.count, 0)
@@ -823,27 +823,31 @@ export default function AnalitikaPage() {
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="text-center">
-                            <div className="text-2xl font-bold text-white">{summary.languageDistribution.reduce((sum, l) => sum + l.count, 0)}</div>
-                            <div className="text-xs text-slate-200">Ukupno</div>
+                            <div className="text-lg md:text-2xl font-bold text-white">{summary.languageDistribution.reduce((sum, l) => sum + l.count, 0)}</div>
+                            <div className="text-xs text-slate-200 hidden md:block">Ukupno</div>
                           </div>
                         </div>
                       </div>
                       {/* Legend */}
-                      <div className="flex-1 space-y-3">
+                      <div className="flex-1 space-y-2 md:space-y-3">
                         {summary.languageDistribution.map((item, idx) => {
                           const total = summary.languageDistribution.reduce((sum, l) => sum + l.count, 0)
                           const percentage = total > 0 ? Math.round((item.count / total) * 100) : 0
                           const colors = ['bg-blue-400', 'bg-green-400', 'bg-amber-400']
                           const langNames: Record<string, string> = { sr: 'Srpski', en: 'Engleski', de: 'Nemački' }
+                          const langNamesShort: Record<string, string> = { sr: 'SR', en: 'EN', de: 'DE' }
                           return (
-                            <div key={item.language} className="flex items-center gap-3">
-                              <div className={`w-4 h-4 rounded ${colors[idx % colors.length]}`} />
+                            <div key={item.language} className="flex items-center gap-2 md:gap-3">
+                              <div className={`w-3 h-3 md:w-4 md:h-4 rounded ${colors[idx % colors.length]}`} />
                               <div className="flex-1">
                                 <div className="flex justify-between">
-                                  <span className="text-slate-100">{langNames[item.language] || item.language.toUpperCase()}</span>
-                                  <span className="font-semibold text-white">{percentage}%</span>
+                                  <span className="text-slate-100 text-xs md:text-base">
+                                    <span className="md:hidden">{langNamesShort[item.language] || item.language.toUpperCase()}</span>
+                                    <span className="hidden md:inline">{langNames[item.language] || item.language.toUpperCase()}</span>
+                                  </span>
+                                  <span className="font-semibold text-white text-xs md:text-base">{percentage}%</span>
                                 </div>
-                                <div className="text-xs text-slate-300">{item.count} poseta</div>
+                                <div className="text-xs text-slate-300 hidden md:block">{item.count} poseta</div>
                               </div>
                             </div>
                           )
@@ -860,44 +864,46 @@ export default function AnalitikaPage() {
 
               {/* Daily Views - Area Chart Style */}
               {summary.dailyViews.length > 0 && (
-                <div className="bg-slate-800 border border-slate-600 rounded-2xl p-6 shadow-lg">
-                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2 text-white">
-                    <Calendar className="w-5 h-5 text-amber-300" />
-                    Dnevni pregledi (poslednjih 30 dana)
+                <div className="bg-slate-800 border border-slate-600 rounded-xl md:rounded-2xl p-3 md:p-6 shadow-lg">
+                  <h3 className="text-sm md:text-lg font-semibold mb-3 md:mb-6 flex items-center gap-2 text-white">
+                    <Calendar className="w-4 h-4 md:w-5 md:h-5 text-amber-300" />
+                    <span className="hidden md:inline">Dnevni pregledi (poslednjih 30 dana)</span>
+                    <span className="md:hidden">Dnevni pregledi</span>
                   </h3>
-                  <div className="relative h-64">
+                  <div className="relative h-40 md:h-64">
                     {/* Y-axis labels */}
-                    <div className="absolute left-0 top-0 bottom-8 w-12 flex flex-col justify-between text-xs text-slate-200">
+                    <div className="absolute left-0 top-0 bottom-6 md:bottom-8 w-8 md:w-12 flex flex-col justify-between text-xs text-slate-200">
                       <span>{Math.max(...summary.dailyViews.map(d => d.count))}</span>
-                      <span>{Math.round(Math.max(...summary.dailyViews.map(d => d.count)) / 2)}</span>
+                      <span className="hidden md:block">{Math.round(Math.max(...summary.dailyViews.map(d => d.count)) / 2)}</span>
                       <span>0</span>
                     </div>
                     {/* Chart area */}
-                    <div className="ml-14 h-full flex items-end gap-1 pb-8 relative">
+                    <div className="ml-10 md:ml-14 h-full flex items-end gap-px md:gap-1 pb-6 md:pb-8 relative">
                       {/* Grid lines */}
-                      <div className="absolute inset-0 bottom-8 flex flex-col justify-between pointer-events-none">
+                      <div className="absolute inset-0 bottom-6 md:bottom-8 flex flex-col justify-between pointer-events-none">
                         <div className="border-b border-slate-600/50" />
                         <div className="border-b border-slate-600/50" />
-                        <div className="border-b border-slate-600/50" />
+                        <div className="border-b border-slate-600/50 hidden md:block" />
                       </div>
-                      {/* Bars */}
-                      {summary.dailyViews.slice(-30).map((day, idx) => {
+                      {/* Bars - show last 15 on mobile, 30 on desktop */}
+                      {summary.dailyViews.slice(-30).map((day, idx, arr) => {
+                        const showOnMobile = idx >= arr.length - 15
                         const maxCount = Math.max(...summary.dailyViews.map(d => d.count))
                         const height = maxCount > 0 ? (day.count / maxCount) * 100 : 0
                         return (
-                          <div key={day.date} className="flex-1 flex flex-col items-center group relative">
+                          <div key={day.date} className={`flex-1 flex flex-col items-center group relative ${showOnMobile ? '' : 'hidden md:flex'}`}>
                             <div 
                               className="w-full bg-gradient-to-t from-amber-600 to-amber-400 rounded-t hover:from-amber-500 hover:to-amber-300 transition-all cursor-pointer"
                               style={{ height: `${Math.max(2, height)}%` }}
                             />
                             {/* Tooltip */}
-                            <div className="absolute bottom-full mb-2 bg-slate-900 border border-slate-500 px-3 py-2 rounded-lg text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none shadow-lg">
-                              <div className="font-semibold text-amber-300">{day.count} pregleda</div>
-                              <div className="text-slate-200">{new Date(day.date).toLocaleDateString('sr-RS', { day: '2-digit', month: 'short' })}</div>
+                            <div className="absolute bottom-full mb-2 bg-slate-900 border border-slate-500 px-2 md:px-3 py-1 md:py-2 rounded-lg text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none shadow-lg">
+                              <div className="font-semibold text-amber-300">{day.count}</div>
+                              <div className="text-slate-200">{new Date(day.date).toLocaleDateString('sr-RS', { day: '2-digit', month: '2-digit' })}</div>
                             </div>
-                            {/* X-axis label - show every 5th */}
-                            {idx % 5 === 0 && (
-                              <div className="absolute -bottom-6 text-xs text-slate-200 whitespace-nowrap">
+                            {/* X-axis label - show every 5th on desktop, every 3rd on mobile */}
+                            {((showOnMobile && (arr.length - 15 + arr.slice(-15).indexOf(day)) % 3 === 0) || (!showOnMobile && idx % 5 === 0)) && (
+                              <div className="absolute -bottom-5 md:-bottom-6 text-xs text-slate-200 whitespace-nowrap hidden md:block">
                                 {new Date(day.date).toLocaleDateString('sr-RS', { day: '2-digit', month: '2-digit' })}
                               </div>
                             )}
@@ -913,39 +919,40 @@ export default function AnalitikaPage() {
 
           {/* Grafikoni Tab */}
           {activeTab === 'grafikoni' && (
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
               {/* Period Type Selector */}
-              <div className="bg-slate-800 border border-slate-600 rounded-2xl p-6 shadow-lg">
-                <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="bg-slate-800 border border-slate-600 rounded-xl md:rounded-2xl p-3 md:p-6 shadow-lg">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-white font-medium">Period:</span>
+                    <span className="text-white font-medium text-sm md:text-base">Period:</span>
                     <div className="flex bg-slate-700 rounded-lg p-1">
                       {[
-                        { id: 'daily', label: 'Dnevno' },
-                        { id: 'weekly', label: 'Nedeljno' },
-                        { id: 'monthly', label: 'Mesečno' }
+                        { id: 'daily', label: 'Dan', labelFull: 'Dnevno' },
+                        { id: 'weekly', label: 'Ned', labelFull: 'Nedeljno' },
+                        { id: 'monthly', label: 'Mes', labelFull: 'Mesečno' }
                       ].map(period => (
                         <button
                           key={period.id}
                           onClick={() => setSelectedPeriodType(period.id as PeriodType)}
-                          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                          className={`px-2 md:px-4 py-1.5 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors ${
                             selectedPeriodType === period.id
                               ? 'bg-amber-400 text-black'
                               : 'text-slate-100 hover:text-white hover:bg-slate-600'
                           }`}
                         >
-                          {period.label}
+                          <span className="md:hidden">{period.label}</span>
+                          <span className="hidden md:inline">{period.labelFull}</span>
                         </button>
                       ))}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-white font-medium">Metrika:</span>
+                    <span className="text-white font-medium text-sm md:text-base">Metrika:</span>
                     <div className="flex bg-slate-700 rounded-lg p-1">
                       {[
-                        { id: 'pageViews', label: 'Pregledi', color: 'amber' },
-                        { id: 'uniqueVisitors', label: 'Posetioci', color: 'blue' },
-                        { id: 'whatsappClicks', label: 'WhatsApp', color: 'green' }
+                        { id: 'pageViews', label: 'Preg', labelFull: 'Pregledi', color: 'amber' },
+                        { id: 'uniqueVisitors', label: 'Pos', labelFull: 'Posetioci', color: 'blue' },
+                        { id: 'whatsappClicks', label: 'WA', labelFull: 'WhatsApp', color: 'green' }
                       ].map(metric => (
                         <button
                           key={metric.id}
@@ -967,7 +974,7 @@ export default function AnalitikaPage() {
 
               {/* Trend Cards */}
               {periodData.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-3 gap-2 md:gap-4">
                   {(['pageViews', 'uniqueVisitors', 'whatsappClicks'] as const).map(metric => {
                     const trend = calculateTrend(periodData, metric)
                     const total = periodData.reduce((sum, d) => sum + d[metric], 0)
@@ -976,22 +983,26 @@ export default function AnalitikaPage() {
                       uniqueVisitors: { bg: 'bg-slate-800', border: 'border-blue-400/50', text: 'text-blue-300' },
                       whatsappClicks: { bg: 'bg-slate-800', border: 'border-green-400/50', text: 'text-green-300' }
                     }
+                    const labels = { pageViews: 'Preg', uniqueVisitors: 'Pos', whatsappClicks: 'WA' }
                     return (
-                      <div key={metric} className={`${colors[metric].bg} border ${colors[metric].border} rounded-2xl p-5 shadow-lg`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-white text-sm font-medium">{getMetricLabel(metric)}</span>
-                          <div className={`flex items-center gap-1 text-sm font-bold ${
+                      <div key={metric} className={`${colors[metric].bg} border ${colors[metric].border} rounded-xl md:rounded-2xl p-2 md:p-5 shadow-lg`}>
+                        <div className="flex flex-col md:flex-row md:items-center justify-between mb-1 md:mb-2">
+                          <span className="text-white text-xs md:text-sm font-medium">
+                            <span className="md:hidden">{labels[metric]}</span>
+                            <span className="hidden md:inline">{getMetricLabel(metric)}</span>
+                          </span>
+                          <div className={`flex items-center gap-0.5 md:gap-1 text-xs md:text-sm font-bold ${
                             trend.direction === 'up' ? 'text-green-300' : 
                             trend.direction === 'down' ? 'text-red-300' : 'text-slate-300'
                           }`}>
-                            {trend.direction === 'up' && <ArrowUp className="w-4 h-4" />}
-                            {trend.direction === 'down' && <ArrowDown className="w-4 h-4" />}
-                            {trend.direction === 'neutral' && <Minus className="w-4 h-4" />}
+                            {trend.direction === 'up' && <ArrowUp className="w-3 h-3 md:w-4 md:h-4" />}
+                            {trend.direction === 'down' && <ArrowDown className="w-3 h-3 md:w-4 md:h-4" />}
+                            {trend.direction === 'neutral' && <Minus className="w-3 h-3 md:w-4 md:h-4" />}
                             {trend.value}%
                           </div>
                         </div>
-                        <div className={`text-3xl font-bold ${colors[metric].text}`}>{total.toLocaleString()}</div>
-                        <div className="text-sm text-slate-200 mt-1">Ukupno u periodu</div>
+                        <div className={`text-lg md:text-3xl font-bold ${colors[metric].text}`}>{total.toLocaleString()}</div>
+                        <div className="text-xs text-slate-200 mt-1 hidden md:block">Ukupno u periodu</div>
                       </div>
                     )
                   })}
@@ -999,39 +1010,41 @@ export default function AnalitikaPage() {
               )}
 
               {/* Main Chart */}
-              <div className="bg-slate-800 border border-slate-600 rounded-2xl p-6 shadow-lg">
-                <h3 className="text-lg font-semibold mb-6 flex items-center gap-2 text-white">
-                  <TrendingUp className="w-5 h-5" style={{ color: getMetricColor(selectedMetric) }} />
-                  {getMetricLabel(selectedMetric)} po {selectedPeriodType === 'daily' ? 'danima' : selectedPeriodType === 'weekly' ? 'nedeljama' : 'mesecima'}
+              <div className="bg-slate-800 border border-slate-600 rounded-xl md:rounded-2xl p-3 md:p-6 shadow-lg">
+                <h3 className="text-sm md:text-lg font-semibold mb-3 md:mb-6 flex items-center gap-2 text-white">
+                  <TrendingUp className="w-4 h-4 md:w-5 md:h-5" style={{ color: getMetricColor(selectedMetric) }} />
+                  <span className="hidden md:inline">{getMetricLabel(selectedMetric)} po {selectedPeriodType === 'daily' ? 'danima' : selectedPeriodType === 'weekly' ? 'nedeljama' : 'mesecima'}</span>
+                  <span className="md:hidden">{getMetricLabel(selectedMetric)}</span>
                 </h3>
                 
                 {periodData.length > 0 ? (
-                  <div className="relative h-80">
+                  <div className="relative h-48 md:h-80">
                     {/* Y-axis */}
-                    <div className="absolute left-0 top-0 bottom-12 w-16 flex flex-col justify-between text-xs text-slate-200 text-right pr-2">
+                    <div className="absolute left-0 top-0 bottom-8 md:bottom-12 w-10 md:w-16 flex flex-col justify-between text-xs text-slate-200 text-right pr-1 md:pr-2">
                       <span>{Math.max(...periodData.map(d => d[selectedMetric])).toLocaleString()}</span>
-                      <span>{Math.round(Math.max(...periodData.map(d => d[selectedMetric])) * 0.75).toLocaleString()}</span>
+                      <span className="hidden md:block">{Math.round(Math.max(...periodData.map(d => d[selectedMetric])) * 0.75).toLocaleString()}</span>
                       <span>{Math.round(Math.max(...periodData.map(d => d[selectedMetric])) * 0.5).toLocaleString()}</span>
-                      <span>{Math.round(Math.max(...periodData.map(d => d[selectedMetric])) * 0.25).toLocaleString()}</span>
+                      <span className="hidden md:block">{Math.round(Math.max(...periodData.map(d => d[selectedMetric])) * 0.25).toLocaleString()}</span>
                       <span>0</span>
                     </div>
                     
                     {/* Chart */}
-                    <div className="ml-20 h-full pb-12 relative">
+                    <div className="ml-12 md:ml-20 h-full pb-8 md:pb-12 relative">
                       {/* Grid */}
                       <div className="absolute inset-0 bottom-0 flex flex-col justify-between pointer-events-none">
-                        {[0, 1, 2, 3, 4].map(i => (
+                        {[0, 1, 2].map(i => (
                           <div key={i} className="border-b border-slate-600/50" />
                         ))}
                       </div>
                       
-                      {/* Bars */}
-                      <div className="h-full flex items-end gap-2">
-                        {periodData.slice(-20).map((item, idx) => {
+                      {/* Bars - show last 10 on mobile, 20 on desktop */}
+                      <div className="h-full flex items-end gap-1 md:gap-2">
+                        {periodData.slice(-20).map((item, idx, arr) => {
+                          const showOnMobile = idx >= arr.length - 10
                           const maxValue = Math.max(...periodData.map(d => d[selectedMetric]))
                           const height = maxValue > 0 ? (item[selectedMetric] / maxValue) * 100 : 0
                           return (
-                            <div key={item.period} className="flex-1 flex flex-col items-center group relative min-w-0">
+                            <div key={item.period} className={`flex-1 flex flex-col items-center group relative min-w-0 ${showOnMobile ? '' : 'hidden md:flex'}`}>
                               <div 
                                 className="w-full rounded-t transition-all duration-300 hover:opacity-80 cursor-pointer"
                                 style={{ 
@@ -1134,7 +1147,37 @@ export default function AnalitikaPage() {
           {/* Ponude Tab */}
           {activeTab === 'ponude' && (
             <div className="bg-slate-800 border border-slate-600 rounded-xl overflow-hidden shadow-lg">
-              <table className="w-full">
+              {/* Mobile Cards */}
+              <div className="md:hidden divide-y divide-slate-600">
+                {ponudeAnalytics.map(item => (
+                  <div key={item.ponudaId} className="p-3">
+                    <div className="font-medium text-white text-sm truncate mb-2">{item.ponudaNaslov}</div>
+                    <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                      <div>
+                        <div className="text-blue-300 font-bold">{item.totalViews}</div>
+                        <div className="text-slate-400">Preg.</div>
+                      </div>
+                      <div>
+                        <div className="text-purple-300 font-bold">{item.uniqueVisitors}</div>
+                        <div className="text-slate-400">Pos.</div>
+                      </div>
+                      <div>
+                        <div className="text-green-300 font-bold">{item.whatsappClicks}</div>
+                        <div className="text-slate-400">WA</div>
+                      </div>
+                      <div>
+                        <div className="text-slate-100 font-bold">{formatDuration(item.avgTimeSpent)}</div>
+                        <div className="text-slate-400">Vreme</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {ponudeAnalytics.length === 0 && (
+                  <div className="p-8 text-center text-slate-300 text-sm">Nema podataka</div>
+                )}
+              </div>
+              {/* Desktop Table */}
+              <table className="w-full hidden md:table">
                 <thead className="bg-slate-700">
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-white">Ponuda</th>
@@ -1190,7 +1233,45 @@ export default function AnalitikaPage() {
           {/* Pozivi Tab */}
           {activeTab === 'pozivi' && (
             <div className="bg-slate-800 border border-slate-600 rounded-xl overflow-hidden shadow-lg">
-              <table className="w-full">
+              {/* Mobile Cards */}
+              <div className="md:hidden divide-y divide-slate-600">
+                {pozivi.map(poziv => (
+                  <div key={poziv.id} className="p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-white text-sm">{poziv.imekupca || 'Nepoznat'}</span>
+                      {poziv.validacija_ag ? (
+                        <span className="px-1.5 py-0.5 bg-green-600/30 text-green-200 rounded text-xs">
+                          {poziv.validacija_ag}
+                        </span>
+                      ) : (
+                        <span className="px-1.5 py-0.5 bg-slate-600/50 text-slate-300 rounded text-xs">
+                          -
+                        </span>
+                      )}
+                    </div>
+                    <div className="space-y-1 text-xs">
+                      {poziv.mobtel && (
+                        <div className="flex items-center gap-1 text-slate-100">
+                          <Phone className="w-3 h-3 text-green-300" />
+                          {poziv.mobtel}
+                        </div>
+                      )}
+                      {poziv.drzava && (
+                        <div className="flex items-center gap-1 text-slate-200">
+                          <MapPin className="w-3 h-3 text-amber-300" />
+                          {poziv.drzava}
+                        </div>
+                      )}
+                      <div className="text-slate-400">{formatDate(poziv.created_at)}</div>
+                    </div>
+                  </div>
+                ))}
+                {pozivi.length === 0 && (
+                  <div className="p-8 text-center text-slate-300 text-sm">Nema poziva</div>
+                )}
+              </div>
+              {/* Desktop Table */}
+              <table className="w-full hidden md:table">
                 <thead className="bg-slate-700">
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-white">Datum</th>
@@ -1270,7 +1351,35 @@ export default function AnalitikaPage() {
           {/* Logovi Tab */}
           {activeTab === 'logovi' && (
             <div className="bg-slate-800 border border-slate-600 rounded-xl overflow-hidden shadow-lg">
-              <table className="w-full">
+              {/* Mobile Cards */}
+              <div className="md:hidden divide-y divide-slate-600">
+                {recentLogs.map(log => (
+                  <div key={log.id} className="p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${getEventTypeColor(log.event_type)}`}>
+                        {getEventTypeLabel(log.event_type)}
+                      </span>
+                      {log.language && (
+                        <span className="px-1.5 py-0.5 bg-slate-600 rounded text-xs uppercase font-bold text-white">
+                          {log.language}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-slate-300 mb-1">
+                      {log.ponuda?.naslovoglasa || `Ponuda #${log.ponuda_id}`}
+                    </div>
+                    <div className="text-xs text-slate-400">
+                      {formatDate(log.created_at)}
+                      {log.time_spent_seconds && ` • ${formatDuration(log.time_spent_seconds)}`}
+                    </div>
+                  </div>
+                ))}
+                {recentLogs.length === 0 && (
+                  <div className="p-8 text-center text-slate-300 text-sm">Nema logova</div>
+                )}
+              </div>
+              {/* Desktop Table */}
+              <table className="w-full hidden md:table">
                 <thead className="bg-slate-700">
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-white">Vreme</th>
