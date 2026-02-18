@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, Users, Shield, ChevronDown, LogOut, Menu, X, Home } from 'lucide-react'
+import { Building2, Users, Shield, ChevronDown, LogOut, Menu, X, Home, BarChart3 } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -24,6 +24,7 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
   const adminSubItems = [
     { id: 'korisnici', label: 'Korisnici', href: '/dashboard/korisnici', icon: Users },
     { id: 'ponude', label: 'Ponude', href: '/dashboard/ponude', icon: Home },
+    { id: 'analitika', label: 'Analiza Logovanja', href: '/dashboard/analitika', icon: BarChart3 },
   ]
 
   // Agent vidi samo Ponude direktno (bez submenija)

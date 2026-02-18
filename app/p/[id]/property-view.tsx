@@ -10,6 +10,7 @@ import {
 import { translations, translateHeating, translatePropertyType, translateDescription, type Language } from '@/lib/translations'
 import type { Ponuda, PonudaFoto } from '@/lib/types/ponuda'
 import type { Kampanja } from '@/lib/types/kampanja'
+import { useWebstranaTracking } from '@/hooks/useWebstranaTracking'
 
 interface PropertyViewProps {
   ponuda: Ponuda
@@ -99,6 +100,20 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
 
+  // Tracking hook za logovanje aktivnosti
+  const {
+    trackPhotoClick,
+    trackLanguageChange,
+    trackWhatsAppClick,
+    trackVideoClick,
+    track3DTourClick,
+    trackMapInteraction
+  } = useWebstranaTracking({
+    ponudaId: ponuda.id,
+    kampanjaId: kampanja?.id,
+    initialLanguage: config.primaryLanguage
+  })
+
   const t = translations[lang]
   
   // Filtriraj fotografije - skice idu u posebnu sekciju
@@ -187,7 +202,12 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
         {(['sr', 'en', 'de'] as Language[]).map((l) => (
           <button
             key={l}
-            onClick={() => setLang(l)}
+            onClick={() => {
+              if (l !== lang) {
+                trackLanguageChange(l, lang)
+                setLang(l)
+              }
+            }}
             className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase transition-all ${
               lang === l 
                 ? `${accent.bg} ${config.accentColor === 'amber' ? 'text-black' : 'text-white'}` 
@@ -388,7 +408,10 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
               {regularPhotos.map((photo, idx) => (
                 <button
                   key={photo.id}
-                  onClick={() => openLightbox(idx)}
+                  onClick={() => {
+                    trackPhotoClick(idx, photo.url || undefined)
+                    openLightbox(idx)
+                  }}
                   className={`group relative aspect-square rounded-xl overflow-hidden border-2 transition-all ${
                     idx === currentPhotoIndex ? 'border-amber-500' : 'border-transparent hover:border-gray-600'
                   }`}
@@ -441,6 +464,7 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
                 href={ponuda.videolink}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackVideoClick(ponuda.videolink || undefined)}
                 className="bg-gray-800 rounded-2xl p-6 flex items-center gap-4 hover:bg-gray-700 transition-colors"
               >
                 <div className="w-16 h-16 bg-red-500/20 rounded-xl flex items-center justify-center">
@@ -457,6 +481,7 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
                 href={ponuda['3dture']}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => track3DTourClick(ponuda['3dture'] || undefined)}
                 className="bg-gray-800 rounded-2xl p-6 flex items-center gap-4 hover:bg-gray-700 transition-colors"
               >
                 <div className="w-16 h-16 bg-violet-500/20 rounded-xl flex items-center justify-center">
@@ -545,7 +570,10 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
               <MapPin className="w-6 h-6 text-amber-500" />
               {t.location}
             </h2>
-            <div className="aspect-video bg-gray-800 rounded-2xl overflow-hidden">
+            <div 
+              className="aspect-video bg-gray-800 rounded-2xl overflow-hidden"
+              onClick={() => trackMapInteraction('click')}
+            >
               <iframe
                 src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${ponuda.latitude},${ponuda.longitude}&zoom=15`}
                 width="100%"
@@ -574,6 +602,7 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
             href={getWhatsAppUrl()}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackWhatsAppClick()}
             className="group flex items-center justify-center gap-3 w-full py-4 px-6 bg-gradient-to-r from-green-600 via-green-500 to-emerald-500 text-white rounded-2xl font-bold text-lg shadow-[0_8px_32px_rgba(34,197,94,0.4)] hover:shadow-[0_12px_40px_rgba(34,197,94,0.5)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border border-green-400/20 backdrop-blur-sm"
           >
             {/* Pulse animation ring */}
