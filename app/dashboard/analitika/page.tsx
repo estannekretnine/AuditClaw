@@ -53,6 +53,7 @@ export default function AnalitikaPage() {
   const [selectedPeriodType, setSelectedPeriodType] = useState<PeriodType>('daily')
   const [selectedMetric, setSelectedMetric] = useState<'pageViews' | 'uniqueVisitors' | 'whatsappClicks'>('pageViews')
   const [syntheticReport, setSyntheticReport] = useState<SyntheticReport | null>(null)
+  const [exportingPDF, setExportingPDF] = useState(false)
   const reportRef = useRef<HTMLDivElement>(null)
 
   // Filteri
@@ -181,20 +182,29 @@ export default function AnalitikaPage() {
   }
 
   const exportToPDF = async () => {
-    if (!reportRef.current) return
+    if (!reportRef.current || exportingPDF) return
     
-    const html2pdf = (await import('html2pdf.js')).default
+    setExportingPDF(true)
     
-    const element = reportRef.current
-    const opt = {
-      margin: 10,
-      filename: `analitika-${new Date().toISOString().split('T')[0]}.pdf`,
-      image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'landscape' as const }
+    try {
+      const html2pdf = (await import('html2pdf.js')).default
+      
+      const element = reportRef.current
+      const opt = {
+        margin: 10,
+        filename: `analitika-${new Date().toISOString().split('T')[0]}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.8 },
+        html2canvas: { scale: 1.5, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'landscape' as const }
+      }
+      
+      await html2pdf().set(opt).from(element).save()
+    } catch (error) {
+      console.error('PDF export error:', error)
+      alert('Greška pri eksportu PDF-a. Pokušajte ponovo.')
+    } finally {
+      setExportingPDF(false)
     }
-    
-    html2pdf().set(opt).from(element).save()
   }
 
   const getMetricLabel = (metric: string) => {
@@ -295,10 +305,19 @@ export default function AnalitikaPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={exportToPDF}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+            disabled={exportingPDF}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              exportingPDF 
+                ? 'bg-slate-600 text-slate-300 cursor-wait' 
+                : 'bg-slate-700 text-white hover:bg-slate-600'
+            }`}
           >
-            <Download className="w-4 h-4" />
-            PDF
+            {exportingPDF ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            {exportingPDF ? 'Generisanje...' : 'PDF'}
           </button>
         <button
           onClick={() => {
