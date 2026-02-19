@@ -56,6 +56,10 @@ export async function POST(request: NextRequest) {
                        'unknown'
     const user_agent = request.headers.get('user-agent') || null
     const referrer = request.headers.get('referer') || null
+    
+    // Vercel geolocation headers
+    const country = request.headers.get('x-vercel-ip-country') || null
+    const city = request.headers.get('x-vercel-ip-city') || null
 
     const logEntry: WebstranaLogInsert = {
       session_id,
@@ -67,7 +71,9 @@ export async function POST(request: NextRequest) {
       user_agent,
       referrer,
       language: language || null,
-      time_spent_seconds: time_spent_seconds || null
+      time_spent_seconds: time_spent_seconds || null,
+      country,
+      city
     }
 
     const { data, error } = await supabase
