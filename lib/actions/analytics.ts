@@ -846,14 +846,25 @@ export interface KampanjaAnalytics {
   conversionRate: number
 }
 
-export async function getKampanjeAnalytics(): Promise<KampanjaAnalytics[]> {
+export interface KampanjeFilter {
+  ponudaId?: number
+  dateFrom?: string
+  dateTo?: string
+}
+
+export async function getKampanjeAnalytics(filter?: KampanjeFilter): Promise<KampanjaAnalytics[]> {
   const admin = createAdminClient()
 
-  const { data: kampanje, error: kampanjeError } = await admin
+  let kampanjeQuery = admin
     .from('kampanja')
     .select('id, kodkampanje, ponudaid')
     .not('ponudaid', 'is', null)
-    .order('created_at', { ascending: false })
+  
+  if (filter?.ponudaId) {
+    kampanjeQuery = kampanjeQuery.eq('ponudaid', filter.ponudaId)
+  }
+  
+  const { data: kampanje, error: kampanjeError } = await kampanjeQuery.order('created_at', { ascending: false })
 
   if (kampanjeError || !kampanje) {
     console.error('Error fetching kampanje:', kampanjeError)
@@ -876,15 +887,21 @@ export async function getKampanjeAnalytics(): Promise<KampanjaAnalytics[]> {
 
   const { data: kupacKampanja } = await admin
     .from('kupackampanja')
-    .select('id, kampanjaid')
+    .select('id, kampanjaid, created_at')
 
-  const { data: logs } = await admin
+  let logsQuery = admin
     .from('webstrana_log')
-    .select('kampanja_id, event_type')
+    .select('kampanja_id, event_type, created_at')
+  if (filter?.dateFrom) logsQuery = logsQuery.gte('created_at', filter.dateFrom)
+  if (filter?.dateTo) logsQuery = logsQuery.lte('created_at', filter.dateTo + 'T23:59:59')
+  const { data: logs } = await logsQuery
 
-  const { data: pozivi } = await admin
+  let poziviQuery = admin
     .from('pozivi')
-    .select('idkampanjakupac')
+    .select('idkampanjakupac, created_at')
+  if (filter?.dateFrom) poziviQuery = poziviQuery.gte('created_at', filter.dateFrom)
+  if (filter?.dateTo) poziviQuery = poziviQuery.lte('created_at', filter.dateTo + 'T23:59:59')
+  const { data: pozivi } = await poziviQuery
 
   const safeKupacKampanja = kupacKampanja || []
   const safeLogs = logs || []
@@ -931,6 +948,35 @@ export async function getKampanjeAnalytics(): Promise<KampanjaAnalytics[]> {
     })
 
   return analytics.sort((a, b) => b.kupacaPoslato - a.kupacaPoslato)
+}
+
+export interface PonudaOption {
+  id: number
+  naslovoglasa: string
+}
+
+export async function getPonudeForKampanje(): Promise<PonudaOption[]> {
+  const admin = createAdminClient()
+  
+  const { data: kampanje } = await admin
+    .from('kampanja')
+    .select('ponudaid')
+    .not('ponudaid', 'is', null)
+  
+  const ponudaIds = [...new Set((kampanje || []).map(k => k.ponudaid).filter(Boolean))]
+  
+  if (ponudaIds.length === 0) return []
+  
+  const { data: ponude } = await admin
+    .from('ponuda')
+    .select('id, naslovoglasa')
+    .in('id', ponudaIds)
+    .order('naslovoglasa')
+  
+  return (ponude || []).map(p => ({
+    id: Number(p.id),
+    naslovoglasa: p.naslovoglasa || `Ponuda #${p.id}`
+  }))
 }
 
 export interface WebLogEntry {

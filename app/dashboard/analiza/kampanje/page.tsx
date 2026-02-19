@@ -3,9 +3,15 @@
 import { useState, useEffect, useMemo } from 'react'
 import { 
   Target, Users, Globe, MessageCircle, Phone, 
-  RefreshCw, TrendingUp, ArrowUpRight, BarChart3, ChevronDown, ChevronRight
+  RefreshCw, TrendingUp, ArrowUpRight, BarChart3, ChevronDown, ChevronRight,
+  Calendar, Search, Filter
 } from 'lucide-react'
-import { getKampanjeAnalytics, type KampanjaAnalytics } from '@/lib/actions/analytics'
+import { 
+  getKampanjeAnalytics, 
+  getPonudeForKampanje,
+  type KampanjaAnalytics,
+  type PonudaOption
+} from '@/lib/actions/analytics'
 
 interface PonudaSummary {
   ponudaId: number
@@ -20,22 +26,51 @@ interface PonudaSummary {
 }
 
 export default function KampanjePage() {
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
+  const [loadingPonude, setLoadingPonude] = useState(true)
+  const [ponudeOptions, setPonudeOptions] = useState<PonudaOption[]>([])
   const [kampanje, setKampanje] = useState<KampanjaAnalytics[]>([])
   const [expandedPonude, setExpandedPonude] = useState<Set<number>>(new Set())
+  const [dataLoaded, setDataLoaded] = useState(false)
+
+  const [selectedPonuda, setSelectedPonuda] = useState<number | null>(null)
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
 
   useEffect(() => {
-    loadData()
+    loadPonudeOptions()
   }, [])
 
+  const loadPonudeOptions = async () => {
+    setLoadingPonude(true)
+    try {
+      const ponude = await getPonudeForKampanje()
+      setPonudeOptions(ponude)
+    } finally {
+      setLoadingPonude(false)
+    }
+  }
+
   const loadData = async () => {
+    if (!selectedPonuda) return
+    
     setLoading(true)
     try {
-      const data = await getKampanjeAnalytics()
+      const data = await getKampanjeAnalytics({
+        ponudaId: selectedPonuda,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined
+      })
       setKampanje(data)
+      setDataLoaded(true)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    loadData()
   }
 
   const totals = kampanje.reduce((acc, k) => ({
@@ -80,6 +115,8 @@ export default function KampanjePage() {
 
   const maxPoslato = Math.max(...poPonudi.map(p => p.totals.kupacaPoslato), 1)
 
+  const selectedPonudaNaslov = ponudeOptions.find(p => p.id === selectedPonuda)?.naslovoglasa
+
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto">
       {/* Header */}
@@ -89,25 +126,124 @@ export default function KampanjePage() {
             <Target className="w-7 h-7 md:w-8 md:h-8 text-amber-500" />
             Analiza Kampanja
           </h1>
-          <p className="text-slate-400 mt-1 text-sm">Statistika kupaca po kampanjama i ponudama</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={loadData}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-black rounded-lg hover:bg-amber-400 transition-colors font-medium"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Osveži
-          </button>
+          <p className="text-slate-400 mt-1 text-sm">Izaberite ponudu i period za prikaz statistike</p>
         </div>
       </div>
 
-      {loading ? (
+      {/* Filter Form */}
+      <form onSubmit={handleSubmit} className="bg-slate-800 border border-slate-700 rounded-xl p-6 mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Filter className="w-5 h-5 text-amber-400" />
+          <h2 className="text-lg font-semibold text-white">Filteri</h2>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="md:col-span-2">
+            <label className="block text-sm text-slate-400 mb-2">Ponuda *</label>
+            {loadingPonude ? (
+              <div className="flex items-center gap-2 text-slate-400 py-2">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Učitavanje ponuda...
+              </div>
+            ) : (
+              <select
+                value={selectedPonuda || ''}
+                onChange={(e) => setSelectedPonuda(e.target.value ? Number(e.target.value) : null)}
+                className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2.5 text-white focus:border-amber-500 focus:outline-none"
+                required
+              >
+                <option value="">-- Izaberite ponudu --</option>
+                {ponudeOptions.map(p => (
+                  <option key={p.id} value={p.id}>{p.naslovoglasa}</option>
+                ))}
+              </select>
+            )}
+          </div>
+          
+          <div>
+            <label className="block text-sm text-slate-400 mb-2">
+              <Calendar className="w-4 h-4 inline mr-1" />
+              Od datuma
+            </label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2.5 text-white focus:border-amber-500 focus:outline-none"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm text-slate-400 mb-2">
+              <Calendar className="w-4 h-4 inline mr-1" />
+              Do datuma
+            </label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2.5 text-white focus:border-amber-500 focus:outline-none"
+            />
+          </div>
+        </div>
+        
+        <div className="mt-4 flex justify-end">
+          <button
+            type="submit"
+            disabled={!selectedPonuda || loading}
+            className="flex items-center gap-2 px-6 py-2.5 bg-amber-500 text-black rounded-lg hover:bg-amber-400 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <Search className="w-4 h-4" />
+            )}
+            Prikaži statistiku
+          </button>
+        </div>
+      </form>
+
+      {/* Initial State - No Data */}
+      {!dataLoaded && !loading && (
+        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-12 text-center">
+          <Target className="w-16 h-16 mx-auto mb-4 text-slate-600" />
+          <h3 className="text-xl font-semibold text-slate-400 mb-2">Izaberite ponudu</h3>
+          <p className="text-slate-500">Izaberite ponudu iz liste iznad da biste videli statistiku kampanja i totale.</p>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading && (
         <div className="flex items-center justify-center py-20">
           <RefreshCw className="w-8 h-8 animate-spin text-amber-500" />
         </div>
-      ) : (
+      )}
+
+      {/* Data Display */}
+      {dataLoaded && !loading && (
         <div className="space-y-6">
+          {/* Selected Ponuda Header */}
+          <div className="bg-gradient-to-r from-amber-600/20 to-amber-800/10 border border-amber-500/30 rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white">{selectedPonudaNaslov}</h2>
+                <p className="text-amber-300/70 text-sm mt-1">
+                  {dateFrom && dateTo ? `Period: ${dateFrom} - ${dateTo}` : 
+                   dateFrom ? `Od: ${dateFrom}` :
+                   dateTo ? `Do: ${dateTo}` :
+                   'Svi podaci'}
+                </p>
+              </div>
+              <button
+                onClick={loadData}
+                className="flex items-center gap-2 px-4 py-2 bg-amber-500/20 text-amber-300 rounded-lg hover:bg-amber-500/30 transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Osveži
+              </button>
+            </div>
+          </div>
+
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border border-blue-500/30 rounded-xl p-4">
@@ -135,136 +271,67 @@ export default function KampanjePage() {
             </div>
           </div>
 
-          {/* Po ponudi - Grafikon */}
-          {poPonudi.length > 0 && (
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-amber-400" />
-                Statistika po ponudi
-              </h2>
-              <div className="space-y-3">
-                {poPonudi.slice(0, 10).map((p) => (
-                  <div key={p.ponudaId} className="space-y-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-300 truncate max-w-[200px]">{p.ponudaNaslov}</span>
-                      <div className="flex items-center gap-4 text-xs">
-                        <span className="text-blue-300">{p.totals.kupacaPoslato} poslato</span>
-                        <span className="text-purple-300">{p.totals.dosliNaSajt} sajt</span>
-                        <span className="text-green-300">{p.totals.whatsappKlikovi} WA</span>
-                        <span className={p.totals.kontaktPoslat > 0 ? 'text-emerald-400 font-bold' : 'text-slate-500'}>{p.totals.kontaktPoslat} kontakt</span>
-                      </div>
-                    </div>
-                    <div className="flex gap-1 h-6">
-                      <div 
-                        className="bg-blue-500/60 rounded-l"
-                        style={{ width: `${(p.totals.kupacaPoslato / maxPoslato) * 100}%` }}
-                        title={`Poslato: ${p.totals.kupacaPoslato}`}
-                      />
-                      <div 
-                        className="bg-purple-500/60"
-                        style={{ width: `${(p.totals.dosliNaSajt / maxPoslato) * 100}%` }}
-                        title={`Na sajt: ${p.totals.dosliNaSajt}`}
-                      />
-                      <div 
-                        className="bg-green-500/60"
-                        style={{ width: `${(p.totals.whatsappKlikovi / maxPoslato) * 100}%` }}
-                        title={`WhatsApp: ${p.totals.whatsappKlikovi}`}
-                      />
-                      <div 
-                        className={`rounded-r ${p.totals.kontaktPoslat > 0 ? 'bg-emerald-500/80' : 'bg-slate-600/40'}`}
-                        style={{ width: `${Math.max((p.totals.kontaktPoslat / maxPoslato) * 100, p.totals.kontaktPoslat > 0 ? 2 : 0)}%` }}
-                        title={`Kontakt: ${p.totals.kontaktPoslat}`}
-                      />
-                    </div>
-                  </div>
-                ))}
+          {/* Kampanje Table */}
+          {kampanje.length > 0 ? (
+            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+              <div className="p-4 border-b border-slate-700">
+                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-amber-400" />
+                  Kampanje ({kampanje.length})
+                </h2>
               </div>
-              <div className="mt-4 flex items-center gap-4 text-xs text-slate-400">
-                <span className="flex items-center gap-1"><span className="w-3 h-3 bg-blue-500/60 rounded" /> Poslato</span>
-                <span className="flex items-center gap-1"><span className="w-3 h-3 bg-purple-500/60 rounded" /> Na sajt</span>
-                <span className="flex items-center gap-1"><span className="w-3 h-3 bg-green-500/60 rounded" /> WhatsApp</span>
-                <span className="flex items-center gap-1"><span className="w-3 h-3 bg-emerald-500/80 rounded" /> Kontakt</span>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-900/50 text-slate-400 text-xs">
+                      <th className="text-left py-3 px-4">Kampanja</th>
+                      <th className="text-right py-3 px-4">Poslato</th>
+                      <th className="text-right py-3 px-4">Na sajt</th>
+                      <th className="text-right py-3 px-4">WhatsApp</th>
+                      <th className="text-right py-3 px-4">Kontakt</th>
+                      <th className="text-right py-3 px-4">Konverzija</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-700/50">
+                    {kampanje.map((k) => (
+                      <tr key={k.kampanjaId} className="hover:bg-slate-700/20">
+                        <td className="py-3 px-4 text-amber-400 font-mono">{k.kodKampanje}</td>
+                        <td className="py-3 px-4 text-right text-blue-300">{k.kupacaPoslato}</td>
+                        <td className="py-3 px-4 text-right text-purple-300">{k.dosliNaSajt}</td>
+                        <td className="py-3 px-4 text-right text-green-300">{k.whatsappKlikovi}</td>
+                        <td className={`py-3 px-4 text-right font-bold ${k.kontaktPoslat > 0 ? 'text-emerald-400' : 'text-slate-500'}`}>
+                          {k.kontaktPoslat}
+                        </td>
+                        <td className="py-3 px-4 text-right text-slate-300">
+                          {k.conversionRate > 0 ? `${k.conversionRate}%` : '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-slate-900/70 font-semibold">
+                      <td className="py-3 px-4 text-white">UKUPNO</td>
+                      <td className="py-3 px-4 text-right text-blue-300">{totals.kupacaPoslato}</td>
+                      <td className="py-3 px-4 text-right text-purple-300">{totals.dosliNaSajt}</td>
+                      <td className="py-3 px-4 text-right text-green-300">{totals.whatsappKlikovi}</td>
+                      <td className={`py-3 px-4 text-right font-bold ${totals.kontaktPoslat > 0 ? 'text-emerald-400' : 'text-slate-500'}`}>
+                        {totals.kontaktPoslat}
+                      </td>
+                      <td className="py-3 px-4 text-right text-slate-300">
+                        {totals.kupacaPoslato > 0 ? `${Math.round((totals.kontaktPoslat / totals.kupacaPoslato) * 100)}%` : '-'}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
+            </div>
+          ) : (
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8 text-center">
+              <Target className="w-12 h-12 mx-auto mb-3 text-slate-600" />
+              <p className="text-slate-400">Nema kampanja za izabranu ponudu</p>
             </div>
           )}
-
-          {/* Po ponudi - Expandable List */}
-          <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
-            <div className="p-4 border-b border-slate-700">
-              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-amber-400" />
-                Po ponudi (detalji)
-              </h2>
-            </div>
-            
-            {poPonudi.length === 0 ? (
-              <div className="p-8 text-center text-slate-400">
-                <Target className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>Nema kampanja sa ponudom</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-slate-700">
-                {poPonudi.map((p) => (
-                  <div key={p.ponudaId}>
-                    <button
-                      onClick={() => togglePonuda(p.ponudaId)}
-                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-700/30 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        {expandedPonude.has(p.ponudaId) ? (
-                          <ChevronDown className="w-5 h-5 text-amber-400" />
-                        ) : (
-                          <ChevronRight className="w-5 h-5 text-slate-500" />
-                        )}
-                        <span className="text-white font-medium truncate max-w-[300px]">{p.ponudaNaslov}</span>
-                        <span className="text-slate-500 text-sm">({p.kampanje.length} kampanja)</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm">
-                        <span className="px-2 py-1 bg-blue-600/20 text-blue-300 rounded">{p.totals.kupacaPoslato}</span>
-                        <span className="px-2 py-1 bg-purple-600/20 text-purple-300 rounded">{p.totals.dosliNaSajt}</span>
-                        <span className="px-2 py-1 bg-green-600/20 text-green-300 rounded">{p.totals.whatsappKlikovi}</span>
-                        <span className={`px-2 py-1 rounded font-bold ${p.totals.kontaktPoslat > 0 ? 'bg-emerald-600/30 text-emerald-300' : 'bg-slate-600/20 text-slate-500'}`}>
-                          {p.totals.kontaktPoslat}
-                        </span>
-                      </div>
-                    </button>
-                    {expandedPonude.has(p.ponudaId) && (
-                      <div className="bg-slate-900/50 px-4 py-2">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="text-slate-400 text-xs">
-                              <th className="text-left py-2 pl-8">Kampanja</th>
-                              <th className="text-right py-2">Poslato</th>
-                              <th className="text-right py-2">Na sajt</th>
-                              <th className="text-right py-2">WhatsApp</th>
-                              <th className="text-right py-2">Kontakt</th>
-                              <th className="text-right py-2 pr-2">Konverzija</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {p.kampanje.map((k) => (
-                              <tr key={k.kampanjaId} className="border-t border-slate-700/50">
-                                <td className="py-2 pl-8 text-amber-400 font-mono">{k.kodKampanje}</td>
-                                <td className="py-2 text-right text-blue-300">{k.kupacaPoslato}</td>
-                                <td className="py-2 text-right text-purple-300">{k.dosliNaSajt}</td>
-                                <td className="py-2 text-right text-green-300">{k.whatsappKlikovi}</td>
-                                <td className={`py-2 text-right font-bold ${k.kontaktPoslat > 0 ? 'text-emerald-400' : 'text-slate-500'}`}>
-                                  {k.kontaktPoslat}
-                                </td>
-                                <td className="py-2 text-right pr-2 text-slate-300">
-                                  {k.conversionRate > 0 ? `${k.conversionRate}%` : '-'}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
 
           {/* Funnel Visualization */}
           {totals.kupacaPoslato > 0 && (
