@@ -254,7 +254,7 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
                                 </div>
                                 <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${isAnalizaOpen ? 'rotate-90' : ''}`} />
                               </button>
-                              {isAnalizaOpen && (
+                              {isAnalizaOpen && subItem.subItems && (
                                 <ul className="mt-1 ml-4 pl-3 border-l border-amber-500/10 space-y-1">
                                   {subItem.subItems.map((nestedItem: AnalyzaSubItem) => {
                                     const NestedIcon = nestedItem.icon

@@ -613,6 +613,204 @@ export async function getSyntheticReport(filter?: {
   }
 }
 
+export interface WebLogReport {
+  totalPageViews: number
+  uniqueSessions: number
+  whatsappClicks: number
+  photoClicks: number
+  videoClicks: number
+  tourClicks: number
+  mapInteractions: number
+  avgTimeOnPage: number
+  eventDistribution: Array<{ eventType: string; count: number }>
+  byCountry: Array<{ country: string; count: number }>
+  byCity: Array<{ city: string; count: number }>
+  byLanguage: Array<{ language: string; count: number }>
+  topReferrers: Array<{ referrer: string; count: number }>
+  topPonude: Array<{
+    id: number
+    naslov: string
+    pageViews: number
+    uniqueSessions: number
+    whatsappClicks: number
+    photoClicks: number
+    avgTime: number
+  }>
+  dailyStats: Array<{ date: string; pageViews: number; whatsapp: number }>
+  periodComparison: {
+    currentPeriod: { pageViews: number; whatsapp: number; photo: number }
+    previousPeriod: { pageViews: number; whatsapp: number; photo: number }
+    changePercent: { pageViews: number; whatsapp: number; photo: number }
+  }
+}
+
+export async function getWebLogReport(filter?: {
+  dateFrom?: string
+  dateTo?: string
+  ponudaId?: number
+}): Promise<WebLogReport> {
+  const supabase = await createClient()
+
+  let query = supabase.from('webstrana_log').select('*')
+  if (filter?.ponudaId) query = query.eq('ponuda_id', filter.ponudaId)
+  if (filter?.dateFrom) query = query.gte('created_at', filter.dateFrom)
+  if (filter?.dateTo) query = query.lte('created_at', filter.dateTo)
+  
+  const { data: logs } = await query
+  const { data: ponude } = await supabase.from('ponuda').select('id, naslovoglasa').eq('stsaktivan', true)
+
+  const safeLog = logs || []
+  const safePonude = ponude || []
+
+  const pageViews = safeLog.filter(l => l.event_type === 'page_view')
+  const totalPageViews = pageViews.length
+  const uniqueSessions = new Set(safeLog.map(l => l.session_id)).size
+  const whatsappClicks = safeLog.filter(l => l.event_type === 'whatsapp_click').length
+  const photoClicks = safeLog.filter(l => l.event_type === 'photo_click').length
+  const videoClicks = safeLog.filter(l => l.event_type === 'video_click').length
+  const tourClicks = safeLog.filter(l => l.event_type === '3d_tour_click').length
+  const mapInteractions = safeLog.filter(l => l.event_type === 'map_interaction').length
+
+  const pageLeaves = safeLog.filter(l => l.event_type === 'page_leave' && l.time_spent_seconds)
+  const avgTimeOnPage = pageLeaves.length > 0 
+    ? Math.round(pageLeaves.reduce((sum, l) => sum + (l.time_spent_seconds || 0), 0) / pageLeaves.length)
+    : 0
+
+  const eventCounts: Record<string, number> = {}
+  safeLog.forEach(l => {
+    eventCounts[l.event_type] = (eventCounts[l.event_type] || 0) + 1
+  })
+  const eventDistribution = Object.entries(eventCounts)
+    .map(([eventType, count]) => ({ eventType, count }))
+    .sort((a, b) => b.count - a.count)
+
+  const countryCounts: Record<string, number> = {}
+  safeLog.filter(l => l.country).forEach(l => {
+    countryCounts[l.country!] = (countryCounts[l.country!] || 0) + 1
+  })
+  const byCountry = Object.entries(countryCounts)
+    .map(([country, count]) => ({ country, count }))
+    .sort((a, b) => b.count - a.count)
+
+  const cityCounts: Record<string, number> = {}
+  safeLog.filter(l => l.city).forEach(l => {
+    cityCounts[l.city!] = (cityCounts[l.city!] || 0) + 1
+  })
+  const byCity = Object.entries(cityCounts)
+    .map(([city, count]) => ({ city, count }))
+    .sort((a, b) => b.count - a.count)
+
+  const langCounts: Record<string, number> = {}
+  safeLog.filter(l => l.language).forEach(l => {
+    langCounts[l.language!] = (langCounts[l.language!] || 0) + 1
+  })
+  const byLanguage = Object.entries(langCounts)
+    .map(([language, count]) => ({ language, count }))
+    .sort((a, b) => b.count - a.count)
+
+  const referrerCounts: Record<string, number> = {}
+  safeLog.filter(l => l.referrer).forEach(l => {
+    try {
+      const url = new URL(l.referrer!)
+      const domain = url.hostname
+      referrerCounts[domain] = (referrerCounts[domain] || 0) + 1
+    } catch {
+      referrerCounts[l.referrer!] = (referrerCounts[l.referrer!] || 0) + 1
+    }
+  })
+  const directCount = safeLog.filter(l => !l.referrer).length
+  if (directCount > 0) referrerCounts['Direktno'] = directCount
+  const topReferrers = Object.entries(referrerCounts)
+    .map(([referrer, count]) => ({ referrer, count }))
+    .sort((a, b) => b.count - a.count)
+
+  const topPonude = safePonude.map(p => {
+    const ponudaLogs = safeLog.filter(l => l.ponuda_id === p.id)
+    const ponudaPageViews = ponudaLogs.filter(l => l.event_type === 'page_view').length
+    const ponudaSessions = new Set(ponudaLogs.map(l => l.session_id)).size
+    const ponudaWhatsapp = ponudaLogs.filter(l => l.event_type === 'whatsapp_click').length
+    const ponudaPhoto = ponudaLogs.filter(l => l.event_type === 'photo_click').length
+    const ponudaLeaves = ponudaLogs.filter(l => l.event_type === 'page_leave' && l.time_spent_seconds)
+    const ponudaAvgTime = ponudaLeaves.length > 0
+      ? Math.round(ponudaLeaves.reduce((sum, l) => sum + (l.time_spent_seconds || 0), 0) / ponudaLeaves.length)
+      : 0
+
+    return {
+      id: p.id,
+      naslov: p.naslovoglasa || `Ponuda #${p.id}`,
+      pageViews: ponudaPageViews,
+      uniqueSessions: ponudaSessions,
+      whatsappClicks: ponudaWhatsapp,
+      photoClicks: ponudaPhoto,
+      avgTime: ponudaAvgTime
+    }
+  }).filter(p => p.pageViews > 0).sort((a, b) => b.pageViews - a.pageViews)
+
+  const dailyCounts: Record<string, { pageViews: number; whatsapp: number }> = {}
+  safeLog.forEach(l => {
+    const date = l.created_at.split('T')[0]
+    if (!dailyCounts[date]) dailyCounts[date] = { pageViews: 0, whatsapp: 0 }
+    if (l.event_type === 'page_view') dailyCounts[date].pageViews++
+    if (l.event_type === 'whatsapp_click') dailyCounts[date].whatsapp++
+  })
+  const dailyStats = Object.entries(dailyCounts)
+    .map(([date, data]) => ({ date, ...data }))
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  const now = new Date()
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
+
+  const currentLogs = safeLog.filter(l => new Date(l.created_at) >= thirtyDaysAgo)
+  const previousLogs = safeLog.filter(l => {
+    const d = new Date(l.created_at)
+    return d >= sixtyDaysAgo && d < thirtyDaysAgo
+  })
+
+  const currentPeriod = {
+    pageViews: currentLogs.filter(l => l.event_type === 'page_view').length,
+    whatsapp: currentLogs.filter(l => l.event_type === 'whatsapp_click').length,
+    photo: currentLogs.filter(l => l.event_type === 'photo_click').length
+  }
+  const previousPeriod = {
+    pageViews: previousLogs.filter(l => l.event_type === 'page_view').length,
+    whatsapp: previousLogs.filter(l => l.event_type === 'whatsapp_click').length,
+    photo: previousLogs.filter(l => l.event_type === 'photo_click').length
+  }
+
+  const calcChange = (curr: number, prev: number) => {
+    if (prev === 0) return curr > 0 ? 100 : 0
+    return Math.round(((curr - prev) / prev) * 100)
+  }
+
+  return {
+    totalPageViews,
+    uniqueSessions,
+    whatsappClicks,
+    photoClicks,
+    videoClicks,
+    tourClicks,
+    mapInteractions,
+    avgTimeOnPage,
+    eventDistribution,
+    byCountry,
+    byCity,
+    byLanguage,
+    topReferrers,
+    topPonude,
+    dailyStats,
+    periodComparison: {
+      currentPeriod,
+      previousPeriod,
+      changePercent: {
+        pageViews: calcChange(currentPeriod.pageViews, previousPeriod.pageViews),
+        whatsapp: calcChange(currentPeriod.whatsapp, previousPeriod.whatsapp),
+        photo: calcChange(currentPeriod.photo, previousPeriod.photo)
+      }
+    }
+  }
+}
+
 export interface KampanjaAnalytics {
   kampanjaId: number
   kodKampanje: string
