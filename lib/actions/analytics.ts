@@ -731,10 +731,10 @@ export async function getWebLogReport(filter?: {
 
   const topPonude = safePonude.map(p => {
     const ponudaKampanjeIds = safeKampanje
-      .filter(k => k.ponudaid === p.id)
-      .map(k => k.id)
+      .filter(k => Number(k.ponudaid) === Number(p.id))
+      .map(k => Number(k.id))
     const poslato = safeKupackampanja
-      .filter(kk => kk.kampanjaid && ponudaKampanjeIds.includes(kk.kampanjaid))
+      .filter(kk => kk.kampanjaid && ponudaKampanjeIds.includes(Number(kk.kampanjaid)))
       .length
 
     const ponudaLogs = safeLog.filter(l => l.ponuda_id === p.id)
@@ -841,7 +841,6 @@ export async function getKampanjeAnalytics(): Promise<KampanjaAnalytics[]> {
   const { data: kampanje, error: kampanjeError } = await supabase
     .from('kampanja')
     .select('id, kodkampanje, ponudaid')
-    .eq('stsaktivan', true)
     .order('created_at', { ascending: false })
 
   if (kampanjeError || !kampanje) {
@@ -881,14 +880,14 @@ export async function getKampanjeAnalytics(): Promise<KampanjaAnalytics[]> {
 
   const analytics: KampanjaAnalytics[] = kampanje.map(k => {
     const kampanjaKupciIds = safeKupacKampanja
-      .filter(kk => kk.kampanjaid === k.id)
-      .map(kk => kk.id)
+      .filter(kk => Number(kk.kampanjaid) === Number(k.id))
+      .map(kk => Number(kk.id))
     const kupacaPoslato = kampanjaKupciIds.length
-    const kampanjaLogs = safeLogs.filter(l => l.kampanja_id === k.id)
+    const kampanjaLogs = safeLogs.filter(l => Number(l.kampanja_id) === Number(k.id))
     const dosliNaSajt = kampanjaLogs.filter(l => l.event_type === 'page_view').length
     const whatsappKlikovi = kampanjaLogs.filter(l => l.event_type === 'whatsapp_click').length
     const kontaktPoslat = safePozivi.filter(p => 
-      p.idkampanjakupac && kampanjaKupciIds.includes(p.idkampanjakupac)
+      p.idkampanjakupac && kampanjaKupciIds.includes(Number(p.idkampanjakupac))
     ).length
     
     const conversionRate = kupacaPoslato > 0 
