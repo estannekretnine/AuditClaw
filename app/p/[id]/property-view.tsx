@@ -139,7 +139,7 @@ export default function PropertyView({ ponuda, photos, kampanja, kodkampanje, ku
     // Ako imamo kodkampanje i kupackampanjaId iz URL-a, koristi tracking format
     if (kodkampanje && kupackampanjaId) {
       const header = `Kod:${kodkampanje}:${kupackampanjaId}`
-      const separator = '====================================================================='
+      const separator = '====================='
       const tekst = kampanja?.tekst_whatsapp || ''
       
       const message = `${header}\n${separator}\n\n${tekst}`

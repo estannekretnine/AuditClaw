@@ -18,6 +18,22 @@ function extractPonudaId(text: string): number | null {
   return null
 }
 
+// Parsiranje koda kampanje iz teksta poruke
+// Format: Kod:{kodkampanje}:{kupackampanjaId}
+function extractKampanjaKod(text: string): { kodkampanje: string | null, kupackampanjaId: number | null } {
+  if (!text) return { kodkampanje: null, kupackampanjaId: null }
+  
+  // Traži pattern "Kod:{kodkampanje}:{id}" na početku poruke
+  const match = text.match(/^Kod:([^:]+):(\d+)/i)
+  if (match && match[1] && match[2]) {
+    return {
+      kodkampanje: match[1],
+      kupackampanjaId: parseInt(match[2], 10)
+    }
+  }
+  return { kodkampanje: null, kupackampanjaId: null }
+}
+
 // Formatiranje broja telefona
 function formatPhoneNumber(phone: string): string {
   if (!phone) return ''
@@ -114,12 +130,46 @@ export async function POST(request: NextRequest) {
 
       const ponudaId = extractPonudaId(messageText)
       const phoneNumber = formatPhoneNumber(extractPhoneNumber(message))
+      const { kodkampanje, kupackampanjaId } = extractKampanjaKod(messageText)
       
-      logs.push(`Extracted: phone=${phoneNumber}, ponudaId=${ponudaId}`)
+      logs.push(`Extracted: phone=${phoneNumber}, ponudaId=${ponudaId}, kodkampanje=${kodkampanje}, kupackampanjaId=${kupackampanjaId}`)
 
       // Proveri da li ponuda postoji (foreign key constraint)
       let validPonudaId: number | null = null
-      if (ponudaId) {
+      let validIdKampanjaKupac: number | null = null
+      
+      // Ako imamo kupackampanjaId, dohvati ponudaid iz kampanje
+      if (kupackampanjaId) {
+        const { data: kupackampanjaData } = await supabase
+          .from('kupackampanja')
+          .select('id, kampanjaid')
+          .eq('id', kupackampanjaId)
+          .single()
+        
+        if (kupackampanjaData) {
+          validIdKampanjaKupac = kupackampanjaData.id
+          logs.push(`KupacKampanja ${kupackampanjaId} exists, kampanjaid=${kupackampanjaData.kampanjaid}`)
+          
+          // Dohvati ponudaid iz kampanje
+          if (kupackampanjaData.kampanjaid) {
+            const { data: kampanjaData } = await supabase
+              .from('kampanja')
+              .select('ponudaid')
+              .eq('id', kupackampanjaData.kampanjaid)
+              .single()
+            
+            if (kampanjaData?.ponudaid) {
+              validPonudaId = kampanjaData.ponudaid
+              logs.push(`Ponuda from kampanja: ${validPonudaId}`)
+            }
+          }
+        } else {
+          logs.push(`KupacKampanja ${kupackampanjaId} NOT found`)
+        }
+      }
+      
+      // Fallback na stari način ako nema kupackampanjaId
+      if (!validPonudaId && ponudaId) {
         const { data: ponudaExists } = await supabase
           .from('ponuda')
           .select('id')
@@ -128,7 +178,7 @@ export async function POST(request: NextRequest) {
         
         if (ponudaExists) {
           validPonudaId = ponudaId
-          logs.push(`Ponuda ${ponudaId} exists`)
+          logs.push(`Ponuda ${ponudaId} exists (fallback)`)
         } else {
           logs.push(`Ponuda ${ponudaId} NOT found, setting to null`)
         }
@@ -137,8 +187,10 @@ export async function POST(request: NextRequest) {
       // Kreiraj zapis u pozivi tabeli
       const insertData = {
         mobtel: phoneNumber || null,
-        ponudaid: validPonudaId, // Koristi null ako ponuda ne postoji
-        validacija_ag: messageText.substring(0, 500), // Ograniči dužinu
+        ponudaid: validPonudaId,
+        kodkampanje: kodkampanje || null,
+        idkampanjakupac: validIdKampanjaKupac,
+        validacija_ag: messageText.substring(0, 500),
         created_at: new Date().toISOString(),
       }
       

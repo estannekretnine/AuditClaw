@@ -88,7 +88,7 @@ export default function KupacKampanjaModal({ isOpen, onClose, kampanja }: KupacK
 
     const kodkampanje = kampanja.kodkampanje || ''
     const header = `Kod:${kodkampanje}:${kk.id}`
-    const separator = '====================================================================='
+    const separator = '====================='
     const tekst = kampanja.tekst_whatsapp || ''
     const url = kk.url || ''
 
