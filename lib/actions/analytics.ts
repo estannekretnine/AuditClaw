@@ -730,14 +730,16 @@ export async function getWebLogReport(filter?: {
     .sort((a, b) => b.count - a.count)
 
   const topPonude = safePonude.map(p => {
+    const pId = Number(p.id)
     const ponudaKampanjeIds = safeKampanje
-      .filter(k => Number(k.ponudaid) === Number(p.id))
+      .filter(k => Number(k.ponudaid) === pId)
       .map(k => Number(k.id))
+      .filter(id => !Number.isNaN(id))
     const poslato = safeKupackampanja
-      .filter(kk => kk.kampanjaid && ponudaKampanjeIds.includes(Number(kk.kampanjaid)))
+      .filter(kk => kk.kampanjaid != null && ponudaKampanjeIds.includes(Number(kk.kampanjaid)))
       .length
 
-    const ponudaLogs = safeLog.filter(l => l.ponuda_id === p.id)
+    const ponudaLogs = safeLog.filter(l => Number(l.ponuda_id) === pId)
     const ponudaPageViews = ponudaLogs.filter(l => l.event_type === 'page_view').length
     const ponudaSessions = new Set(ponudaLogs.map(l => l.session_id)).size
     const ponudaWhatsapp = ponudaLogs.filter(l => l.event_type === 'whatsapp_click').length
