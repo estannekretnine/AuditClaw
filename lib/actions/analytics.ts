@@ -837,7 +837,8 @@ export async function getWebLogReport(filter?: {
 export interface KampanjaAnalytics {
   kampanjaId: number
   kodKampanje: string
-  ponudaNaslov: string | null
+  ponudaId: number
+  ponudaNaslov: string
   kupacaPoslato: number
   dosliNaSajt: number
   whatsappKlikovi: number
@@ -846,11 +847,12 @@ export interface KampanjaAnalytics {
 }
 
 export async function getKampanjeAnalytics(): Promise<KampanjaAnalytics[]> {
-  const supabase = await createClient()
+  const admin = createAdminClient()
 
-  const { data: kampanje, error: kampanjeError } = await supabase
+  const { data: kampanje, error: kampanjeError } = await admin
     .from('kampanja')
     .select('id, kodkampanje, ponudaid')
+    .not('ponudaid', 'is', null)
     .order('created_at', { ascending: false })
 
   if (kampanjeError || !kampanje) {
@@ -859,28 +861,28 @@ export async function getKampanjeAnalytics(): Promise<KampanjaAnalytics[]> {
   }
 
   const ponudaIds = [...new Set(kampanje.map(k => k.ponudaid).filter(Boolean))]
-  let ponudeMap: Record<number, string> = {}
+  const ponudeMap: Record<number, string> = {}
   
   if (ponudaIds.length > 0) {
-    const { data: ponude } = await supabase
+    const { data: ponude } = await admin
       .from('ponuda')
       .select('id, naslovoglasa')
       .in('id', ponudaIds)
     
     ponude?.forEach(p => {
-      ponudeMap[p.id] = p.naslovoglasa || `Ponuda #${p.id}`
+      ponudeMap[Number(p.id)] = p.naslovoglasa || `Ponuda #${p.id}`
     })
   }
 
-  const { data: kupacKampanja } = await supabase
+  const { data: kupacKampanja } = await admin
     .from('kupackampanja')
     .select('id, kampanjaid')
 
-  const { data: logs } = await supabase
+  const { data: logs } = await admin
     .from('webstrana_log')
     .select('kampanja_id, event_type')
 
-  const { data: pozivi } = await supabase
+  const { data: pozivi } = await admin
     .from('pozivi')
     .select('idkampanjakupac')
 
@@ -888,33 +890,45 @@ export async function getKampanjeAnalytics(): Promise<KampanjaAnalytics[]> {
   const safeLogs = logs || []
   const safePozivi = pozivi || []
 
-  const analytics: KampanjaAnalytics[] = kampanje.map(k => {
-    const kampanjaKupciIds = safeKupacKampanja
-      .filter(kk => Number(kk.kampanjaid) === Number(k.id))
-      .map(kk => Number(kk.id))
-    const kupacaPoslato = kampanjaKupciIds.length
-    const kampanjaLogs = safeLogs.filter(l => Number(l.kampanja_id) === Number(k.id))
-    const dosliNaSajt = kampanjaLogs.filter(l => l.event_type === 'page_view').length
-    const whatsappKlikovi = kampanjaLogs.filter(l => l.event_type === 'whatsapp_click').length
-    const kontaktPoslat = safePozivi.filter(p => 
-      p.idkampanjakupac && kampanjaKupciIds.includes(Number(p.idkampanjakupac))
-    ).length
-    
-    const conversionRate = kupacaPoslato > 0 
-      ? Math.round((kontaktPoslat / kupacaPoslato) * 10000) / 100 
-      : 0
+  const getKkKampanjaId = (kk: Record<string, unknown>) => kk.kampanjaid ?? kk.kampanja_id
+  const getKkId = (kk: Record<string, unknown>) => kk.id
+  const getLogKampanjaId = (l: Record<string, unknown>) => l.kampanja_id ?? l.kampanjaid
+  const getPoziviIdKampanjaKupac = (p: Record<string, unknown>) => p.idkampanjakupac ?? p.id_kampanja_kupac
 
-    return {
-      kampanjaId: k.id,
-      kodKampanje: k.kodkampanje || `#${k.id}`,
-      ponudaNaslov: k.ponudaid ? ponudeMap[k.ponudaid] || null : null,
-      kupacaPoslato,
-      dosliNaSajt,
-      whatsappKlikovi,
-      kontaktPoslat,
-      conversionRate
-    }
-  })
+  const analytics: KampanjaAnalytics[] = kampanje
+    .filter(k => k.ponudaid != null)
+    .map(k => {
+      const kId = Number(k.id)
+      const pId = Number(k.ponudaid)
+      const kampanjaKupciIds = safeKupacKampanja
+        .filter(kk => Number(getKkKampanjaId(kk as Record<string, unknown>)) === kId)
+        .map(kk => Number(getKkId(kk as Record<string, unknown>)))
+        .filter(id => !Number.isNaN(id))
+      const kupacaPoslato = kampanjaKupciIds.length
+      const kampanjaLogs = safeLogs.filter(l => Number(getLogKampanjaId(l as Record<string, unknown>)) === kId)
+      const dosliNaSajt = kampanjaLogs.filter(l => l.event_type === 'page_view').length
+      const whatsappKlikovi = kampanjaLogs.filter(l => l.event_type === 'whatsapp_click').length
+      const kontaktPoslat = safePozivi.filter(p => {
+        const idKK = getPoziviIdKampanjaKupac(p as Record<string, unknown>)
+        return idKK != null && !Number.isNaN(Number(idKK)) && kampanjaKupciIds.includes(Number(idKK))
+      }).length
+      
+      const conversionRate = kupacaPoslato > 0 
+        ? Math.round((kontaktPoslat / kupacaPoslato) * 10000) / 100 
+        : 0
+
+      return {
+        kampanjaId: kId,
+        kodKampanje: k.kodkampanje || `#${kId}`,
+        ponudaId: pId,
+        ponudaNaslov: ponudeMap[pId] || `Ponuda #${pId}`,
+        kupacaPoslato,
+        dosliNaSajt,
+        whatsappKlikovi,
+        kontaktPoslat,
+        conversionRate
+      }
+    })
 
   return analytics.sort((a, b) => b.kupacaPoslato - a.kupacaPoslato)
 }
