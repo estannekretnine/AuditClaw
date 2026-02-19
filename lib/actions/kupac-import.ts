@@ -222,24 +222,33 @@ export async function addRandomKupciToKampanja(kampanjaId: number, count: number
     return { added: 0, error: insertError.message }
   }
 
+  if (!insertedData || insertedData.length === 0) {
+    console.error('No data returned after insert')
+    return { added: 0, error: 'Insert nije vratio podatke' }
+  }
+
   // Generiši URL-ove za svaki novi zapis
-  if (insertedData && insertedData.length > 0 && kampanja.ponudaid) {
+  if (kampanja.ponudaid) {
     const baseUrl = 'https://www.auditclaw.io/p'
     const kodkampanje = kampanja.kodkampanje || ''
     
     for (const record of insertedData) {
       const url = `${baseUrl}/${kampanja.ponudaid}?c=${encodeURIComponent(kodkampanje)}&u=${record.id}`
       
-      await supabase
+      const { error: updateError } = await supabase
         .from('kupackampanja')
         .update({ url })
         .eq('id', record.id)
+      
+      if (updateError) {
+        console.error('Error updating URL for record:', record.id, updateError)
+      }
     }
   }
 
   revalidatePath('/dashboard/ponude')
 
-  return { added: selected.length, error: null }
+  return { added: insertedData.length, error: null }
 }
 
 export async function getKupciForKampanja(kampanjaId: number) {
