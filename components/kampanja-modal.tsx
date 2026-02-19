@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Plus, Pencil, MoreVertical, Archive, ArchiveRestore, Check, XCircle, Megaphone } from 'lucide-react'
+import { X, Plus, Pencil, MoreVertical, Archive, ArchiveRestore, Check, XCircle, Megaphone, Users } from 'lucide-react'
 import { getKampanjeByPonuda, arhivirajKampanja, aktivirajKampanja } from '@/lib/actions/kampanje'
 import type { Kampanja } from '@/lib/types/kampanja'
 import type { Ponuda } from '@/lib/types/ponuda'
 import KampanjaForm from './kampanja-form'
+import KupacKampanjaModal from './kupac-kampanja-modal'
 
 interface KampanjaModalProps {
   ponuda: Ponuda
@@ -23,6 +24,8 @@ export default function KampanjaModal({ ponuda, userId, userStatus, onClose }: K
   const [openActionMenu, setOpenActionMenu] = useState<number | null>(null)
   const [actionLoading, setActionLoading] = useState<number | null>(null)
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null)
+  const [showKupacModal, setShowKupacModal] = useState(false)
+  const [selectedKampanjaForKupci, setSelectedKampanjaForKupci] = useState<Kampanja | null>(null)
 
   const isAdmin = userStatus === 'admin' || userStatus === 'manager'
 
@@ -85,6 +88,12 @@ export default function KampanjaModal({ ponuda, userId, userStatus, onClose }: K
     } finally {
       setActionLoading(null)
     }
+  }
+
+  const handleImportKupaca = (kampanja: Kampanja) => {
+    setOpenActionMenu(null)
+    setSelectedKampanjaForKupci(kampanja)
+    setShowKupacModal(true)
   }
 
   // Format datum
@@ -275,25 +284,37 @@ export default function KampanjaModal({ ponuda, userId, userStatus, onClose }: K
                                   Izmeni
                                 </button>
                                 {isAdmin && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleArhiviraj(kampanja)
-                                    }}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                                  >
-                                    {kampanja.stsaktivan ? (
-                                      <>
-                                        <Archive className="w-3 h-3" />
-                                        Arhiviraj
-                                      </>
-                                    ) : (
-                                      <>
-                                        <ArchiveRestore className="w-3 h-3" />
-                                        Aktiviraj
-                                      </>
-                                    )}
-                                  </button>
+                                  <>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleImportKupaca(kampanja)
+                                      }}
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+                                    >
+                                      <Users className="w-3 h-3" />
+                                      Import kupaca
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleArhiviraj(kampanja)
+                                      }}
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                    >
+                                      {kampanja.stsaktivan ? (
+                                        <>
+                                          <Archive className="w-3 h-3" />
+                                          Arhiviraj
+                                        </>
+                                      ) : (
+                                        <>
+                                          <ArchiveRestore className="w-3 h-3" />
+                                          Aktiviraj
+                                        </>
+                                      )}
+                                    </button>
+                                  </>
                                 )}
                               </div>
                             </>
@@ -317,6 +338,18 @@ export default function KampanjaModal({ ponuda, userId, userStatus, onClose }: K
             userStatus={userStatus}
             onClose={handleFormClose}
             onSuccess={handleFormSuccess}
+          />
+        )}
+
+        {/* Kupac Kampanja Modal */}
+        {showKupacModal && selectedKampanjaForKupci && (
+          <KupacKampanjaModal
+            isOpen={showKupacModal}
+            onClose={() => {
+              setShowKupacModal(false)
+              setSelectedKampanjaForKupci(null)
+            }}
+            kampanja={selectedKampanjaForKupci}
           />
         )}
       </div>
