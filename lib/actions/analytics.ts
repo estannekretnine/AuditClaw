@@ -974,7 +974,13 @@ export async function getPonudeForKampanje(): Promise<PonudaOption[]> {
     .in('id', ponudaIds)
     .order('naslovoglasa')
   
-  const korisnikIds = [...new Set((ponude || []).flatMap(p => [p.idkorisnik_agencija, p.idkorisnik]).filter(Boolean))]
+  const getAgencijaId = (p: Record<string, unknown>) => p.idkorisnik_agencija ?? p['idkorisnik_agencija']
+  const getKorisnikId = (p: Record<string, unknown>) => p.idkorisnik ?? p['idkorisnik']
+  
+  const korisnikIds = [...new Set((ponude || []).flatMap(p => {
+    const rec = p as Record<string, unknown>
+    return [getAgencijaId(rec), getKorisnikId(rec)]
+  }).filter(Boolean))]
   
   const korisniciMap: Record<number, string> = {}
   if (korisnikIds.length > 0) {
@@ -989,7 +995,8 @@ export async function getPonudeForKampanje(): Promise<PonudaOption[]> {
   }
   
   return (ponude || []).map(p => {
-    const vlasnikId = p.idkorisnik_agencija || p.idkorisnik
+    const rec = p as Record<string, unknown>
+    const vlasnikId = getAgencijaId(rec) || getKorisnikId(rec)
     return {
       id: Number(p.id),
       naslovoglasa: p.naslovoglasa || `Ponuda #${p.id}`,

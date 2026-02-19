@@ -225,11 +225,11 @@ export default function KampanjePage() {
       {dataLoaded && !loading && (
         <div className="space-y-6">
           {/* Selected Ponuda Header */}
-          <div className="bg-gradient-to-r from-amber-600/20 to-amber-800/10 border border-amber-500/30 rounded-xl p-4">
+          <div className="bg-slate-800 border border-amber-500/50 rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-white">{selectedPonudaNaslov}</h2>
-                <p className="text-amber-300/70 text-sm mt-1">
+                <p className="text-slate-400 text-sm mt-1">
                   {dateFrom && dateTo ? `Period: ${dateFrom} - ${dateTo}` : 
                    dateFrom ? `Od: ${dateFrom}` :
                    dateTo ? `Do: ${dateTo}` :
@@ -238,7 +238,7 @@ export default function KampanjePage() {
               </div>
               <button
                 onClick={loadData}
-                className="flex items-center gap-2 px-4 py-2 bg-amber-500/20 text-amber-300 rounded-lg hover:bg-amber-500/30 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-black rounded-lg hover:bg-amber-400 transition-colors font-medium"
               >
                 <RefreshCw className="w-4 h-4" />
                 Osveži
@@ -248,28 +248,28 @@ export default function KampanjePage() {
 
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border border-blue-500/30 rounded-xl p-4">
+            <div className="bg-slate-800 border border-blue-500/50 rounded-xl p-4">
               <Users className="w-6 h-6 text-blue-400 mb-2" />
               <div className="text-3xl font-bold text-white">{totals.kupacaPoslato.toLocaleString()}</div>
-              <div className="text-blue-300 text-sm">Kupaca poslato</div>
+              <div className="text-slate-300 text-sm">Kupaca poslato</div>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border border-purple-500/30 rounded-xl p-4">
+            <div className="bg-slate-800 border border-purple-500/50 rounded-xl p-4">
               <Globe className="w-6 h-6 text-purple-400 mb-2" />
               <div className="text-3xl font-bold text-white">{totals.dosliNaSajt.toLocaleString()}</div>
-              <div className="text-purple-300 text-sm">Došli na sajt</div>
+              <div className="text-slate-300 text-sm">Došli na sajt</div>
             </div>
 
-            <div className="bg-gradient-to-br from-green-600/20 to-green-800/20 border border-green-500/30 rounded-xl p-4">
+            <div className="bg-slate-800 border border-green-500/50 rounded-xl p-4">
               <MessageCircle className="w-6 h-6 text-green-400 mb-2" />
               <div className="text-3xl font-bold text-white">{totals.whatsappKlikovi.toLocaleString()}</div>
-              <div className="text-green-300 text-sm">WhatsApp klikovi</div>
+              <div className="text-slate-300 text-sm">WhatsApp klikovi</div>
             </div>
 
-            <div className="bg-gradient-to-br from-amber-600/20 to-amber-800/20 border border-amber-500/30 rounded-xl p-4">
+            <div className="bg-slate-800 border border-amber-500/50 rounded-xl p-4">
               <Phone className="w-6 h-6 text-amber-400 mb-2" />
               <div className="text-3xl font-bold text-white">{totals.kontaktPoslat.toLocaleString()}</div>
-              <div className="text-amber-300 text-sm">Kontakt poslat</div>
+              <div className="text-slate-300 text-sm">Kontakt poslat</div>
             </div>
           </div>
 
