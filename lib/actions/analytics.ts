@@ -851,8 +851,8 @@ export async function getKampanjeAnalytics(): Promise<KampanjaAnalytics[]> {
   }
 
   const { data: kupacKampanja } = await supabase
-    .from('kupac_kampanja')
-    .select('kampanjaid')
+    .from('kupackampanja')
+    .select('id, kampanjaid')
 
   const { data: logs } = await supabase
     .from('webstrana_log')
@@ -860,18 +860,23 @@ export async function getKampanjeAnalytics(): Promise<KampanjaAnalytics[]> {
 
   const { data: pozivi } = await supabase
     .from('pozivi')
-    .select('kodkampanje')
+    .select('idkampanjakupac')
 
   const safeKupacKampanja = kupacKampanja || []
   const safeLogs = logs || []
   const safePozivi = pozivi || []
 
   const analytics: KampanjaAnalytics[] = kampanje.map(k => {
-    const kupacaPoslato = safeKupacKampanja.filter(kk => kk.kampanjaid === k.id).length
+    const kampanjaKupciIds = safeKupacKampanja
+      .filter(kk => kk.kampanjaid === k.id)
+      .map(kk => kk.id)
+    const kupacaPoslato = kampanjaKupciIds.length
     const kampanjaLogs = safeLogs.filter(l => l.kampanja_id === k.id)
     const dosliNaSajt = kampanjaLogs.filter(l => l.event_type === 'page_view').length
     const whatsappKlikovi = kampanjaLogs.filter(l => l.event_type === 'whatsapp_click').length
-    const kontaktPoslat = safePozivi.filter(p => p.kodkampanje === k.kodkampanje).length
+    const kontaktPoslat = safePozivi.filter(p => 
+      p.idkampanjakupac && kampanjaKupciIds.includes(p.idkampanjakupac)
+    ).length
     
     const conversionRate = kupacaPoslato > 0 
       ? Math.round((kontaktPoslat / kupacaPoslato) * 10000) / 100 
@@ -890,4 +895,141 @@ export async function getKampanjeAnalytics(): Promise<KampanjaAnalytics[]> {
   })
 
   return analytics.sort((a, b) => b.kupacaPoslato - a.kupacaPoslato)
+}
+
+export interface WebLogEntry {
+  id: number
+  created_at: string
+  session_id: string
+  ponuda_id: number
+  kampanja_id: number | null
+  event_type: string
+  event_data: Record<string, unknown> | null
+  ip_address: string | null
+  user_agent: string | null
+  referrer: string | null
+  language: string | null
+  time_spent_seconds: number | null
+  country: string | null
+  city: string | null
+  ponuda?: { id: number; naslovoglasa: string | null } | null
+  kampanja?: { id: number; kodkampanje: string | null } | null
+}
+
+export interface WebLogFilter {
+  dateFrom?: string
+  dateTo?: string
+  ponudaId?: number
+  kampanjaId?: number
+  eventType?: string
+  language?: string
+  country?: string
+  city?: string
+  search?: string
+}
+
+export interface WebLogPaginatedResult {
+  data: WebLogEntry[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+export async function getWebLogs(
+  filter: WebLogFilter = {},
+  page: number = 1,
+  pageSize: number = 50
+): Promise<WebLogPaginatedResult> {
+  const supabase = await createClient()
+
+  let countQuery = supabase
+    .from('webstrana_log')
+    .select('*', { count: 'exact', head: true })
+
+  let dataQuery = supabase
+    .from('webstrana_log')
+    .select(`
+      *,
+      ponuda:ponuda_id (id, naslovoglasa),
+      kampanja:kampanja_id (id, kodkampanje)
+    `)
+    .order('created_at', { ascending: false })
+
+  if (filter.dateFrom) {
+    countQuery = countQuery.gte('created_at', filter.dateFrom)
+    dataQuery = dataQuery.gte('created_at', filter.dateFrom)
+  }
+  if (filter.dateTo) {
+    countQuery = countQuery.lte('created_at', filter.dateTo)
+    dataQuery = dataQuery.lte('created_at', filter.dateTo)
+  }
+  if (filter.ponudaId) {
+    countQuery = countQuery.eq('ponuda_id', filter.ponudaId)
+    dataQuery = dataQuery.eq('ponuda_id', filter.ponudaId)
+  }
+  if (filter.kampanjaId) {
+    countQuery = countQuery.eq('kampanja_id', filter.kampanjaId)
+    dataQuery = dataQuery.eq('kampanja_id', filter.kampanjaId)
+  }
+  if (filter.eventType) {
+    countQuery = countQuery.eq('event_type', filter.eventType)
+    dataQuery = dataQuery.eq('event_type', filter.eventType)
+  }
+  if (filter.language) {
+    countQuery = countQuery.eq('language', filter.language)
+    dataQuery = dataQuery.eq('language', filter.language)
+  }
+  if (filter.country) {
+    countQuery = countQuery.eq('country', filter.country)
+    dataQuery = dataQuery.eq('country', filter.country)
+  }
+  if (filter.city) {
+    countQuery = countQuery.eq('city', filter.city)
+    dataQuery = dataQuery.eq('city', filter.city)
+  }
+  if (filter.search) {
+    const searchTerm = `%${filter.search}%`
+    countQuery = countQuery.or(`session_id.ilike.${searchTerm},ip_address.ilike.${searchTerm},referrer.ilike.${searchTerm}`)
+    dataQuery = dataQuery.or(`session_id.ilike.${searchTerm},ip_address.ilike.${searchTerm},referrer.ilike.${searchTerm}`)
+  }
+
+  const offset = (page - 1) * pageSize
+  dataQuery = dataQuery.range(offset, offset + pageSize - 1)
+
+  const [countResult, dataResult] = await Promise.all([countQuery, dataQuery])
+
+  const total = countResult.count || 0
+  const data = (dataResult.data || []) as WebLogEntry[]
+
+  return {
+    data,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.ceil(total / pageSize)
+  }
+}
+
+export async function getWebLogFiltersData() {
+  const supabase = await createClient()
+
+  const [ponudeResult, kampanjeResult, countriesResult, citiesResult] = await Promise.all([
+    supabase.from('ponuda').select('id, naslovoglasa').eq('stsaktivan', true).order('naslovoglasa'),
+    supabase.from('kampanja').select('id, kodkampanje').eq('stsaktivan', true).order('kodkampanje'),
+    supabase.from('webstrana_log').select('country').not('country', 'is', null),
+    supabase.from('webstrana_log').select('city').not('city', 'is', null)
+  ])
+
+  const uniqueCountries = [...new Set((countriesResult.data || []).map(r => r.country).filter(Boolean))]
+  const uniqueCities = [...new Set((citiesResult.data || []).map(r => r.city).filter(Boolean))]
+
+  return {
+    ponude: ponudeResult.data || [],
+    kampanje: kampanjeResult.data || [],
+    countries: uniqueCountries.sort(),
+    cities: uniqueCities.sort(),
+    eventTypes: ['page_view', 'photo_click', 'language_change', 'whatsapp_click', 'video_click', '3d_tour_click', 'map_interaction', 'page_leave'],
+    languages: ['sr', 'en', 'de']
+  }
 }

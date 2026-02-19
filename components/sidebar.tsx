@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, Users, Shield, ChevronDown, ChevronRight, LogOut, Menu, X, Home, BarChart3, Upload, TrendingUp, Target } from 'lucide-react'
+import { Building2, Users, Shield, ChevronDown, ChevronRight, LogOut, Menu, X, Home, BarChart3, Upload, TrendingUp, Target, FileText } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -32,6 +32,7 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
   const analizaSubItems: AnalyzaSubItem[] = [
     { id: 'posecenost', label: 'Posećenost', href: '/dashboard/analiza/posecenost', icon: TrendingUp },
     { id: 'kampanje', label: 'Kampanje', href: '/dashboard/analiza/kampanje', icon: Target },
+    { id: 'log-strane', label: 'Log Strane', href: '/dashboard/analiza/log-strane', icon: FileText },
   ]
 
   const adminSubItems: Array<{
