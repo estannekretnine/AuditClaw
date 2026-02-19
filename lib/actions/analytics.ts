@@ -612,3 +612,84 @@ export async function getSyntheticReport(filter?: {
     }
   }
 }
+
+export interface KampanjaAnalytics {
+  kampanjaId: number
+  kodKampanje: string
+  ponudaNaslov: string | null
+  kupacaPoslato: number
+  dosliNaSajt: number
+  whatsappKlikovi: number
+  kontaktPoslat: number
+  conversionRate: number
+}
+
+export async function getKampanjeAnalytics(): Promise<KampanjaAnalytics[]> {
+  const supabase = await createClient()
+
+  const { data: kampanje, error: kampanjeError } = await supabase
+    .from('kampanja')
+    .select('id, kodkampanje, ponudaid')
+    .eq('stsaktivan', true)
+    .order('created_at', { ascending: false })
+
+  if (kampanjeError || !kampanje) {
+    console.error('Error fetching kampanje:', kampanjeError)
+    return []
+  }
+
+  const ponudaIds = [...new Set(kampanje.map(k => k.ponudaid).filter(Boolean))]
+  let ponudeMap: Record<number, string> = {}
+  
+  if (ponudaIds.length > 0) {
+    const { data: ponude } = await supabase
+      .from('ponuda')
+      .select('id, naslovoglasa')
+      .in('id', ponudaIds)
+    
+    ponude?.forEach(p => {
+      ponudeMap[p.id] = p.naslovoglasa || `Ponuda #${p.id}`
+    })
+  }
+
+  const { data: kupacKampanja } = await supabase
+    .from('kupac_kampanja')
+    .select('kampanjaid')
+
+  const { data: logs } = await supabase
+    .from('webstrana_log')
+    .select('kampanja_id, event_type')
+
+  const { data: pozivi } = await supabase
+    .from('pozivi')
+    .select('kodkampanje')
+
+  const safeKupacKampanja = kupacKampanja || []
+  const safeLogs = logs || []
+  const safePozivi = pozivi || []
+
+  const analytics: KampanjaAnalytics[] = kampanje.map(k => {
+    const kupacaPoslato = safeKupacKampanja.filter(kk => kk.kampanjaid === k.id).length
+    const kampanjaLogs = safeLogs.filter(l => l.kampanja_id === k.id)
+    const dosliNaSajt = kampanjaLogs.filter(l => l.event_type === 'page_view').length
+    const whatsappKlikovi = kampanjaLogs.filter(l => l.event_type === 'whatsapp_click').length
+    const kontaktPoslat = safePozivi.filter(p => p.kodkampanje === k.kodkampanje).length
+    
+    const conversionRate = kupacaPoslato > 0 
+      ? Math.round((kontaktPoslat / kupacaPoslato) * 10000) / 100 
+      : 0
+
+    return {
+      kampanjaId: k.id,
+      kodKampanje: k.kodkampanje || `#${k.id}`,
+      ponudaNaslov: k.ponudaid ? ponudeMap[k.ponudaid] || null : null,
+      kupacaPoslato,
+      dosliNaSajt,
+      whatsappKlikovi,
+      kontaktPoslat,
+      conversionRate
+    }
+  })
+
+  return analytics.sort((a, b) => b.kupacaPoslato - a.kupacaPoslato)
+}

@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, Users, Shield, ChevronDown, LogOut, Menu, X, Home, BarChart3, Upload } from 'lucide-react'
+import { Building2, Users, Shield, ChevronDown, ChevronRight, LogOut, Menu, X, Home, BarChart3, Upload, TrendingUp, Target } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -13,18 +13,38 @@ interface SidebarProps {
   onToggle?: () => void
 }
 
+interface AnalyzaSubItem {
+  id: string
+  label: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+}
+
 export default function Sidebar({ user, collapsed = false, onToggle }: SidebarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isAdminOpen, setIsAdminOpen] = useState(true)
+  const [isAnalizaOpen, setIsAnalizaOpen] = useState(true)
   const pathname = usePathname()
 
   const isAdmin = user?.stsstatus === 'admin' || user?.stsstatus === 'manager'
   const isAgent = user?.stsstatus === 'agent'
 
-  const adminSubItems = [
+  const analizaSubItems: AnalyzaSubItem[] = [
+    { id: 'posecenost', label: 'Posećenost', href: '/dashboard/analiza/posecenost', icon: TrendingUp },
+    { id: 'kampanje', label: 'Kampanje', href: '/dashboard/analiza/kampanje', icon: Target },
+  ]
+
+  const adminSubItems: Array<{
+    id: string
+    label: string
+    icon: React.ComponentType<{ className?: string }>
+    href?: string
+    hasSubmenu?: boolean
+    subItems?: AnalyzaSubItem[]
+  }> = [
     { id: 'korisnici', label: 'Korisnici', href: '/dashboard/korisnici', icon: Users },
     { id: 'ponude', label: 'Ponude', href: '/dashboard/ponude', icon: Home },
-    { id: 'analitika', label: 'Analiza Logovanja', href: '/dashboard/analitika', icon: BarChart3 },
+    { id: 'analiza', label: 'Analiza', icon: BarChart3, hasSubmenu: true, subItems: analizaSubItems },
     { id: 'import-kupaca', label: 'Import kupaca', href: '/dashboard/import-kupaca', icon: Upload },
   ]
 
@@ -43,7 +63,13 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
     }] : []),
   ]
 
-  const isAdminActive = adminSubItems.some(item => pathname === item.href)
+  const isAnalizaActive = analizaSubItems.some(item => pathname === item.href)
+  const isAdminActive = adminSubItems.some(item => {
+    if (item.hasSubmenu && item.subItems) {
+      return item.subItems.some(sub => pathname === sub.href)
+    }
+    return pathname === item.href
+  })
 
   async function handleLogout() {
     await logout()
@@ -205,12 +231,61 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
                     <ul className="mt-2 ml-5 pl-4 border-l-2 border-amber-500/20 space-y-1">
                       {item.subItems.map((subItem) => {
                         const SubIcon = subItem.icon
-                        const isSubItemActive = pathname === subItem.href
+                        const hasNestedSubmenu = 'hasSubmenu' in subItem && subItem.hasSubmenu
+                        const isSubItemActive = hasNestedSubmenu 
+                          ? ('subItems' in subItem && subItem.subItems?.some((nested: AnalyzaSubItem) => pathname === nested.href))
+                          : pathname === subItem.href
+                        
+                        if (hasNestedSubmenu && 'subItems' in subItem) {
+                          return (
+                            <li key={subItem.id}>
+                              <button
+                                onClick={() => setIsAnalizaOpen(!isAnalizaOpen)}
+                                className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                                  isSubItemActive
+                                    ? 'bg-white/10 text-amber-400'
+                                    : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'
+                                }`}
+                                type="button"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <SubIcon className="w-4 h-4" />
+                                  <span className="text-sm font-medium">{subItem.label}</span>
+                                </div>
+                                <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${isAnalizaOpen ? 'rotate-90' : ''}`} />
+                              </button>
+                              {isAnalizaOpen && (
+                                <ul className="mt-1 ml-4 pl-3 border-l border-amber-500/10 space-y-1">
+                                  {subItem.subItems.map((nestedItem: AnalyzaSubItem) => {
+                                    const NestedIcon = nestedItem.icon
+                                    const isNestedActive = pathname === nestedItem.href
+                                    return (
+                                      <li key={nestedItem.id}>
+                                        <Link
+                                          href={nestedItem.href}
+                                          onClick={() => setIsMobileMenuOpen(false)}
+                                          className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-200 ${
+                                            isNestedActive
+                                              ? 'bg-amber-500/20 text-amber-300'
+                                              : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'
+                                          }`}
+                                        >
+                                          <NestedIcon className="w-3.5 h-3.5" />
+                                          <span className="text-xs font-medium">{nestedItem.label}</span>
+                                        </Link>
+                                      </li>
+                                    )
+                                  })}
+                                </ul>
+                              )}
+                            </li>
+                          )
+                        }
                         
                         return (
                           <li key={subItem.id}>
                             <Link
-                              href={subItem.href}
+                              href={subItem.href!}
                               onClick={() => setIsMobileMenuOpen(false)}
                               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
                                 isSubItemActive
