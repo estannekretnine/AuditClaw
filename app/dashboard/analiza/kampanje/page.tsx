@@ -154,7 +154,9 @@ export default function KampanjePage() {
               >
                 <option value="">-- Izaberite ponudu --</option>
                 {ponudeOptions.map(p => (
-                  <option key={p.id} value={p.id}>{p.naslovoglasa}</option>
+                  <option key={p.id} value={p.id}>
+                    {p.naslovoglasa}{p.agencija ? ` (${p.agencija})` : ''}
+                  </option>
                 ))}
               </select>
             )}

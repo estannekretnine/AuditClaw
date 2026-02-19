@@ -953,6 +953,7 @@ export async function getKampanjeAnalytics(filter?: KampanjeFilter): Promise<Kam
 export interface PonudaOption {
   id: number
   naslovoglasa: string
+  agencija: string | null
 }
 
 export async function getPonudeForKampanje(): Promise<PonudaOption[]> {
@@ -969,13 +970,28 @@ export async function getPonudeForKampanje(): Promise<PonudaOption[]> {
   
   const { data: ponude } = await admin
     .from('ponuda')
-    .select('id, naslovoglasa')
+    .select('id, naslovoglasa, idkorisnik_agencija')
     .in('id', ponudaIds)
     .order('naslovoglasa')
   
+  const agencijaIds = [...new Set((ponude || []).map(p => p.idkorisnik_agencija).filter(Boolean))]
+  
+  const agencijeMap: Record<number, string> = {}
+  if (agencijaIds.length > 0) {
+    const { data: agencije } = await admin
+      .from('korisnici')
+      .select('id, ime')
+      .in('id', agencijaIds)
+    
+    agencije?.forEach(a => {
+      agencijeMap[Number(a.id)] = a.ime || `Agencija #${a.id}`
+    })
+  }
+  
   return (ponude || []).map(p => ({
     id: Number(p.id),
-    naslovoglasa: p.naslovoglasa || `Ponuda #${p.id}`
+    naslovoglasa: p.naslovoglasa || `Ponuda #${p.id}`,
+    agencija: p.idkorisnik_agencija ? agencijeMap[Number(p.idkorisnik_agencija)] || null : null
   }))
 }
 
