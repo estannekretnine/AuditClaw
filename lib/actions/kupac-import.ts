@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import Papa from 'papaparse'
 import type { 
@@ -42,7 +42,7 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
     }
   }
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   let inserted = 0
   let updated = 0
   let errors = 0
@@ -130,7 +130,7 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
 }
 
 export async function getKupciImport(limit: number = 50, offset: number = 0) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data, error, count } = await supabase
     .from('kupacimport')
@@ -147,7 +147,7 @@ export async function getKupciImport(limit: number = 50, offset: number = 0) {
 }
 
 export async function getKupciCountForImport() {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { count, error } = await supabase
     .from('kupacimport')
@@ -162,7 +162,7 @@ export async function getKupciCountForImport() {
 }
 
 export async function addRandomKupciToKampanja(kampanjaId: number, count: number) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data: existingKupci } = await supabase
     .from('kupackampanja')
@@ -214,7 +214,7 @@ export async function addRandomKupciToKampanja(kampanjaId: number, count: number
 }
 
 export async function getKupciForKampanja(kampanjaId: number) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data, error } = await supabase
     .from('kupackampanja')
@@ -234,7 +234,7 @@ export async function getKupciForKampanja(kampanjaId: number) {
 }
 
 export async function removeKupacFromKampanja(id: number) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { error } = await supabase
     .from('kupackampanja')
@@ -252,7 +252,7 @@ export async function removeKupacFromKampanja(id: number) {
 }
 
 export async function getKupciKampanjaCount(kampanjaId: number) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { count, error } = await supabase
     .from('kupackampanja')
