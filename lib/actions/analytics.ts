@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { 
   AnalyticsFilter, 
   AnalyticsSummary, 
@@ -651,6 +652,7 @@ export async function getWebLogReport(filter?: {
   ponudaId?: number
 }): Promise<WebLogReport> {
   const supabase = await createClient()
+  const admin = createAdminClient()
 
   let query = supabase.from('webstrana_log').select('*')
   if (filter?.ponudaId) query = query.eq('ponuda_id', filter.ponudaId)
@@ -659,8 +661,8 @@ export async function getWebLogReport(filter?: {
   
   const { data: logs } = await query
   const { data: ponude } = await supabase.from('ponuda').select('id, naslovoglasa').eq('stsaktivan', true)
-  const { data: kampanje } = await supabase.from('kampanja').select('id, ponudaid')
-  const { data: kupackampanja } = await supabase.from('kupackampanja').select('kampanjaid')
+  const { data: kampanje } = await admin.from('kampanja').select('id, ponudaid')
+  const { data: kupackampanja } = await admin.from('kupackampanja').select('kampanjaid')
 
   const safeLog = logs || []
   const safePonude = ponude || []
@@ -731,12 +733,18 @@ export async function getWebLogReport(filter?: {
 
   const topPonude = safePonude.map(p => {
     const pId = Number(p.id)
+    const getKampanjaPonudaId = (k: Record<string, unknown>) => Number(k.ponudaid ?? k.ponuda_id)
+    const getKampanjaId = (k: Record<string, unknown>) => Number(k.id)
+    const getKkKampanjaId = (kk: Record<string, unknown>) => kk.kampanjaid ?? kk.kampanja_id
     const ponudaKampanjeIds = safeKampanje
-      .filter(k => Number(k.ponudaid) === pId)
-      .map(k => Number(k.id))
+      .filter(k => getKampanjaPonudaId(k as Record<string, unknown>) === pId)
+      .map(k => getKampanjaId(k as Record<string, unknown>))
       .filter(id => !Number.isNaN(id))
     const poslato = safeKupackampanja
-      .filter(kk => kk.kampanjaid != null && ponudaKampanjeIds.includes(Number(kk.kampanjaid)))
+      .filter(kk => {
+        const kid = getKkKampanjaId(kk as Record<string, unknown>)
+        return kid != null && kid !== '' && !Number.isNaN(Number(kid)) && ponudaKampanjeIds.includes(Number(kid))
+      })
       .length
 
     const ponudaLogs = safeLog.filter(l => Number(l.ponuda_id) === pId)
