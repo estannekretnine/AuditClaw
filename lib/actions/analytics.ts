@@ -970,29 +970,32 @@ export async function getPonudeForKampanje(): Promise<PonudaOption[]> {
   
   const { data: ponude } = await admin
     .from('ponuda')
-    .select('id, naslovoglasa, idkorisnik_agencija')
+    .select('id, naslovoglasa, idkorisnik_agencija, idkorisnik')
     .in('id', ponudaIds)
     .order('naslovoglasa')
   
-  const agencijaIds = [...new Set((ponude || []).map(p => p.idkorisnik_agencija).filter(Boolean))]
+  const korisnikIds = [...new Set((ponude || []).flatMap(p => [p.idkorisnik_agencija, p.idkorisnik]).filter(Boolean))]
   
-  const agencijeMap: Record<number, string> = {}
-  if (agencijaIds.length > 0) {
-    const { data: agencije } = await admin
+  const korisniciMap: Record<number, string> = {}
+  if (korisnikIds.length > 0) {
+    const { data: korisnici } = await admin
       .from('korisnici')
       .select('id, ime')
-      .in('id', agencijaIds)
+      .in('id', korisnikIds)
     
-    agencije?.forEach(a => {
-      agencijeMap[Number(a.id)] = a.ime || `Agencija #${a.id}`
+    korisnici?.forEach(k => {
+      korisniciMap[Number(k.id)] = k.ime || `Korisnik #${k.id}`
     })
   }
   
-  return (ponude || []).map(p => ({
-    id: Number(p.id),
-    naslovoglasa: p.naslovoglasa || `Ponuda #${p.id}`,
-    agencija: p.idkorisnik_agencija ? agencijeMap[Number(p.idkorisnik_agencija)] || null : null
-  }))
+  return (ponude || []).map(p => {
+    const vlasnikId = p.idkorisnik_agencija || p.idkorisnik
+    return {
+      id: Number(p.id),
+      naslovoglasa: p.naslovoglasa || `Ponuda #${p.id}`,
+      agencija: vlasnikId ? korisniciMap[Number(vlasnikId)] || null : null
+    }
+  })
 }
 
 export interface WebLogEntry {
