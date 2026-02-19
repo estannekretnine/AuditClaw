@@ -1,0 +1,51 @@
+ime,prezime,email,mobprimarni,mobsek,linkedinurl,drzava,grad,zanimanje,godisnjaplata
+Marko,Petrović,marko.petrovic@gmail.com,+381641234567,+381651234567,https://linkedin.com/in/markopetrovic,Srbija,Beograd,IT Menadžer,85000
+Ana,Jovanović,ana.jovanovic@yahoo.com,+381642345678,,https://linkedin.com/in/anajovanovic,Srbija,Novi Sad,Direktor prodaje,92000
+Stefan,Nikolić,stefan.nikolic@hotmail.com,+381643456789,+381653456789,,Srbija,Niš,Programer,72000
+Jelena,Đorđević,jelena.djordjevic@gmail.com,+381644567890,,,Srbija,Kragujevac,Marketing menadžer,68000
+Nikola,Stojanović,nikola.stojanovic@outlook.com,+381645678901,+381655678901,https://linkedin.com/in/nikolastojanovic,Srbija,Subotica,Finansijski analitičar,78000
+Milica,Ilić,milica.ilic@gmail.com,+381646789012,,https://linkedin.com/in/milicailic,Srbija,Zrenjanin,HR menadžer,65000
+Luka,Popović,luka.popovic@yahoo.com,+381647890123,+381657890123,,Srbija,Pančevo,Arhitekta,88000
+Teodora,Mihajlović,teodora.mihajlovic@gmail.com,+381648901234,,,Srbija,Čačak,Lekar,95000
+Aleksandar,Janković,aleksandar.jankovic@hotmail.com,+381649012345,+381659012345,https://linkedin.com/in/aleksandarjankovic,Srbija,Leskovac,Advokat,82000
+Sofija,Pavlović,sofija.pavlovic@gmail.com,+381640123456,,https://linkedin.com/in/sofijapavlovic,Srbija,Valjevo,Ekonomista,70000
+Đorđe,Marković,djordje.markovic@outlook.com,+381641122334,+381651122334,,Srbija,Beograd,Inženjer,76000
+Mia,Tomić,mia.tomic@gmail.com,+381642233445,,,Srbija,Novi Sad,Dizajner,58000
+Vuk,Živković,vuk.zivkovic@yahoo.com,+381643344556,+381653344556,https://linkedin.com/in/vukzivkovic,Srbija,Niš,Menadžer projekata,80000
+Lena,Kostić,lena.kostic@hotmail.com,+381644455667,,https://linkedin.com/in/lenakostic,Srbija,Kragujevac,Računovođa,62000
+Filip,Ristić,filip.ristic@gmail.com,+381645566778,+381655566778,,Srbija,Subotica,Konsultant,85000
+Nina,Đukić,nina.djukic@outlook.com,+381646677889,,,Srbija,Zrenjanin,Novinar,55000
+Matija,Savić,matija.savic@gmail.com,+381647788990,+381657788990,https://linkedin.com/in/matijasavic,Srbija,Pančevo,Prodavac,48000
+Sara,Lazić,sara.lazic@yahoo.com,+381648899001,,https://linkedin.com/in/saralazic,Srbija,Čačak,Profesor,52000
+Petar,Stanković,petar.stankovic@hotmail.com,+381649900112,+381659900112,,Srbija,Leskovac,Vozač,42000
+Emilija,Vasić,emilija.vasic@gmail.com,+381640011223,,,Srbija,Valjevo,Medicinska sestra,45000
+Milan,Todorović,milan.todorovic@outlook.com,+381641234001,+381651234001,https://linkedin.com/in/milantodorovic,Srbija,Beograd,CEO,150000
+Katarina,Mitrović,katarina.mitrovic@gmail.com,+381642345002,,https://linkedin.com/in/katarinamitrovic,Srbija,Novi Sad,CTO,140000
+Nemanja,Obradović,nemanja.obradovic@yahoo.com,+381643456003,+381653456003,,Srbija,Niš,CFO,135000
+Ivana,Krstić,ivana.krstic@hotmail.com,+381644567004,,,Srbija,Kragujevac,COO,130000
+Uroš,Simić,uros.simic@gmail.com,+381645678005,+381655678005,https://linkedin.com/in/urossimic,Srbija,Subotica,DevOps inženjer,90000
+Tamara,Radović,tamara.radovic@outlook.com,+381646789006,,https://linkedin.com/in/tamararadovic,Srbija,Zrenjanin,UX dizajner,75000
+Bogdan,Petrović,bogdan.petrovic@gmail.com,+381647890007,+381657890007,,Srbija,Pančevo,Backend developer,82000
+Anđela,Vuković,andjela.vukovic@yahoo.com,+381648901008,,,Srbija,Čačak,Frontend developer,78000
+Danilo,Milošević,danilo.milosevic@hotmail.com,+381649012009,+381659012009,https://linkedin.com/in/danilomilosevic,Srbija,Leskovac,Data analyst,72000
+Maja,Đorđević,maja.djordjevic@gmail.com,+381640123010,,https://linkedin.com/in/majadjordjevic,Srbija,Valjevo,QA inženjer,68000
+Jovan,Arsenijević,jovan.arsenijevic@outlook.com,+381641234011,+381651234011,,Srbija,Beograd,Scrum master,88000
+Tijana,Perić,tijana.peric@gmail.com,+381642345012,,,Srbija,Novi Sad,Product manager,95000
+Lazar,Gajić,lazar.gajic@yahoo.com,+381643456013,+381653456013,https://linkedin.com/in/lazargajic,Srbija,Niš,Sales manager,80000
+Dunja,Matić,dunja.matic@hotmail.com,+381644567014,,https://linkedin.com/in/dunjamatic,Srbija,Kragujevac,Account manager,70000
+Miloš,Lukić,milos.lukic@gmail.com,+381645678015,+381655678015,,Srbija,Subotica,Business analyst,75000
+Nađa,Kovačević,nadja.kovacevic@outlook.com,+381646789016,,,Srbija,Zrenjanin,System admin,65000
+Vanja,Nedeljković,vanja.nedeljkovic@gmail.com,+381647890017,+381657890017,https://linkedin.com/in/vanjanedeljkovic,Srbija,Pančevo,Network engineer,70000
+Ksenija,Babić,ksenija.babic@yahoo.com,+381648901018,,https://linkedin.com/in/ksenijababic,Srbija,Čačak,Security analyst,78000
+Igor,Đurić,igor.djuric@hotmail.com,+381649012019,+381659012019,,Srbija,Leskovac,Cloud architect,95000
+Milena,Filipović,milena.filipovic@gmail.com,+381640123020,,,Srbija,Valjevo,Mobile developer,80000
+Srđan,Panić,srdjan.panic@outlook.com,+381641234021,+381651234021,https://linkedin.com/in/srdjanpanic,Srbija,Beograd,Tech lead,110000
+Jovana,Stanić,jovana.stanic@gmail.com,+381642345022,,https://linkedin.com/in/jovanastanic,Srbija,Novi Sad,Team lead,100000
+Rastko,Jović,rastko.jovic@yahoo.com,+381643456023,+381653456023,,Srbija,Niš,Senior developer,92000
+Isidora,Radosavljević,isidora.radosavljevic@hotmail.com,+381644567024,,,Srbija,Kragujevac,Junior developer,55000
+Viktor,Antić,viktor.antic@gmail.com,+381645678025,+381655678025,https://linkedin.com/in/viktorantic,Srbija,Subotica,Intern,35000
+Nevena,Cvetković,nevena.cvetkovic@outlook.com,+381646789026,,https://linkedin.com/in/nevenacvetkovic,Srbija,Zrenjanin,Recruiter,58000
+Aleksa,Milanović,aleksa.milanovic@gmail.com,+381647890027,+381657890027,,Srbija,Pančevo,Office manager,50000
+Dragana,Spasić,dragana.spasic@yahoo.com,+381648901028,,,Srbija,Čačak,Executive assistant,48000
+Marija,Vučić,marija.vucic@hotmail.com,+381649012029,+381659012029,https://linkedin.com/in/marijavucic,Srbija,Leskovac,Legal counsel,85000
+Branislav,Zorić,branislav.zoric@gmail.com,+381640123030,,https://linkedin.com/in/branislavzoric,Srbija,Valjevo,Compliance officer,80000
