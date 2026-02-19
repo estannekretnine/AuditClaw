@@ -394,6 +394,7 @@ export default function PosecenostPage() {
                     <tr>
                       <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">#</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Ponuda</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-slate-300">Poslato</th>
                       <th className="px-4 py-3 text-right text-sm font-medium text-slate-300">Posete</th>
                       <th className="px-4 py-3 text-right text-sm font-medium text-slate-300">Sesije</th>
                       <th className="px-4 py-3 text-right text-sm font-medium text-slate-300">WhatsApp</th>
@@ -406,6 +407,11 @@ export default function PosecenostPage() {
                       <tr key={ponuda.id} className="hover:bg-slate-700/30">
                         <td className="px-4 py-3 text-amber-400 font-bold">{idx + 1}</td>
                         <td className="px-4 py-3 text-white font-medium truncate max-w-[250px]">{ponuda.naslov}</td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="px-2 py-1 bg-blue-600/20 text-blue-300 rounded text-sm font-medium">
+                            {ponuda.poslato}
+                          </span>
+                        </td>
                         <td className="px-4 py-3 text-right text-slate-200">{ponuda.pageViews}</td>
                         <td className="px-4 py-3 text-right text-blue-300">{ponuda.uniqueSessions}</td>
                         <td className="px-4 py-3 text-right text-green-300">{ponuda.whatsappClicks}</td>

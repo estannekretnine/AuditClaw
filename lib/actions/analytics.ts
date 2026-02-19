@@ -630,6 +630,7 @@ export interface WebLogReport {
   topPonude: Array<{
     id: number
     naslov: string
+    poslato: number
     pageViews: number
     uniqueSessions: number
     whatsappClicks: number
@@ -658,9 +659,13 @@ export async function getWebLogReport(filter?: {
   
   const { data: logs } = await query
   const { data: ponude } = await supabase.from('ponuda').select('id, naslovoglasa').eq('stsaktivan', true)
+  const { data: kampanje } = await supabase.from('kampanja').select('id, ponudaid')
+  const { data: kupackampanja } = await supabase.from('kupackampanja').select('kampanjaid')
 
   const safeLog = logs || []
   const safePonude = ponude || []
+  const safeKampanje = kampanje || []
+  const safeKupackampanja = kupackampanja || []
 
   const pageViews = safeLog.filter(l => l.event_type === 'page_view')
   const totalPageViews = pageViews.length
@@ -725,6 +730,13 @@ export async function getWebLogReport(filter?: {
     .sort((a, b) => b.count - a.count)
 
   const topPonude = safePonude.map(p => {
+    const ponudaKampanjeIds = safeKampanje
+      .filter(k => k.ponudaid === p.id)
+      .map(k => k.id)
+    const poslato = safeKupackampanja
+      .filter(kk => kk.kampanjaid && ponudaKampanjeIds.includes(kk.kampanjaid))
+      .length
+
     const ponudaLogs = safeLog.filter(l => l.ponuda_id === p.id)
     const ponudaPageViews = ponudaLogs.filter(l => l.event_type === 'page_view').length
     const ponudaSessions = new Set(ponudaLogs.map(l => l.session_id)).size
@@ -738,6 +750,7 @@ export async function getWebLogReport(filter?: {
     return {
       id: p.id,
       naslov: p.naslovoglasa || `Ponuda #${p.id}`,
+      poslato,
       pageViews: ponudaPageViews,
       uniqueSessions: ponudaSessions,
       whatsappClicks: ponudaWhatsapp,
