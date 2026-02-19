@@ -1046,3 +1046,126 @@ export async function getWebLogFiltersData() {
     languages: ['sr', 'en', 'de']
   }
 }
+
+export interface WebLogStats {
+  totalLogs: number
+  uniqueSessions: number
+  eventCounts: Record<string, number>
+  languageCounts: Record<string, number>
+  countryCounts: Record<string, number>
+  cityCounts: Record<string, number>
+  deviceCounts: Record<string, number>
+  avgTimeOnPage: number
+  dailyStats: Array<{ date: string; count: number; pageViews: number; whatsapp: number; photo: number }>
+  hourlyStats: Array<{ hour: number; count: number }>
+  topReferrers: Array<{ referrer: string; count: number }>
+}
+
+export async function getWebLogStats(filter: WebLogFilter = {}): Promise<WebLogStats> {
+  const supabase = await createClient()
+
+  let query = supabase.from('webstrana_log').select('*')
+
+  if (filter.dateFrom) query = query.gte('created_at', filter.dateFrom)
+  if (filter.dateTo) query = query.lte('created_at', filter.dateTo)
+  if (filter.ponudaId) query = query.eq('ponuda_id', filter.ponudaId)
+  if (filter.kampanjaId) query = query.eq('kampanja_id', filter.kampanjaId)
+  if (filter.eventType) query = query.eq('event_type', filter.eventType)
+  if (filter.language) query = query.eq('language', filter.language)
+  if (filter.country) query = query.eq('country', filter.country)
+  if (filter.city) query = query.eq('city', filter.city)
+
+  const { data: logs } = await query
+  const safeLogs = logs || []
+
+  const totalLogs = safeLogs.length
+  const uniqueSessions = new Set(safeLogs.map(l => l.session_id)).size
+
+  const eventCounts: Record<string, number> = {}
+  safeLogs.forEach(l => {
+    eventCounts[l.event_type] = (eventCounts[l.event_type] || 0) + 1
+  })
+
+  const languageCounts: Record<string, number> = {}
+  safeLogs.filter(l => l.language).forEach(l => {
+    languageCounts[l.language!] = (languageCounts[l.language!] || 0) + 1
+  })
+
+  const countryCounts: Record<string, number> = {}
+  safeLogs.filter(l => l.country).forEach(l => {
+    countryCounts[l.country!] = (countryCounts[l.country!] || 0) + 1
+  })
+
+  const cityCounts: Record<string, number> = {}
+  safeLogs.filter(l => l.city).forEach(l => {
+    cityCounts[l.city!] = (cityCounts[l.city!] || 0) + 1
+  })
+
+  const deviceCounts: Record<string, number> = { Mobile: 0, Desktop: 0 }
+  safeLogs.forEach(l => {
+    if (l.user_agent?.includes('Mobile')) {
+      deviceCounts['Mobile']++
+    } else {
+      deviceCounts['Desktop']++
+    }
+  })
+
+  const pageLeaves = safeLogs.filter(l => l.event_type === 'page_leave' && l.time_spent_seconds)
+  const avgTimeOnPage = pageLeaves.length > 0
+    ? Math.round(pageLeaves.reduce((sum, l) => sum + (l.time_spent_seconds || 0), 0) / pageLeaves.length)
+    : 0
+
+  const dailyMap: Record<string, { count: number; pageViews: number; whatsapp: number; photo: number }> = {}
+  safeLogs.forEach(l => {
+    const date = l.created_at.split('T')[0]
+    if (!dailyMap[date]) dailyMap[date] = { count: 0, pageViews: 0, whatsapp: 0, photo: 0 }
+    dailyMap[date].count++
+    if (l.event_type === 'page_view') dailyMap[date].pageViews++
+    if (l.event_type === 'whatsapp_click') dailyMap[date].whatsapp++
+    if (l.event_type === 'photo_click') dailyMap[date].photo++
+  })
+  const dailyStats = Object.entries(dailyMap)
+    .map(([date, data]) => ({ date, ...data }))
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  const hourlyMap: Record<number, number> = {}
+  for (let i = 0; i < 24; i++) hourlyMap[i] = 0
+  safeLogs.forEach(l => {
+    const hour = new Date(l.created_at).getHours()
+    hourlyMap[hour]++
+  })
+  const hourlyStats = Object.entries(hourlyMap)
+    .map(([hour, count]) => ({ hour: parseInt(hour), count }))
+    .sort((a, b) => a.hour - b.hour)
+
+  const referrerMap: Record<string, number> = {}
+  safeLogs.forEach(l => {
+    let ref = 'Direktno'
+    if (l.referrer) {
+      try {
+        ref = new URL(l.referrer).hostname
+      } catch {
+        ref = l.referrer
+      }
+    }
+    referrerMap[ref] = (referrerMap[ref] || 0) + 1
+  })
+  const topReferrers = Object.entries(referrerMap)
+    .map(([referrer, count]) => ({ referrer, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10)
+
+  return {
+    totalLogs,
+    uniqueSessions,
+    eventCounts,
+    languageCounts,
+    countryCounts,
+    cityCounts,
+    deviceCounts,
+    avgTimeOnPage,
+    dailyStats,
+    hourlyStats,
+    topReferrers
+  }
+}

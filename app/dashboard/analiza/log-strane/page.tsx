@@ -4,13 +4,16 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   FileText, RefreshCw, Search, Filter, ChevronLeft, ChevronRight,
   Eye, Image, MessageCircle, Video, Map, Clock, Globe, MapPin,
-  Monitor, Languages, X, ExternalLink
+  Monitor, Languages, X, ExternalLink, Users, BarChart3, Smartphone,
+  TrendingUp
 } from 'lucide-react'
 import {
   getWebLogs,
   getWebLogFiltersData,
+  getWebLogStats,
   type WebLogEntry,
-  type WebLogFilter
+  type WebLogFilter,
+  type WebLogStats
 } from '@/lib/actions/analytics'
 
 const eventLabels: Record<string, string> = {
@@ -65,6 +68,7 @@ export default function LogStranePage() {
   const [filtersData, setFiltersData] = useState<FiltersData | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [selectedLog, setSelectedLog] = useState<WebLogEntry | null>(null)
+  const [stats, setStats] = useState<WebLogStats | null>(null)
 
   const [filters, setFilters] = useState<WebLogFilter>({})
   const [searchTerm, setSearchTerm] = useState('')
@@ -74,17 +78,25 @@ export default function LogStranePage() {
     setFiltersData(data)
   }, [])
 
+  const loadStats = useCallback(async () => {
+    const data = await getWebLogStats(filters)
+    setStats(data)
+  }, [filters])
+
   const loadLogs = useCallback(async () => {
     setLoading(true)
     try {
-      const result = await getWebLogs(filters, page, pageSize)
-      setLogs(result.data)
-      setTotal(result.total)
-      setTotalPages(result.totalPages)
+      const [logsResult] = await Promise.all([
+        getWebLogs(filters, page, pageSize),
+        loadStats()
+      ])
+      setLogs(logsResult.data)
+      setTotal(logsResult.total)
+      setTotalPages(logsResult.totalPages)
     } finally {
       setLoading(false)
     }
-  }, [filters, page, pageSize])
+  }, [filters, page, pageSize, loadStats])
 
   useEffect(() => {
     loadFiltersData()
@@ -500,6 +512,269 @@ export default function LogStranePage() {
           </div>
         )}
       </div>
+
+      {/* Statistics Section */}
+      {stats && !loading && (
+        <div className="mt-6 space-y-6">
+          {/* KPI Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border border-blue-500/30 rounded-xl p-4">
+              <BarChart3 className="w-6 h-6 text-blue-400 mb-2" />
+              <div className="text-3xl font-bold text-white">{stats.totalLogs.toLocaleString()}</div>
+              <div className="text-blue-300 text-sm">Ukupno logova</div>
+            </div>
+            <div className="bg-gradient-to-br from-green-600/20 to-green-800/20 border border-green-500/30 rounded-xl p-4">
+              <Users className="w-6 h-6 text-green-400 mb-2" />
+              <div className="text-3xl font-bold text-white">{stats.uniqueSessions.toLocaleString()}</div>
+              <div className="text-green-300 text-sm">Jedinstvene sesije</div>
+            </div>
+            <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border border-purple-500/30 rounded-xl p-4">
+              <Clock className="w-6 h-6 text-purple-400 mb-2" />
+              <div className="text-3xl font-bold text-white">{stats.avgTimeOnPage}s</div>
+              <div className="text-purple-300 text-sm">Prosečno vreme</div>
+            </div>
+            <div className="bg-gradient-to-br from-amber-600/20 to-amber-800/20 border border-amber-500/30 rounded-xl p-4">
+              <MessageCircle className="w-6 h-6 text-amber-400 mb-2" />
+              <div className="text-3xl font-bold text-white">{stats.eventCounts['whatsapp_click'] || 0}</div>
+              <div className="text-amber-300 text-sm">WhatsApp klikovi</div>
+            </div>
+          </div>
+
+          {/* Event Distribution */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-amber-400" />
+                Događaji po tipu
+              </h3>
+              <div className="space-y-3">
+                {Object.entries(stats.eventCounts)
+                  .sort(([, a], [, b]) => b - a)
+                  .map(([event, count]) => {
+                    const maxCount = Math.max(...Object.values(stats.eventCounts))
+                    const percent = maxCount > 0 ? (count / maxCount) * 100 : 0
+                    return (
+                      <div key={event} className="flex items-center gap-3">
+                        <div className={`p-1.5 rounded ${eventColors[event] || 'bg-slate-600'}`}>
+                          {eventIcons[event] || <Eye className="w-4 h-4" />}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-slate-300">{eventLabels[event] || event}</span>
+                            <span className="text-white font-medium">{count}</span>
+                          </div>
+                          <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-amber-500 rounded-full transition-all"
+                              style={{ width: `${percent}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+            </div>
+
+            {/* Device & Language */}
+            <div className="space-y-6">
+              {/* Device Distribution */}
+              <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Smartphone className="w-5 h-5 text-cyan-400" />
+                  Uređaji
+                </h3>
+                <div className="flex gap-4">
+                  {Object.entries(stats.deviceCounts).map(([device, count]) => {
+                    const total = Object.values(stats.deviceCounts).reduce((a, b) => a + b, 0)
+                    const percent = total > 0 ? Math.round((count / total) * 100) : 0
+                    return (
+                      <div key={device} className="flex-1 text-center">
+                        <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-2 ${
+                          device === 'Mobile' ? 'bg-cyan-500' : 'bg-violet-500'
+                        }`}>
+                          <span className="text-white font-bold text-lg">{percent}%</span>
+                        </div>
+                        <div className="text-white font-medium">{device}</div>
+                        <div className="text-slate-400 text-sm">{count} poseta</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Language Distribution */}
+              <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Languages className="w-5 h-5 text-violet-400" />
+                  Jezici
+                </h3>
+                <div className="flex gap-4">
+                  {Object.entries(stats.languageCounts)
+                    .sort(([, a], [, b]) => b - a)
+                    .slice(0, 3)
+                    .map(([lang, count]) => {
+                      const total = Object.values(stats.languageCounts).reduce((a, b) => a + b, 0)
+                      const percent = total > 0 ? Math.round((count / total) * 100) : 0
+                      const langNames: Record<string, string> = { sr: 'Srpski', en: 'Engleski', de: 'Nemački' }
+                      const langColors: Record<string, string> = { sr: 'bg-blue-500', en: 'bg-green-500', de: 'bg-amber-500' }
+                      return (
+                        <div key={lang} className="flex-1 text-center">
+                          <div className={`w-14 h-14 mx-auto rounded-full flex items-center justify-center mb-2 ${langColors[lang] || 'bg-slate-500'}`}>
+                            <span className="text-white font-bold">{percent}%</span>
+                          </div>
+                          <div className="text-white font-medium text-sm">{langNames[lang] || lang.toUpperCase()}</div>
+                          <div className="text-slate-400 text-xs">{count}</div>
+                        </div>
+                      )
+                    })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Daily Chart */}
+          {stats.dailyStats.length > 0 && (
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Dnevna aktivnost (poslednjih 14 dana)</h3>
+              <div className="flex items-end gap-1 h-40">
+                {stats.dailyStats.slice(-14).map(day => {
+                  const maxCount = Math.max(...stats.dailyStats.slice(-14).map(d => d.count), 1)
+                  const height = (day.count / maxCount) * 100
+                  return (
+                    <div key={day.date} className="flex-1 flex flex-col items-center group">
+                      <div className="relative w-full">
+                        <div 
+                          className="w-full bg-amber-500/80 rounded-t hover:bg-amber-400 transition-colors cursor-pointer"
+                          style={{ height: `${Math.max(4, height)}px` }}
+                        />
+                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-600 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                          <div className="text-amber-300 font-bold">{day.count} događaja</div>
+                          <div className="text-blue-300">{day.pageViews} pregleda</div>
+                          <div className="text-green-300">{day.whatsapp} WA</div>
+                          <div className="text-slate-400">{new Date(day.date).toLocaleDateString('sr-RS', { day: '2-digit', month: '2-digit' })}</div>
+                        </div>
+                      </div>
+                      <span className="text-xs text-slate-500 mt-1 hidden md:block">
+                        {new Date(day.date).toLocaleDateString('sr-RS', { day: '2-digit' })}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="flex justify-center gap-6 mt-4 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-amber-500 rounded" />
+                  <span className="text-slate-400">Ukupno događaja</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Hourly Distribution */}
+          <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Aktivnost po satu</h3>
+            <div className="flex items-end gap-0.5 h-32">
+              {stats.hourlyStats.map(({ hour, count }) => {
+                const maxCount = Math.max(...stats.hourlyStats.map(h => h.count), 1)
+                const height = (count / maxCount) * 100
+                return (
+                  <div key={hour} className="flex-1 flex flex-col items-center group">
+                    <div className="relative w-full">
+                      <div 
+                        className="w-full bg-cyan-500/80 rounded-t hover:bg-cyan-400 transition-colors cursor-pointer"
+                        style={{ height: `${Math.max(2, height)}px` }}
+                      />
+                      <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-600 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                        <div className="text-cyan-300 font-bold">{count} događaja</div>
+                        <div className="text-slate-400">{hour}:00 - {hour}:59</div>
+                      </div>
+                    </div>
+                    {hour % 4 === 0 && (
+                      <span className="text-xs text-slate-500 mt-1">{hour}h</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Geography & Referrers */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Countries */}
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Globe className="w-5 h-5 text-blue-400" />
+                Top države
+              </h3>
+              <div className="space-y-2">
+                {Object.entries(stats.countryCounts)
+                  .sort(([, a], [, b]) => b - a)
+                  .slice(0, 5)
+                  .map(([country, count], idx) => (
+                    <div key={country} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <span className="text-amber-400 font-bold text-sm w-5">{idx + 1}</span>
+                        <span className="text-white text-sm">{country}</span>
+                      </div>
+                      <span className="text-blue-300 font-bold">{count}</span>
+                    </div>
+                  ))}
+                {Object.keys(stats.countryCounts).length === 0 && (
+                  <p className="text-slate-500 text-sm">Nema podataka</p>
+                )}
+              </div>
+            </div>
+
+            {/* Cities */}
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-pink-400" />
+                Top gradovi
+              </h3>
+              <div className="space-y-2">
+                {Object.entries(stats.cityCounts)
+                  .sort(([, a], [, b]) => b - a)
+                  .slice(0, 5)
+                  .map(([city, count], idx) => (
+                    <div key={city} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <span className="text-amber-400 font-bold text-sm w-5">{idx + 1}</span>
+                        <span className="text-white text-sm">{city}</span>
+                      </div>
+                      <span className="text-pink-300 font-bold">{count}</span>
+                    </div>
+                  ))}
+                {Object.keys(stats.cityCounts).length === 0 && (
+                  <p className="text-slate-500 text-sm">Nema podataka</p>
+                )}
+              </div>
+            </div>
+
+            {/* Referrers */}
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <ExternalLink className="w-5 h-5 text-green-400" />
+                Top referreri
+              </h3>
+              <div className="space-y-2">
+                {stats.topReferrers.slice(0, 5).map((item, idx) => (
+                  <div key={item.referrer} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-amber-400 font-bold text-sm w-5">{idx + 1}</span>
+                      <span className="text-white text-sm truncate">{item.referrer}</span>
+                    </div>
+                    <span className="text-green-300 font-bold ml-2">{item.count}</span>
+                  </div>
+                ))}
+                {stats.topReferrers.length === 0 && (
+                  <p className="text-slate-500 text-sm">Nema podataka</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Detail Modal */}
       {selectedLog && (
