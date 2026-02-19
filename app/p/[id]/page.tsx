@@ -4,6 +4,7 @@ import PropertyView from './property-view'
 
 interface PageProps {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ c?: string; u?: string }>
 }
 
 async function getPonudaWithPhotos(id: number) {
@@ -62,8 +63,9 @@ async function getPonudaWithPhotos(id: number) {
   return { ponuda, photos: photos || [], kampanja: kampanja || null }
 }
 
-export default async function PropertyPage({ params }: PageProps) {
+export default async function PropertyPage({ params, searchParams }: PageProps) {
   const { id } = await params
+  const { c: kodkampanje, u: kupackampanjaId } = await searchParams
   const ponudaId = parseInt(id, 10)
 
   if (isNaN(ponudaId)) {
@@ -76,7 +78,15 @@ export default async function PropertyPage({ params }: PageProps) {
     notFound()
   }
 
-  return <PropertyView ponuda={ponuda} photos={photos} kampanja={kampanja} />
+  return (
+    <PropertyView 
+      ponuda={ponuda} 
+      photos={photos} 
+      kampanja={kampanja}
+      kodkampanje={kodkampanje}
+      kupackampanjaId={kupackampanjaId ? parseInt(kupackampanjaId, 10) : undefined}
+    />
+  )
 }
 
 export async function generateMetadata({ params }: PageProps) {

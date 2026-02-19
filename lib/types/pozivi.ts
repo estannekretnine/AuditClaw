@@ -12,6 +12,7 @@ export interface Poziv {
   validacija_ag: string | null
   kodkampanje: string | null
   ponudaid: number | null
+  idkampanjakupac: number | null
 }
 
 export interface PozivInsert {
@@ -24,6 +25,7 @@ export interface PozivInsert {
   validacija_ag?: string | null
   kodkampanje?: string | null
   ponudaid?: number | null
+  idkampanjakupac?: number | null
 }
 
 export interface PozivUpdate extends PozivInsert {

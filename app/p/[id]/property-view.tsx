@@ -16,6 +16,8 @@ interface PropertyViewProps {
   ponuda: Ponuda
   photos: PonudaFoto[]
   kampanja: Kampanja | null
+  kodkampanje?: string
+  kupackampanjaId?: number
 }
 
 // Struktura koja se čuva u ponuda.webstrana
@@ -68,7 +70,7 @@ const defaultConfig: WebStranaConfig = {
   ctaButtonText: 'Kontaktirajte nas'
 }
 
-export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewProps) {
+export default function PropertyView({ ponuda, photos, kampanja, kodkampanje, kupackampanjaId }: PropertyViewProps) {
   // Parsiraj sačuvanu konfiguraciju (novi format sa link i config)
   const config = useMemo<WebStranaConfig>(() => {
     if (ponuda.webstrana) {
@@ -111,6 +113,7 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
   } = useWebstranaTracking({
     ponudaId: ponuda.id,
     kampanjaId: kampanja?.id,
+    kupackampanjaId: kupackampanjaId,
     initialLanguage: config.primaryLanguage
   })
 
@@ -132,6 +135,18 @@ export default function PropertyView({ ponuda, photos, kampanja }: PropertyViewP
   // Generisanje WhatsApp URL-a za "Zatraži detalje"
   const getWhatsAppUrl = () => {
     const phone = config.whatsappNumber.replace(/[+\s-]/g, '')
+    
+    // Ako imamo kodkampanje i kupackampanjaId iz URL-a, koristi tracking format
+    if (kodkampanje && kupackampanjaId) {
+      const header = `Kod:${kodkampanje}:${kupackampanjaId}`
+      const separator = '====================================================================='
+      const tekst = kampanja?.tekst_whatsapp || ''
+      
+      const message = `${header}\n${separator}\n\n${tekst}`
+      return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+    }
+    
+    // Fallback - standardna poruka bez tracking-a
     const title = ponuda.naslovoglasa || `${ponuda.vrstaobjekta_ag} - ${ponuda.lokacija_ag}`
     const message = `${t.whatsappMessage} "${title}" (ID: ${ponuda.id}).\n${t.requestDetails}`
     return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`

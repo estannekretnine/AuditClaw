@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Users, Shuffle, Trash2, RefreshCw, Mail, Phone, AlertCircle, CheckCircle } from 'lucide-react'
+import { X, Users, Shuffle, Trash2, RefreshCw, Mail, Phone, AlertCircle, CheckCircle, MessageCircle } from 'lucide-react'
 import { 
   getKupciCountForImport, 
   addRandomKupciToKampanja, 
@@ -80,6 +80,22 @@ export default function KupacKampanjaModal({ isOpen, onClose, kampanja }: KupacK
   if (!isOpen) return null
 
   const availableKupci = totalKupci - kupciKampanja.length
+
+  // Generiši WhatsApp URL za kupca
+  const getWhatsAppUrl = (kk: KupacKampanjaWithDetails) => {
+    const phone = kk.kupac?.mobprimarni?.replace(/[+\s-]/g, '') || ''
+    if (!phone) return null
+
+    const kodkampanje = kampanja.kodkampanje || ''
+    const header = `Kod:${kodkampanje}:${kk.id}`
+    const separator = '====================================================================='
+    const tekst = kampanja.tekst_whatsapp || ''
+    const url = kk.url || ''
+
+    const message = `${header}\n${separator}\n\n${tekst}\n\n${url}`
+    
+    return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+  }
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -250,18 +266,33 @@ export default function KupacKampanjaModal({ isOpen, onClose, kampanja }: KupacK
                             </div>
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleRemove(kk.id)}
-                          disabled={removingId === kk.id}
-                          className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors flex-shrink-0"
-                          title="Ukloni iz kampanje"
-                        >
-                          {removingId === kk.id ? (
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {/* WhatsApp dugme */}
+                          {getWhatsAppUrl(kk) && (
+                            <a
+                              href={getWhatsAppUrl(kk)!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 text-gray-400 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-colors"
+                              title="Pošalji WhatsApp poruku"
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                            </a>
                           )}
-                        </button>
+                          {/* Ukloni dugme */}
+                          <button
+                            onClick={() => handleRemove(kk.id)}
+                            disabled={removingId === kk.id}
+                            className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                            title="Ukloni iz kampanje"
+                          >
+                            {removingId === kk.id ? (
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
                       </div>
                     ))}
                     {kupciKampanja.length > 50 && (

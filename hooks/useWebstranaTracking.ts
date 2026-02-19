@@ -6,6 +6,7 @@ import type { EventType, Language } from '@/lib/types/webstrana-log'
 interface TrackingConfig {
   ponudaId: number
   kampanjaId?: number | null
+  kupackampanjaId?: number | null
   initialLanguage?: Language
 }
 
@@ -28,7 +29,7 @@ function generateSessionId(): string {
 }
 
 export function useWebstranaTracking(config: TrackingConfig) {
-  const { ponudaId, kampanjaId, initialLanguage } = config
+  const { ponudaId, kampanjaId, kupackampanjaId, initialLanguage } = config
   const sessionIdRef = useRef<string>('')
   const startTimeRef = useRef<number>(Date.now())
   const currentLanguageRef = useRef<Language>(initialLanguage || 'sr')
@@ -52,6 +53,7 @@ export function useWebstranaTracking(config: TrackingConfig) {
           session_id: sessionIdRef.current,
           ponuda_id: ponudaId,
           kampanja_id: kampanjaId || null,
+          kupackampanja_id: kupackampanjaId || null,
           event_type: data.event_type,
           event_data: data.event_data || null,
           language: data.language || currentLanguageRef.current,
@@ -61,7 +63,7 @@ export function useWebstranaTracking(config: TrackingConfig) {
     } catch (error) {
       console.error('Failed to track event:', error)
     }
-  }, [ponudaId, kampanjaId])
+  }, [ponudaId, kampanjaId, kupackampanjaId])
 
   const trackPageView = useCallback(() => {
     if (hasTrackedPageView.current) return
@@ -128,6 +130,7 @@ export function useWebstranaTracking(config: TrackingConfig) {
         session_id: sessionIdRef.current,
         ponuda_id: ponudaId,
         kampanja_id: kampanjaId || null,
+        kupackampanja_id: kupackampanjaId || null,
         event_type: 'page_leave',
         event_data: { timeSpent },
         language: currentLanguageRef.current,
@@ -141,7 +144,7 @@ export function useWebstranaTracking(config: TrackingConfig) {
         time_spent_seconds: timeSpent
       })
     }
-  }, [ponudaId, kampanjaId, trackEvent])
+  }, [ponudaId, kampanjaId, kupackampanjaId, trackEvent])
 
   useEffect(() => {
     trackPageView()

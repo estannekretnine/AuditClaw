@@ -164,6 +164,18 @@ export async function getKupciCountForImport() {
 export async function addRandomKupciToKampanja(kampanjaId: number, count: number) {
   const supabase = createAdminClient()
 
+  // Dohvati kampanju sa kodkampanje i ponudaid
+  const { data: kampanja, error: kampanjaError } = await supabase
+    .from('kampanja')
+    .select('kodkampanje, ponudaid')
+    .eq('id', kampanjaId)
+    .single()
+
+  if (kampanjaError || !kampanja) {
+    console.error('Error fetching kampanja:', kampanjaError)
+    return { added: 0, error: 'Kampanja nije pronađena' }
+  }
+
   const { data: existingKupci } = await supabase
     .from('kupackampanja')
     .select('kupacid')
@@ -199,13 +211,30 @@ export async function addRandomKupciToKampanja(kampanjaId: number, count: number
     created_at: new Date().toISOString(),
   }))
 
-  const { error: insertError } = await supabase
+  // Insert sa select da dobijemo ID-eve novih zapisa
+  const { data: insertedData, error: insertError } = await supabase
     .from('kupackampanja')
     .insert(insertData)
+    .select('id')
 
   if (insertError) {
     console.error('Error inserting kupackampanja:', insertError)
     return { added: 0, error: insertError.message }
+  }
+
+  // Generiši URL-ove za svaki novi zapis
+  if (insertedData && insertedData.length > 0 && kampanja.ponudaid) {
+    const baseUrl = 'https://www.auditclaw.io/p'
+    const kodkampanje = kampanja.kodkampanje || ''
+    
+    for (const record of insertedData) {
+      const url = `${baseUrl}/${kampanja.ponudaid}?c=${encodeURIComponent(kodkampanje)}&u=${record.id}`
+      
+      await supabase
+        .from('kupackampanja')
+        .update({ url })
+        .eq('id', record.id)
+    }
   }
 
   revalidatePath('/dashboard/ponude')

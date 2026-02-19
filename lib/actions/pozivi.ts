@@ -16,6 +16,7 @@ const pozivSchema = z.object({
   validacija_ag: z.string().optional().nullable(),
   kodkampanje: z.string().optional().nullable(),
   ponudaid: z.number().optional().nullable(),
+  idkampanjakupac: z.number().optional().nullable(),
 })
 
 // Zod schema za validaciju poziva (Agent - samo validacija_ag)
@@ -71,6 +72,7 @@ export async function createPoziv(formData: FormData) {
     validacija_ag: formData.get('validacija_ag') as string || null,
     kodkampanje: formData.get('kodkampanje') as string || null,
     ponudaid: formData.get('ponudaid') ? Number(formData.get('ponudaid')) : null,
+    idkampanjakupac: formData.get('idkampanjakupac') ? Number(formData.get('idkampanjakupac')) : null,
   }
 
   // Validacija
@@ -108,6 +110,7 @@ export async function updatePoziv(id: number, formData: FormData) {
     validacija_ag: formData.get('validacija_ag') as string || null,
     kodkampanje: formData.get('kodkampanje') as string || null,
     ponudaid: formData.get('ponudaid') ? Number(formData.get('ponudaid')) : null,
+    idkampanjakupac: formData.get('idkampanjakupac') ? Number(formData.get('idkampanjakupac')) : null,
   }
 
   // Validacija
