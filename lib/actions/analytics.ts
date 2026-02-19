@@ -986,11 +986,13 @@ export async function getPonudeForKampanje(): Promise<PonudaOption[]> {
   if (korisnikIds.length > 0) {
     const { data: korisnici } = await admin
       .from('korisnici')
-      .select('id, ime')
+      .select('id, naziv')
       .in('id', korisnikIds)
     
     korisnici?.forEach(k => {
-      korisniciMap[Number(k.id)] = k.ime || `Korisnik #${k.id}`
+      const rec = k as Record<string, unknown>
+      const naziv = rec.naziv ?? rec['naziv']
+      korisniciMap[Number(k.id)] = (naziv as string) || `Korisnik #${k.id}`
     })
   }
   
