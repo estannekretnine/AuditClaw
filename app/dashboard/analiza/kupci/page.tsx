@@ -8,11 +8,13 @@ import {
 import { 
   getKorisniciZaKupciAnaliza, 
   getKupciAnaliza,
-  izracunajGeoTotale,
   type KorisnikOption,
-  type KupacKontaktRow,
-  type KupciGeoTotali
+  type KupacKontaktRow
 } from '@/lib/actions/analytics'
+import { 
+  izracunajGeoTotale,
+  type KupciGeoTotali
+} from '@/lib/utils/geo-utils'
 
 export default function KupciAnalizaPage() {
   const [loading, setLoading] = useState(false)

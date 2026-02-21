@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Groq from 'groq-sdk'
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-})
+function getGroqClient() {
+  if (!process.env.GROQ_API_KEY) {
+    throw new Error('GROQ_API_KEY is not configured')
+  }
+  return new Groq({
+    apiKey: process.env.GROQ_API_KEY,
+  })
+}
 
 const SYSTEM_PROMPT = `Ti si 'AuditClaw AI', brutalno iskren investicioni analitičar nekretnina. 
 Tvoj fokus je na inženjerskoj preciznosti i psihologiji kupaca visoke platežne moći iz dijaspore (Nemačka, Švajcarska, Austrija, USA). 
@@ -93,6 +98,7 @@ ${ponuda.opis_ag || 'Opis nije unet - ovo je kritičan nedostatak za marketing.'
 
 Generiši JSON odgovor sa analizom i preporukama za kampanju. Odgovori SAMO sa JSON objektom, bez dodatnog teksta ili markdown formatiranja.`
 
+    const groq = getGroqClient()
     const completion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [
