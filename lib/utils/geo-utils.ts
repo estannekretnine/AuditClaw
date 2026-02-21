@@ -11,8 +11,8 @@ export interface KupciGeoTotali {
 }
 
 export interface KontaktZaGeo {
-  poziviDrzava: string | null
-  poziviRegija: string | null
+  drzava: string | null
+  grad: string | null
 }
 
 export function izracunajGeoTotale(kontakti: KontaktZaGeo[]): KupciGeoTotali {
@@ -20,8 +20,8 @@ export function izracunajGeoTotale(kontakti: KontaktZaGeo[]): KupciGeoTotali {
   const gradoviMap: Record<string, number> = {}
   
   for (const k of kontakti) {
-    const drzava = k.poziviDrzava?.trim()
-    const grad = k.poziviRegija?.trim()
+    const drzava = k.drzava?.trim()
+    const grad = k.grad?.trim()
     
     if (drzava) {
       drzaveMap[drzava] = (drzaveMap[drzava] || 0) + 1

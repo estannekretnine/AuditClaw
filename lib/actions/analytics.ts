@@ -1451,8 +1451,6 @@ export interface KupacKontaktRow {
   ponudaId: number | null
   ponudaNaslov: string | null
   kodkampanje: string | null
-  poziviDrzava: string | null
-  poziviRegija: string | null
 }
 
 
@@ -1488,7 +1486,7 @@ export async function getKupciAnaliza(filter: KupciAnalizaFilter): Promise<Kupac
   
   let poziviQuery = admin
     .from('pozivi')
-    .select('id, created_at, ponudaid, idkampanjakupac, kodkampanje, drzava, regija')
+    .select('id, created_at, ponudaid, idkampanjakupac, kodkampanje')
     .not('idkampanjakupac', 'is', null)
   
   if (korisnikPonudaIds) {
@@ -1562,7 +1560,6 @@ export async function getKupciAnaliza(filter: KupciAnalizaFilter): Promise<Kupac
     const kupacData = kupacDataMap[kupacId]
     if (!kupacData) continue
     
-    const rec = p as Record<string, unknown>
     result.push({
       pozivId: Number(p.id),
       kupacId,
@@ -1577,9 +1574,7 @@ export async function getKupciAnaliza(filter: KupciAnalizaFilter): Promise<Kupac
       grad: kupacData.grad,
       ponudaId: p.ponudaid ? Number(p.ponudaid) : null,
       ponudaNaslov: p.ponudaid ? ponudeMap[Number(p.ponudaid)] || `Ponuda #${p.ponudaid}` : null,
-      kodkampanje: p.kodkampanje,
-      poziviDrzava: (rec.drzava as string) || null,
-      poziviRegija: (rec.regija as string) || null
+      kodkampanje: p.kodkampanje
     })
   }
   
