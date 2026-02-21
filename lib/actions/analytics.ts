@@ -1436,14 +1436,10 @@ export interface KupciAnalizaFilter {
   dateTo?: string
 }
 
-export interface KupacOglas {
-  ponudaId: number
-  naslov: string
-  datum: string
-}
-
-export interface KupacAnalizaRow {
+export interface KupacKontaktRow {
+  pozivId: number
   kupacId: number
+  created_at: string
   ime: string | null
   prezime: string | null
   email: string | null
@@ -1452,13 +1448,12 @@ export interface KupacAnalizaRow {
   linkedinurl: string | null
   drzava: string | null
   grad: string | null
-  oglasi: KupacOglas[]
-  brojKontakata: number
-  prviKontakt: string | null
-  poslednjiKontakt: string | null
+  ponudaId: number | null
+  ponudaNaslov: string | null
+  kodkampanje: string | null
 }
 
-export async function getKupciAnaliza(filter: KupciAnalizaFilter): Promise<KupacAnalizaRow[]> {
+export async function getKupciAnaliza(filter: KupciAnalizaFilter): Promise<KupacKontaktRow[]> {
   const admin = createAdminClient()
   
   const { data: ponude } = await admin
@@ -1490,7 +1485,7 @@ export async function getKupciAnaliza(filter: KupciAnalizaFilter): Promise<Kupac
   
   let poziviQuery = admin
     .from('pozivi')
-    .select('id, created_at, ponudaid, idkampanjakupac')
+    .select('id, created_at, ponudaid, idkampanjakupac, kodkampanje')
     .not('idkampanjakupac', 'is', null)
   
   if (korisnikPonudaIds) {
@@ -1553,7 +1548,7 @@ export async function getKupciAnaliza(filter: KupciAnalizaFilter): Promise<Kupac
     }
   })
   
-  const kupciMap = new Map<number, KupacAnalizaRow>()
+  const result: KupacKontaktRow[] = []
   
   for (const p of pozivi) {
     if (!p.idkampanjakupac) continue
@@ -1564,42 +1559,23 @@ export async function getKupciAnaliza(filter: KupciAnalizaFilter): Promise<Kupac
     const kupacData = kupacDataMap[kupacId]
     if (!kupacData) continue
     
-    if (!kupciMap.has(kupacId)) {
-      kupciMap.set(kupacId, {
-        kupacId,
-        ime: kupacData.ime,
-        prezime: kupacData.prezime,
-        email: kupacData.email,
-        mobprimarni: kupacData.mobprimarni,
-        mobsek: kupacData.mobsek,
-        linkedinurl: kupacData.linkedinurl,
-        drzava: kupacData.drzava,
-        grad: kupacData.grad,
-        oglasi: [],
-        brojKontakata: 0,
-        prviKontakt: p.created_at,
-        poslednjiKontakt: p.created_at
-      })
-    }
-    
-    const kupac = kupciMap.get(kupacId)!
-    kupac.brojKontakata++
-    
-    if (p.created_at < (kupac.prviKontakt || '')) {
-      kupac.prviKontakt = p.created_at
-    }
-    if (p.created_at > (kupac.poslednjiKontakt || '')) {
-      kupac.poslednjiKontakt = p.created_at
-    }
-    
-    if (p.ponudaid) {
-      kupac.oglasi.push({
-        ponudaId: Number(p.ponudaid),
-        naslov: ponudeMap[Number(p.ponudaid)] || `Ponuda #${p.ponudaid}`,
-        datum: p.created_at
-      })
-    }
+    result.push({
+      pozivId: Number(p.id),
+      kupacId,
+      created_at: p.created_at,
+      ime: kupacData.ime,
+      prezime: kupacData.prezime,
+      email: kupacData.email,
+      mobprimarni: kupacData.mobprimarni,
+      mobsek: kupacData.mobsek,
+      linkedinurl: kupacData.linkedinurl,
+      drzava: kupacData.drzava,
+      grad: kupacData.grad,
+      ponudaId: p.ponudaid ? Number(p.ponudaid) : null,
+      ponudaNaslov: p.ponudaid ? ponudeMap[Number(p.ponudaid)] || `Ponuda #${p.ponudaid}` : null,
+      kodkampanje: p.kodkampanje
+    })
   }
   
-  return Array.from(kupciMap.values()).sort((a, b) => b.brojKontakata - a.brojKontakata)
+  return result
 }
