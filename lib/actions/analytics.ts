@@ -637,6 +637,7 @@ export interface WebLogReport {
     whatsappClicks: number
     photoClicks: number
     avgTime: number
+    kontakt: number
   }>
   dailyStats: Array<{ date: string; pageViews: number; whatsapp: number }>
   periodComparison: {
@@ -663,11 +664,13 @@ export async function getWebLogReport(filter?: {
   const { data: ponude } = await supabase.from('ponuda').select('id, naslovoglasa').eq('stsaktivan', true)
   const { data: kampanje } = await admin.from('kampanja').select('id, ponudaid')
   const { data: kupackampanja } = await admin.from('kupackampanja').select('kampanjaid')
+  const { data: pozivi } = await admin.from('pozivi').select('ponudaid')
 
   const safeLog = logs || []
   const safePonude = ponude || []
   const safeKampanje = kampanje || []
   const safeKupackampanja = kupackampanja || []
+  const safePozivi = pozivi || []
 
   const pageViews = safeLog.filter(l => l.event_type === 'page_view')
   const totalPageViews = pageViews.length
@@ -756,6 +759,7 @@ export async function getWebLogReport(filter?: {
     const ponudaAvgTime = ponudaLeaves.length > 0
       ? Math.round(ponudaLeaves.reduce((sum, l) => sum + (l.time_spent_seconds || 0), 0) / ponudaLeaves.length)
       : 0
+    const ponudaKontakt = safePozivi.filter(pz => Number(pz.ponudaid) === pId).length
 
     return {
       id: p.id,
@@ -765,7 +769,8 @@ export async function getWebLogReport(filter?: {
       uniqueSessions: ponudaSessions,
       whatsappClicks: ponudaWhatsapp,
       photoClicks: ponudaPhoto,
-      avgTime: ponudaAvgTime
+      avgTime: ponudaAvgTime,
+      kontakt: ponudaKontakt
     }
   }).filter(p => p.pageViews > 0).sort((a, b) => b.pageViews - a.pageViews)
 
@@ -948,6 +953,43 @@ export async function getKampanjeAnalytics(filter?: KampanjeFilter): Promise<Kam
     })
 
   return analytics.sort((a, b) => b.kupacaPoslato - a.kupacaPoslato)
+}
+
+export interface KontaktKupac {
+  id: number
+  created_at: string
+  imekupca: string | null
+  mobtel: string | null
+  email: string | null
+  drzava: string | null
+  regija: string | null
+  kodkampanje: string | null
+}
+
+export async function getKontaktiZaPonudu(ponudaId: number): Promise<KontaktKupac[]> {
+  const admin = createAdminClient()
+  
+  const { data: pozivi, error } = await admin
+    .from('pozivi')
+    .select('id, created_at, imekupca, mobtel, email, drzava, regija, kodkampanje')
+    .eq('ponudaid', ponudaId)
+    .order('created_at', { ascending: false })
+  
+  if (error) {
+    console.error('Error fetching kontakti:', error)
+    return []
+  }
+  
+  return (pozivi || []).map(p => ({
+    id: Number(p.id),
+    created_at: p.created_at,
+    imekupca: p.imekupca,
+    mobtel: p.mobtel,
+    email: p.email,
+    drzava: p.drzava,
+    regija: p.regija,
+    kodkampanje: p.kodkampanje
+  }))
 }
 
 export interface PonudaOption {

@@ -399,6 +399,7 @@ export default function PosecenostPage() {
                       <th className="px-4 py-3 text-right text-sm font-medium text-slate-300">Sesije</th>
                       <th className="px-4 py-3 text-right text-sm font-medium text-slate-300">WhatsApp</th>
                       <th className="px-4 py-3 text-right text-sm font-medium text-slate-300">Foto</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-slate-300">Kontakt</th>
                       <th className="px-4 py-3 text-right text-sm font-medium text-slate-300">Vreme</th>
                     </tr>
                   </thead>
@@ -416,6 +417,7 @@ export default function PosecenostPage() {
                         <td className="px-4 py-3 text-right text-blue-300">{ponuda.uniqueSessions}</td>
                         <td className="px-4 py-3 text-right text-green-300">{ponuda.whatsappClicks}</td>
                         <td className="px-4 py-3 text-right text-purple-300">{ponuda.photoClicks}</td>
+                        <td className={`px-4 py-3 text-right font-bold ${ponuda.kontakt > 0 ? 'text-emerald-400' : 'text-slate-500'}`}>{ponuda.kontakt}</td>
                         <td className="px-4 py-3 text-right text-slate-300">{formatDuration(ponuda.avgTime)}</td>
                       </tr>
                     ))}

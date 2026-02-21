@@ -9,8 +9,10 @@ import {
 import { 
   getKampanjeAnalytics, 
   getPonudeForKampanje,
+  getKontaktiZaPonudu,
   type KampanjaAnalytics,
-  type PonudaOption
+  type PonudaOption,
+  type KontaktKupac
 } from '@/lib/actions/analytics'
 
 interface PonudaSummary {
@@ -30,6 +32,7 @@ export default function KampanjePage() {
   const [loadingPonude, setLoadingPonude] = useState(true)
   const [ponudeOptions, setPonudeOptions] = useState<PonudaOption[]>([])
   const [kampanje, setKampanje] = useState<KampanjaAnalytics[]>([])
+  const [kontakti, setKontakti] = useState<KontaktKupac[]>([])
   const [expandedPonude, setExpandedPonude] = useState<Set<number>>(new Set())
   const [dataLoaded, setDataLoaded] = useState(false)
 
@@ -56,12 +59,16 @@ export default function KampanjePage() {
     
     setLoading(true)
     try {
-      const data = await getKampanjeAnalytics({
-        ponudaId: selectedPonuda,
-        dateFrom: dateFrom || undefined,
-        dateTo: dateTo || undefined
-      })
-      setKampanje(data)
+      const [kampanjeData, kontaktiData] = await Promise.all([
+        getKampanjeAnalytics({
+          ponudaId: selectedPonuda,
+          dateFrom: dateFrom || undefined,
+          dateTo: dateTo || undefined
+        }),
+        getKontaktiZaPonudu(selectedPonuda)
+      ])
+      setKampanje(kampanjeData)
+      setKontakti(kontaktiData)
       setDataLoaded(true)
     } finally {
       setLoading(false)
@@ -374,6 +381,100 @@ export default function KampanjePage() {
               </div>
             </div>
           )}
+
+          {/* Lista kontakata / kupaca koji su zvali */}
+          <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+            <h2 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+              <Phone className="w-5 h-5 text-emerald-400" />
+              Kupci koji su kontaktirali za ovaj oglas
+              <span className="ml-2 text-sm font-normal text-slate-400">({kontakti.length} kontakata)</span>
+            </h2>
+            
+            {kontakti.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-700">
+                      <th className="text-left py-3 px-4 text-slate-400 font-medium">#</th>
+                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Ime kupca</th>
+                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Telefon</th>
+                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Email</th>
+                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Država</th>
+                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Regija</th>
+                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Kampanja</th>
+                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Datum</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {kontakti.map((k, idx) => (
+                      <tr 
+                        key={k.id} 
+                        className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors"
+                      >
+                        <td className="py-3 px-4 text-slate-500">{idx + 1}</td>
+                        <td className="py-3 px-4 text-white font-medium">
+                          {k.imekupca || <span className="text-slate-500 italic">-</span>}
+                        </td>
+                        <td className="py-3 px-4">
+                          {k.mobtel ? (
+                            <a 
+                              href={`tel:${k.mobtel}`} 
+                              className="text-blue-400 hover:text-blue-300 hover:underline"
+                            >
+                              {k.mobtel}
+                            </a>
+                          ) : (
+                            <span className="text-slate-500 italic">-</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          {k.email ? (
+                            <a 
+                              href={`mailto:${k.email}`} 
+                              className="text-blue-400 hover:text-blue-300 hover:underline"
+                            >
+                              {k.email}
+                            </a>
+                          ) : (
+                            <span className="text-slate-500 italic">-</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-slate-300">
+                          {k.drzava || <span className="text-slate-500 italic">-</span>}
+                        </td>
+                        <td className="py-3 px-4 text-slate-300">
+                          {k.regija || <span className="text-slate-500 italic">-</span>}
+                        </td>
+                        <td className="py-3 px-4">
+                          {k.kodkampanje ? (
+                            <span className="bg-amber-500/20 text-amber-300 px-2 py-1 rounded text-xs font-mono">
+                              {k.kodkampanje}
+                            </span>
+                          ) : (
+                            <span className="text-slate-500 italic">-</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-slate-400 text-sm">
+                          {new Date(k.created_at).toLocaleDateString('sr-RS', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Phone className="w-12 h-12 mx-auto mb-3 text-slate-600" />
+                <p className="text-slate-400">Nema kontakata za ovaj oglas</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
