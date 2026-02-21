@@ -39,12 +39,10 @@ export default function KupciAnalizaPage() {
   }
 
   const loadData = async () => {
-    if (!selectedKorisnik) return
-    
     setLoading(true)
     try {
       const data = await getKupciAnaliza({
-        korisnikId: selectedKorisnik,
+        korisnikId: selectedKorisnik || undefined,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined
       })
@@ -80,7 +78,9 @@ export default function KupciAnalizaPage() {
       : '0'
   }
 
-  const selectedKorisnikNaziv = korisniciOptions.find(k => k.id === selectedKorisnik)?.naziv || ''
+  const selectedKorisnikNaziv = selectedKorisnik 
+    ? korisniciOptions.find(k => k.id === selectedKorisnik)?.naziv || '' 
+    : 'Svi korisnici'
 
   return (
     <div className="space-y-6">
@@ -116,17 +116,16 @@ export default function KupciAnalizaPage() {
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
-              Korisnik *
+              Korisnik
             </label>
             <select
               value={selectedKorisnik || ''}
               onChange={(e) => setSelectedKorisnik(e.target.value ? Number(e.target.value) : null)}
               className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-              required
               disabled={loadingKorisnici}
             >
               <option value="">
-                {loadingKorisnici ? 'Učitavanje...' : 'Izaberite korisnika'}
+                {loadingKorisnici ? 'Učitavanje...' : 'Svi korisnici'}
               </option>
               {korisniciOptions.map(k => (
                 <option key={k.id} value={k.id}>{k.naziv}</option>
@@ -160,7 +159,7 @@ export default function KupciAnalizaPage() {
           <div className="flex items-end">
             <button
               type="submit"
-              disabled={loading || !selectedKorisnik}
+              disabled={loading}
               className="w-full px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-600 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
             >
               {loading ? (
@@ -183,9 +182,9 @@ export default function KupciAnalizaPage() {
       {!dataLoaded ? (
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-12 text-center">
           <Users className="w-16 h-16 mx-auto mb-4 text-slate-600" />
-          <h3 className="text-xl font-semibold text-slate-400 mb-2">Izaberite korisnika</h3>
+          <h3 className="text-xl font-semibold text-slate-400 mb-2">Kliknite &quot;Prikaži statistiku&quot;</h3>
           <p className="text-slate-500">
-            Izaberite korisnika iz liste i kliknite &quot;Prikaži statistiku&quot; za prikaz podataka
+            Opciono izaberite korisnika i period, zatim kliknite dugme za prikaz podataka
           </p>
         </div>
       ) : loading ? (

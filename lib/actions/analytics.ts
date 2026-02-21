@@ -1357,7 +1357,7 @@ export async function getKorisniciZaKupciAnaliza(): Promise<KorisnikOption[]> {
 }
 
 export interface KupciAnalizaFilter {
-  korisnikId: number
+  korisnikId?: number
   dateFrom?: string
   dateTo?: string
 }
@@ -1390,26 +1390,33 @@ export async function getKupciAnaliza(filter: KupciAnalizaFilter): Promise<Kupac
   const getAgencijaId = (p: Record<string, unknown>) => p.idkorisnik_agencija ?? p['idkorisnik_agencija']
   const getKorisnikId = (p: Record<string, unknown>) => p.idkorisnik ?? p['idkorisnik']
   
-  const korisnikPonudaIds = (ponude || [])
-    .filter(p => {
-      const rec = p as Record<string, unknown>
-      const agId = Number(getAgencijaId(rec))
-      const kId = Number(getKorisnikId(rec))
-      return agId === filter.korisnikId || kId === filter.korisnikId
-    })
-    .map(p => Number(p.id))
-  
-  if (korisnikPonudaIds.length === 0) return []
-  
   const ponudeMap: Record<number, string> = {}
   ponude?.forEach(p => {
     ponudeMap[Number(p.id)] = p.naslovoglasa || `Ponuda #${p.id}`
   })
   
+  let korisnikPonudaIds: number[] | null = null
+  
+  if (filter.korisnikId) {
+    korisnikPonudaIds = (ponude || [])
+      .filter(p => {
+        const rec = p as Record<string, unknown>
+        const agId = Number(getAgencijaId(rec))
+        const kId = Number(getKorisnikId(rec))
+        return agId === filter.korisnikId || kId === filter.korisnikId
+      })
+      .map(p => Number(p.id))
+    
+    if (korisnikPonudaIds.length === 0) return []
+  }
+  
   let poziviQuery = admin
     .from('pozivi')
     .select('id, created_at, imekupca, mobtel, email, drzava, regija, ponudaid, idkampanjakupac')
-    .in('ponudaid', korisnikPonudaIds)
+  
+  if (korisnikPonudaIds) {
+    poziviQuery = poziviQuery.in('ponudaid', korisnikPonudaIds)
+  }
   
   if (filter.dateFrom) poziviQuery = poziviQuery.gte('created_at', filter.dateFrom)
   if (filter.dateTo) poziviQuery = poziviQuery.lte('created_at', filter.dateTo + 'T23:59:59')
