@@ -1369,13 +1369,15 @@ export interface KupacOglas {
 }
 
 export interface KupacAnalizaRow {
-  kupacKey: string
-  imekupca: string | null
-  mobtel: string | null
+  kupacId: number
+  ime: string | null
+  prezime: string | null
   email: string | null
+  mobprimarni: string | null
+  mobsek: string | null
   linkedinurl: string | null
   drzava: string | null
-  regija: string | null
+  grad: string | null
   oglasi: KupacOglas[]
   brojKontakata: number
 }
@@ -1412,7 +1414,8 @@ export async function getKupciAnaliza(filter: KupciAnalizaFilter): Promise<Kupac
   
   let poziviQuery = admin
     .from('pozivi')
-    .select('id, created_at, imekupca, mobtel, email, drzava, regija, ponudaid, idkampanjakupac')
+    .select('id, created_at, ponudaid, idkampanjakupac')
+    .not('idkampanjakupac', 'is', null)
   
   if (korisnikPonudaIds) {
     poziviQuery = poziviQuery.in('ponudaid', korisnikPonudaIds)
@@ -1429,65 +1432,80 @@ export async function getKupciAnaliza(filter: KupciAnalizaFilter): Promise<Kupac
     pozivi.map(p => p.idkampanjakupac).filter(Boolean).map(Number)
   )]
   
-  const kupacImportMap: Record<number, { linkedinurl: string | null }> = {}
+  const { data: kupackampanje } = await admin
+    .from('kupackampanja')
+    .select('id, kupacid')
+    .in('id', idkampanjakupacIds)
   
-  if (idkampanjakupacIds.length > 0) {
-    const { data: kupackampanje } = await admin
-      .from('kupackampanja')
-      .select('id, kupacid')
-      .in('id', idkampanjakupacIds)
-    
-    const kupacIds = [...new Set((kupackampanje || []).map(kk => kk.kupacid).filter(Boolean).map(Number))]
-    
-    if (kupacIds.length > 0) {
-      const { data: kupci } = await admin
-        .from('kupacimport')
-        .select('id, linkedinurl')
-        .in('id', kupacIds)
-      
-      const kupacLinkedinMap: Record<number, string | null> = {}
-      kupci?.forEach(k => {
-        kupacLinkedinMap[Number(k.id)] = k.linkedinurl
-      })
-      
-      kupackampanje?.forEach(kk => {
-        if (kk.kupacid) {
-          kupacImportMap[Number(kk.id)] = { linkedinurl: kupacLinkedinMap[Number(kk.kupacid)] || null }
-        }
-      })
+  const kupackampanjaMap: Record<number, number> = {}
+  kupackampanje?.forEach(kk => {
+    if (kk.kupacid) {
+      kupackampanjaMap[Number(kk.id)] = Number(kk.kupacid)
     }
-  }
+  })
   
-  const kupciMap = new Map<string, KupacAnalizaRow>()
+  const kupacIds = [...new Set(Object.values(kupackampanjaMap))]
+  
+  if (kupacIds.length === 0) return []
+  
+  const { data: kupciData } = await admin
+    .from('kupacimport')
+    .select('id, ime, prezime, email, mobprimarni, mobsek, linkedinurl, drzava, grad')
+    .in('id', kupacIds)
+  
+  const kupacDataMap: Record<number, {
+    ime: string | null
+    prezime: string | null
+    email: string | null
+    mobprimarni: string | null
+    mobsek: string | null
+    linkedinurl: string | null
+    drzava: string | null
+    grad: string | null
+  }> = {}
+  
+  kupciData?.forEach(k => {
+    kupacDataMap[Number(k.id)] = {
+      ime: k.ime,
+      prezime: k.prezime,
+      email: k.email,
+      mobprimarni: k.mobprimarni,
+      mobsek: k.mobsek,
+      linkedinurl: k.linkedinurl,
+      drzava: k.drzava,
+      grad: k.grad
+    }
+  })
+  
+  const kupciMap = new Map<number, KupacAnalizaRow>()
   
   for (const p of pozivi) {
-    const key = `${(p.imekupca || '').toLowerCase().trim()}|${(p.mobtel || '').trim()}|${(p.email || '').toLowerCase().trim()}`
+    if (!p.idkampanjakupac) continue
     
-    let linkedinurl: string | null = null
-    if (p.idkampanjakupac && kupacImportMap[Number(p.idkampanjakupac)]) {
-      linkedinurl = kupacImportMap[Number(p.idkampanjakupac)].linkedinurl
-    }
+    const kupacId = kupackampanjaMap[Number(p.idkampanjakupac)]
+    if (!kupacId) continue
     
-    if (!kupciMap.has(key)) {
-      kupciMap.set(key, {
-        kupacKey: key,
-        imekupca: p.imekupca,
-        mobtel: p.mobtel,
-        email: p.email,
-        linkedinurl,
-        drzava: p.drzava,
-        regija: p.regija,
+    const kupacData = kupacDataMap[kupacId]
+    if (!kupacData) continue
+    
+    if (!kupciMap.has(kupacId)) {
+      kupciMap.set(kupacId, {
+        kupacId,
+        ime: kupacData.ime,
+        prezime: kupacData.prezime,
+        email: kupacData.email,
+        mobprimarni: kupacData.mobprimarni,
+        mobsek: kupacData.mobsek,
+        linkedinurl: kupacData.linkedinurl,
+        drzava: kupacData.drzava,
+        grad: kupacData.grad,
         oglasi: [],
         brojKontakata: 0
       })
     }
     
-    const kupac = kupciMap.get(key)!
+    const kupac = kupciMap.get(kupacId)!
     kupac.brojKontakata++
-    
-    if (!kupac.linkedinurl && linkedinurl) {
-      kupac.linkedinurl = linkedinurl
-    }
     
     if (p.ponudaid) {
       kupac.oglasi.push({

@@ -254,25 +254,28 @@ export default function KupciAnalizaPage() {
                   <thead>
                     <tr className="bg-slate-900/50">
                       <th className="text-left py-3 px-4 text-slate-400 font-medium w-8"></th>
-                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Ime kupca</th>
+                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Ime i prezime</th>
                       <th className="text-left py-3 px-4 text-slate-400 font-medium">Telefon</th>
                       <th className="text-left py-3 px-4 text-slate-400 font-medium">Email</th>
                       <th className="text-left py-3 px-4 text-slate-400 font-medium">LinkedIn</th>
-                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Država</th>
+                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Lokacija</th>
                       <th className="text-right py-3 px-4 text-slate-400 font-medium">Kontakata</th>
                       <th className="text-right py-3 px-4 text-slate-400 font-medium">Oglasa</th>
                     </tr>
                   </thead>
                   <tbody>
                     {kupci.map((kupac) => {
-                      const isExpanded = expandedKupci.has(kupac.kupacKey)
+                      const isExpanded = expandedKupci.has(kupac.kupacId.toString())
                       const uniqueOglasi = [...new Set(kupac.oglasi.map(o => o.ponudaId))].length
+                      const imePrezime = [kupac.ime, kupac.prezime].filter(Boolean).join(' ')
+                      const lokacija = [kupac.grad, kupac.drzava].filter(Boolean).join(', ')
+                      const telefon = kupac.mobprimarni || kupac.mobsek
                       
                       return (
                         <>
                           <tr 
-                            key={kupac.kupacKey}
-                            onClick={() => toggleKupac(kupac.kupacKey)}
+                            key={kupac.kupacId}
+                            onClick={() => toggleKupac(kupac.kupacId.toString())}
                             className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors cursor-pointer"
                           >
                             <td className="py-3 px-4">
@@ -283,17 +286,17 @@ export default function KupciAnalizaPage() {
                               )}
                             </td>
                             <td className="py-3 px-4 text-white font-medium">
-                              {kupac.imekupca || <span className="text-slate-500 italic">-</span>}
+                              {imePrezime || <span className="text-slate-500 italic">-</span>}
                             </td>
                             <td className="py-3 px-4">
-                              {kupac.mobtel ? (
+                              {telefon ? (
                                 <a 
-                                  href={`tel:${kupac.mobtel}`}
+                                  href={`tel:${telefon}`}
                                   onClick={(e) => e.stopPropagation()}
                                   className="text-blue-400 hover:text-blue-300 hover:underline flex items-center gap-1"
                                 >
                                   <Phone className="w-3 h-3" />
-                                  {kupac.mobtel}
+                                  {telefon}
                                 </a>
                               ) : (
                                 <span className="text-slate-500 italic">-</span>
@@ -330,10 +333,10 @@ export default function KupciAnalizaPage() {
                               )}
                             </td>
                             <td className="py-3 px-4 text-slate-300">
-                              {kupac.drzava ? (
+                              {lokacija ? (
                                 <span className="flex items-center gap-1">
                                   <Globe className="w-3 h-3 text-slate-500" />
-                                  {kupac.drzava}
+                                  {lokacija}
                                 </span>
                               ) : (
                                 <span className="text-slate-500 italic">-</span>
@@ -349,7 +352,7 @@ export default function KupciAnalizaPage() {
                             </td>
                           </tr>
                           {isExpanded && (
-                            <tr key={`${kupac.kupacKey}-expanded`} className="bg-slate-900/50">
+                            <tr key={`${kupac.kupacId}-expanded`} className="bg-slate-900/50">
                               <td colSpan={8} className="py-4 px-8">
                                 <div className="text-sm">
                                   <h4 className="text-slate-300 font-medium mb-3">Oglasi za koje je kontaktirao:</h4>
