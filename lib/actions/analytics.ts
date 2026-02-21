@@ -1380,6 +1380,8 @@ export interface KupacAnalizaRow {
   grad: string | null
   oglasi: KupacOglas[]
   brojKontakata: number
+  prviKontakt: string | null
+  poslednjiKontakt: string | null
 }
 
 export async function getKupciAnaliza(filter: KupciAnalizaFilter): Promise<KupacAnalizaRow[]> {
@@ -1500,12 +1502,21 @@ export async function getKupciAnaliza(filter: KupciAnalizaFilter): Promise<Kupac
         drzava: kupacData.drzava,
         grad: kupacData.grad,
         oglasi: [],
-        brojKontakata: 0
+        brojKontakata: 0,
+        prviKontakt: p.created_at,
+        poslednjiKontakt: p.created_at
       })
     }
     
     const kupac = kupciMap.get(kupacId)!
     kupac.brojKontakata++
+    
+    if (p.created_at < (kupac.prviKontakt || '')) {
+      kupac.prviKontakt = p.created_at
+    }
+    if (p.created_at > (kupac.poslednjiKontakt || '')) {
+      kupac.poslednjiKontakt = p.created_at
+    }
     
     if (p.ponudaid) {
       kupac.oglasi.push({

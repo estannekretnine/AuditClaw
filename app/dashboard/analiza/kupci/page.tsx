@@ -254,11 +254,13 @@ export default function KupciAnalizaPage() {
                   <thead>
                     <tr className="bg-slate-900/50">
                       <th className="text-left py-3 px-4 text-slate-400 font-medium w-8"></th>
+                      <th className="text-left py-3 px-4 text-slate-400 font-medium">ID</th>
                       <th className="text-left py-3 px-4 text-slate-400 font-medium">Ime i prezime</th>
                       <th className="text-left py-3 px-4 text-slate-400 font-medium">Telefon</th>
                       <th className="text-left py-3 px-4 text-slate-400 font-medium">Email</th>
                       <th className="text-left py-3 px-4 text-slate-400 font-medium">LinkedIn</th>
                       <th className="text-left py-3 px-4 text-slate-400 font-medium">Lokacija</th>
+                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Datum kontakta</th>
                       <th className="text-right py-3 px-4 text-slate-400 font-medium">Kontakata</th>
                       <th className="text-right py-3 px-4 text-slate-400 font-medium">Oglasa</th>
                     </tr>
@@ -284,6 +286,9 @@ export default function KupciAnalizaPage() {
                               ) : (
                                 <ChevronRight className="w-4 h-4 text-slate-500" />
                               )}
+                            </td>
+                            <td className="py-3 px-4 text-slate-400 text-sm">
+                              #{kupac.kupacId}
                             </td>
                             <td className="py-3 px-4 text-white font-medium">
                               {imePrezime || <span className="text-slate-500 italic">-</span>}
@@ -342,6 +347,19 @@ export default function KupciAnalizaPage() {
                                 <span className="text-slate-500 italic">-</span>
                               )}
                             </td>
+                            <td className="py-3 px-4 text-slate-300 text-sm">
+                              {kupac.poslednjiKontakt ? (
+                                <span>
+                                  {new Date(kupac.poslednjiKontakt).toLocaleDateString('sr-RS', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              ) : (
+                                <span className="text-slate-500 italic">-</span>
+                              )}
+                            </td>
                             <td className="py-3 px-4 text-right">
                               <span className={`font-bold ${kupac.brojKontakata > 1 ? 'text-emerald-400' : 'text-slate-300'}`}>
                                 {kupac.brojKontakata}
@@ -353,7 +371,7 @@ export default function KupciAnalizaPage() {
                           </tr>
                           {isExpanded && (
                             <tr key={`${kupac.kupacId}-expanded`} className="bg-slate-900/50">
-                              <td colSpan={8} className="py-4 px-8">
+                              <td colSpan={10} className="py-4 px-8">
                                 <div className="text-sm">
                                   <h4 className="text-slate-300 font-medium mb-3">Oglasi za koje je kontaktirao:</h4>
                                   <div className="space-y-2">
