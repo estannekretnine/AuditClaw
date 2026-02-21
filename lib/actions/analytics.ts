@@ -1308,3 +1308,188 @@ export async function getWebLogStats(filter: WebLogFilter = {}): Promise<WebLogS
     topReferrers
   }
 }
+
+// ==========================================
+// KUPCI ANALIZA
+// ==========================================
+
+export interface KorisnikOption {
+  id: number
+  naziv: string
+}
+
+export async function getKorisniciZaKupciAnaliza(): Promise<KorisnikOption[]> {
+  const admin = createAdminClient()
+  
+  const { data: pozivi } = await admin
+    .from('pozivi')
+    .select('ponudaid')
+    .not('ponudaid', 'is', null)
+  
+  const ponudaIds = [...new Set((pozivi || []).map(p => p.ponudaid).filter(Boolean))]
+  
+  if (ponudaIds.length === 0) return []
+  
+  const { data: ponude } = await admin
+    .from('ponuda')
+    .select('idkorisnik_agencija, idkorisnik')
+    .in('id', ponudaIds)
+  
+  const korisnikIds = [...new Set((ponude || []).flatMap(p => {
+    const rec = p as Record<string, unknown>
+    const agId = rec.idkorisnik_agencija ?? rec['idkorisnik_agencija']
+    const kId = rec.idkorisnik ?? rec['idkorisnik']
+    return [agId, kId].filter(Boolean).map(Number)
+  }))]
+  
+  if (korisnikIds.length === 0) return []
+  
+  const { data: korisnici } = await admin
+    .from('korisnici')
+    .select('id, naziv')
+    .in('id', korisnikIds)
+    .order('naziv')
+  
+  return (korisnici || []).map(k => ({
+    id: Number(k.id),
+    naziv: k.naziv || `Korisnik #${k.id}`
+  }))
+}
+
+export interface KupciAnalizaFilter {
+  korisnikId: number
+  dateFrom?: string
+  dateTo?: string
+}
+
+export interface KupacOglas {
+  ponudaId: number
+  naslov: string
+  datum: string
+}
+
+export interface KupacAnalizaRow {
+  kupacKey: string
+  imekupca: string | null
+  mobtel: string | null
+  email: string | null
+  linkedinurl: string | null
+  drzava: string | null
+  regija: string | null
+  oglasi: KupacOglas[]
+  brojKontakata: number
+}
+
+export async function getKupciAnaliza(filter: KupciAnalizaFilter): Promise<KupacAnalizaRow[]> {
+  const admin = createAdminClient()
+  
+  const { data: ponude } = await admin
+    .from('ponuda')
+    .select('id, naslovoglasa, idkorisnik_agencija, idkorisnik')
+  
+  const getAgencijaId = (p: Record<string, unknown>) => p.idkorisnik_agencija ?? p['idkorisnik_agencija']
+  const getKorisnikId = (p: Record<string, unknown>) => p.idkorisnik ?? p['idkorisnik']
+  
+  const korisnikPonudaIds = (ponude || [])
+    .filter(p => {
+      const rec = p as Record<string, unknown>
+      const agId = Number(getAgencijaId(rec))
+      const kId = Number(getKorisnikId(rec))
+      return agId === filter.korisnikId || kId === filter.korisnikId
+    })
+    .map(p => Number(p.id))
+  
+  if (korisnikPonudaIds.length === 0) return []
+  
+  const ponudeMap: Record<number, string> = {}
+  ponude?.forEach(p => {
+    ponudeMap[Number(p.id)] = p.naslovoglasa || `Ponuda #${p.id}`
+  })
+  
+  let poziviQuery = admin
+    .from('pozivi')
+    .select('id, created_at, imekupca, mobtel, email, drzava, regija, ponudaid, idkampanjakupac')
+    .in('ponudaid', korisnikPonudaIds)
+  
+  if (filter.dateFrom) poziviQuery = poziviQuery.gte('created_at', filter.dateFrom)
+  if (filter.dateTo) poziviQuery = poziviQuery.lte('created_at', filter.dateTo + 'T23:59:59')
+  
+  const { data: pozivi } = await poziviQuery.order('created_at', { ascending: false })
+  
+  if (!pozivi || pozivi.length === 0) return []
+  
+  const idkampanjakupacIds = [...new Set(
+    pozivi.map(p => p.idkampanjakupac).filter(Boolean).map(Number)
+  )]
+  
+  const kupacImportMap: Record<number, { linkedinurl: string | null }> = {}
+  
+  if (idkampanjakupacIds.length > 0) {
+    const { data: kupackampanje } = await admin
+      .from('kupackampanja')
+      .select('id, kupacid')
+      .in('id', idkampanjakupacIds)
+    
+    const kupacIds = [...new Set((kupackampanje || []).map(kk => kk.kupacid).filter(Boolean).map(Number))]
+    
+    if (kupacIds.length > 0) {
+      const { data: kupci } = await admin
+        .from('kupacimport')
+        .select('id, linkedinurl')
+        .in('id', kupacIds)
+      
+      const kupacLinkedinMap: Record<number, string | null> = {}
+      kupci?.forEach(k => {
+        kupacLinkedinMap[Number(k.id)] = k.linkedinurl
+      })
+      
+      kupackampanje?.forEach(kk => {
+        if (kk.kupacid) {
+          kupacImportMap[Number(kk.id)] = { linkedinurl: kupacLinkedinMap[Number(kk.kupacid)] || null }
+        }
+      })
+    }
+  }
+  
+  const kupciMap = new Map<string, KupacAnalizaRow>()
+  
+  for (const p of pozivi) {
+    const key = `${(p.imekupca || '').toLowerCase().trim()}|${(p.mobtel || '').trim()}|${(p.email || '').toLowerCase().trim()}`
+    
+    let linkedinurl: string | null = null
+    if (p.idkampanjakupac && kupacImportMap[Number(p.idkampanjakupac)]) {
+      linkedinurl = kupacImportMap[Number(p.idkampanjakupac)].linkedinurl
+    }
+    
+    if (!kupciMap.has(key)) {
+      kupciMap.set(key, {
+        kupacKey: key,
+        imekupca: p.imekupca,
+        mobtel: p.mobtel,
+        email: p.email,
+        linkedinurl,
+        drzava: p.drzava,
+        regija: p.regija,
+        oglasi: [],
+        brojKontakata: 0
+      })
+    }
+    
+    const kupac = kupciMap.get(key)!
+    kupac.brojKontakata++
+    
+    if (!kupac.linkedinurl && linkedinurl) {
+      kupac.linkedinurl = linkedinurl
+    }
+    
+    if (p.ponudaid) {
+      kupac.oglasi.push({
+        ponudaId: Number(p.ponudaid),
+        naslov: ponudeMap[Number(p.ponudaid)] || `Ponuda #${p.ponudaid}`,
+        datum: p.created_at
+      })
+    }
+  }
+  
+  return Array.from(kupciMap.values()).sort((a, b) => b.brojKontakata - a.brojKontakata)
+}

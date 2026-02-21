@@ -32,6 +32,7 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
   const analizaSubItems: AnalyzaSubItem[] = [
     { id: 'posecenost', label: 'Posećenost', href: '/dashboard/analiza/posecenost', icon: TrendingUp },
     { id: 'kampanje', label: 'Kampanje', href: '/dashboard/analiza/kampanje', icon: Target },
+    { id: 'kupci', label: 'Kupci analiza', href: '/dashboard/analiza/kupci', icon: Users },
     { id: 'log-strane', label: 'Log Strane', href: '/dashboard/analiza/log-strane', icon: FileText },
   ]
 
