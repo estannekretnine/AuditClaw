@@ -1,15 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { 
   Users, Phone, Mail, Linkedin, Globe, RefreshCw, 
-  Calendar, Filter, BarChart3
+  Calendar, Filter, BarChart3, MapPin, Flag
 } from 'lucide-react'
 import { 
   getKorisniciZaKupciAnaliza, 
   getKupciAnaliza,
+  izracunajGeoTotale,
   type KorisnikOption,
-  type KupacKontaktRow
+  type KupacKontaktRow,
+  type KupciGeoTotali
 } from '@/lib/actions/analytics'
 
 export default function KupciAnalizaPage() {
@@ -58,6 +60,10 @@ export default function KupciAnalizaPage() {
   }
 
   const uniqueKupci = new Set(kontakti.map(k => k.kupacId)).size
+
+  const geoTotali: KupciGeoTotali = useMemo(() => {
+    return izracunajGeoTotale(kontakti)
+  }, [kontakti])
 
   const selectedKorisnikNaziv = selectedKorisnik 
     ? korisniciOptions.find(k => k.id === selectedKorisnik)?.naziv || '' 
@@ -333,6 +339,173 @@ export default function KupciAnalizaPage() {
               </div>
             )}
           </div>
+
+          {/* Geografski totali */}
+          {kontakti.length > 0 && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold text-white flex items-center gap-3">
+                <Globe className="w-6 h-6 text-cyan-400" />
+                Geografska analiza kontakata
+              </h2>
+
+              {/* KPI kartice za geo */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-cyan-500/20 rounded-xl flex items-center justify-center">
+                      <Flag className="w-6 h-6 text-cyan-400" />
+                    </div>
+                    <div>
+                      <p className="text-slate-400 text-sm">Broj država</p>
+                      <p className="text-2xl font-bold text-white">{geoTotali.ukupnoDrzava}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                      <MapPin className="w-6 h-6 text-purple-400" />
+                    </div>
+                    <div>
+                      <p className="text-slate-400 text-sm">Broj gradova</p>
+                      <p className="text-2xl font-bold text-white">{geoTotali.ukupnoGradova}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabele i grafikoni */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Države */}
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <Flag className="w-5 h-5 text-cyan-400" />
+                    Kontakti po državama
+                  </h3>
+                  
+                  {geoTotali.drzave.length > 0 ? (
+                    <>
+                      {/* Grafikon */}
+                      <div className="space-y-2 mb-6">
+                        {geoTotali.drzave.slice(0, 10).map((d, idx) => {
+                          const maxBroj = geoTotali.drzave[0]?.broj || 1
+                          const procenat = (d.broj / maxBroj) * 100
+                          return (
+                            <div key={d.naziv} className="flex items-center gap-3">
+                              <span className="w-6 text-slate-500 text-sm text-right">{idx + 1}.</span>
+                              <div className="flex-1">
+                                <div className="flex justify-between mb-1">
+                                  <span className="text-white text-sm">{d.naziv}</span>
+                                  <span className="text-cyan-400 font-medium">{d.broj}</span>
+                                </div>
+                                <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-full transition-all duration-500"
+                                    style={{ width: `${procenat}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Tabela */}
+                      <div className="overflow-x-auto max-h-64 overflow-y-auto">
+                        <table className="w-full text-sm">
+                          <thead className="sticky top-0 bg-slate-800">
+                            <tr className="border-b border-slate-700">
+                              <th className="text-left py-2 px-2 text-slate-400 font-medium">#</th>
+                              <th className="text-left py-2 px-2 text-slate-400 font-medium">Država</th>
+                              <th className="text-right py-2 px-2 text-slate-400 font-medium">Kontakata</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {geoTotali.drzave.map((d, idx) => (
+                              <tr key={d.naziv} className="border-b border-slate-700/50 hover:bg-slate-700/30">
+                                <td className="py-2 px-2 text-slate-500">{idx + 1}</td>
+                                <td className="py-2 px-2 text-white">{d.naziv}</td>
+                                <td className="py-2 px-2 text-cyan-400 text-right font-medium">{d.broj}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Flag className="w-10 h-10 mx-auto mb-2 text-slate-600" />
+                      <p className="text-slate-500 text-sm">Nema podataka o državama</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Gradovi */}
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-purple-400" />
+                    Kontakti po gradovima
+                  </h3>
+                  
+                  {geoTotali.gradovi.length > 0 ? (
+                    <>
+                      {/* Grafikon */}
+                      <div className="space-y-2 mb-6">
+                        {geoTotali.gradovi.slice(0, 10).map((g, idx) => {
+                          const maxBroj = geoTotali.gradovi[0]?.broj || 1
+                          const procenat = (g.broj / maxBroj) * 100
+                          return (
+                            <div key={g.naziv} className="flex items-center gap-3">
+                              <span className="w-6 text-slate-500 text-sm text-right">{idx + 1}.</span>
+                              <div className="flex-1">
+                                <div className="flex justify-between mb-1">
+                                  <span className="text-white text-sm">{g.naziv}</span>
+                                  <span className="text-purple-400 font-medium">{g.broj}</span>
+                                </div>
+                                <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-gradient-to-r from-purple-500 to-purple-400 rounded-full transition-all duration-500"
+                                    style={{ width: `${procenat}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Tabela */}
+                      <div className="overflow-x-auto max-h-64 overflow-y-auto">
+                        <table className="w-full text-sm">
+                          <thead className="sticky top-0 bg-slate-800">
+                            <tr className="border-b border-slate-700">
+                              <th className="text-left py-2 px-2 text-slate-400 font-medium">#</th>
+                              <th className="text-left py-2 px-2 text-slate-400 font-medium">Grad</th>
+                              <th className="text-right py-2 px-2 text-slate-400 font-medium">Kontakata</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {geoTotali.gradovi.map((g, idx) => (
+                              <tr key={g.naziv} className="border-b border-slate-700/50 hover:bg-slate-700/30">
+                                <td className="py-2 px-2 text-slate-500">{idx + 1}</td>
+                                <td className="py-2 px-2 text-white">{g.naziv}</td>
+                                <td className="py-2 px-2 text-purple-400 text-right font-medium">{g.broj}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <MapPin className="w-10 h-10 mx-auto mb-2 text-slate-600" />
+                      <p className="text-slate-500 text-sm">Nema podataka o gradovima</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

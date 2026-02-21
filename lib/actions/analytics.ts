@@ -1451,6 +1451,20 @@ export interface KupacKontaktRow {
   ponudaId: number | null
   ponudaNaslov: string | null
   kodkampanje: string | null
+  poziviDrzava: string | null
+  poziviRegija: string | null
+}
+
+export interface GeoStat {
+  naziv: string
+  broj: number
+}
+
+export interface KupciGeoTotali {
+  drzave: GeoStat[]
+  gradovi: GeoStat[]
+  ukupnoDrzava: number
+  ukupnoGradova: number
 }
 
 export async function getKupciAnaliza(filter: KupciAnalizaFilter): Promise<KupacKontaktRow[]> {
@@ -1485,7 +1499,7 @@ export async function getKupciAnaliza(filter: KupciAnalizaFilter): Promise<Kupac
   
   let poziviQuery = admin
     .from('pozivi')
-    .select('id, created_at, ponudaid, idkampanjakupac, kodkampanje')
+    .select('id, created_at, ponudaid, idkampanjakupac, kodkampanje, drzava, regija')
     .not('idkampanjakupac', 'is', null)
   
   if (korisnikPonudaIds) {
@@ -1559,6 +1573,7 @@ export async function getKupciAnaliza(filter: KupciAnalizaFilter): Promise<Kupac
     const kupacData = kupacDataMap[kupacId]
     if (!kupacData) continue
     
+    const rec = p as Record<string, unknown>
     result.push({
       pozivId: Number(p.id),
       kupacId,
@@ -1573,9 +1588,43 @@ export async function getKupciAnaliza(filter: KupciAnalizaFilter): Promise<Kupac
       grad: kupacData.grad,
       ponudaId: p.ponudaid ? Number(p.ponudaid) : null,
       ponudaNaslov: p.ponudaid ? ponudeMap[Number(p.ponudaid)] || `Ponuda #${p.ponudaid}` : null,
-      kodkampanje: p.kodkampanje
+      kodkampanje: p.kodkampanje,
+      poziviDrzava: (rec.drzava as string) || null,
+      poziviRegija: (rec.regija as string) || null
     })
   }
   
   return result
+}
+
+export function izracunajGeoTotale(kontakti: KupacKontaktRow[]): KupciGeoTotali {
+  const drzaveMap: Record<string, number> = {}
+  const gradoviMap: Record<string, number> = {}
+  
+  for (const k of kontakti) {
+    const drzava = k.poziviDrzava?.trim()
+    const grad = k.poziviRegija?.trim()
+    
+    if (drzava) {
+      drzaveMap[drzava] = (drzaveMap[drzava] || 0) + 1
+    }
+    if (grad) {
+      gradoviMap[grad] = (gradoviMap[grad] || 0) + 1
+    }
+  }
+  
+  const drzave: GeoStat[] = Object.entries(drzaveMap)
+    .map(([naziv, broj]) => ({ naziv, broj }))
+    .sort((a, b) => b.broj - a.broj)
+  
+  const gradovi: GeoStat[] = Object.entries(gradoviMap)
+    .map(([naziv, broj]) => ({ naziv, broj }))
+    .sort((a, b) => b.broj - a.broj)
+  
+  return {
+    drzave,
+    gradovi,
+    ukupnoDrzava: drzave.length,
+    ukupnoGradova: gradovi.length
+  }
 }
