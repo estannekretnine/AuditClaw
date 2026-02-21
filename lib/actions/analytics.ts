@@ -957,12 +957,16 @@ export async function getKampanjeAnalytics(filter?: KampanjeFilter): Promise<Kam
 
 export interface KontaktKupac {
   id: number
+  kupacId: number
   created_at: string
-  imekupca: string | null
-  mobtel: string | null
+  ime: string | null
+  prezime: string | null
   email: string | null
+  mobprimarni: string | null
+  mobsek: string | null
+  linkedinurl: string | null
   drzava: string | null
-  regija: string | null
+  grad: string | null
   kodkampanje: string | null
 }
 
@@ -971,8 +975,9 @@ export async function getKontaktiZaPonudu(ponudaId: number): Promise<KontaktKupa
   
   const { data: pozivi, error } = await admin
     .from('pozivi')
-    .select('id, created_at, imekupca, mobtel, email, drzava, regija, kodkampanje')
+    .select('id, created_at, kodkampanje, idkampanjakupac')
     .eq('ponudaid', ponudaId)
+    .not('idkampanjakupac', 'is', null)
     .order('created_at', { ascending: false })
   
   if (error) {
@@ -980,16 +985,85 @@ export async function getKontaktiZaPonudu(ponudaId: number): Promise<KontaktKupa
     return []
   }
   
-  return (pozivi || []).map(p => ({
-    id: Number(p.id),
-    created_at: p.created_at,
-    imekupca: p.imekupca,
-    mobtel: p.mobtel,
-    email: p.email,
-    drzava: p.drzava,
-    regija: p.regija,
-    kodkampanje: p.kodkampanje
-  }))
+  if (!pozivi || pozivi.length === 0) return []
+  
+  const idkampanjakupacIds = [...new Set(
+    pozivi.map(p => p.idkampanjakupac).filter(Boolean).map(Number)
+  )]
+  
+  const { data: kupackampanje } = await admin
+    .from('kupackampanja')
+    .select('id, kupacid')
+    .in('id', idkampanjakupacIds)
+  
+  const kupackampanjaMap: Record<number, number> = {}
+  kupackampanje?.forEach(kk => {
+    if (kk.kupacid) {
+      kupackampanjaMap[Number(kk.id)] = Number(kk.kupacid)
+    }
+  })
+  
+  const kupacIds = [...new Set(Object.values(kupackampanjaMap))]
+  
+  if (kupacIds.length === 0) return []
+  
+  const { data: kupciData } = await admin
+    .from('kupacimport')
+    .select('id, ime, prezime, email, mobprimarni, mobsek, linkedinurl, drzava, grad')
+    .in('id', kupacIds)
+  
+  const kupacDataMap: Record<number, {
+    ime: string | null
+    prezime: string | null
+    email: string | null
+    mobprimarni: string | null
+    mobsek: string | null
+    linkedinurl: string | null
+    drzava: string | null
+    grad: string | null
+  }> = {}
+  
+  kupciData?.forEach(k => {
+    kupacDataMap[Number(k.id)] = {
+      ime: k.ime,
+      prezime: k.prezime,
+      email: k.email,
+      mobprimarni: k.mobprimarni,
+      mobsek: k.mobsek,
+      linkedinurl: k.linkedinurl,
+      drzava: k.drzava,
+      grad: k.grad
+    }
+  })
+  
+  const result: KontaktKupac[] = []
+  
+  for (const p of pozivi) {
+    if (!p.idkampanjakupac) continue
+    
+    const kupacId = kupackampanjaMap[Number(p.idkampanjakupac)]
+    if (!kupacId) continue
+    
+    const kupacData = kupacDataMap[kupacId]
+    if (!kupacData) continue
+    
+    result.push({
+      id: Number(p.id),
+      kupacId,
+      created_at: p.created_at,
+      ime: kupacData.ime,
+      prezime: kupacData.prezime,
+      email: kupacData.email,
+      mobprimarni: kupacData.mobprimarni,
+      mobsek: kupacData.mobsek,
+      linkedinurl: kupacData.linkedinurl,
+      drzava: kupacData.drzava,
+      grad: kupacData.grad,
+      kodkampanje: p.kodkampanje
+    })
+  }
+  
+  return result
 }
 
 export interface PonudaOption {
