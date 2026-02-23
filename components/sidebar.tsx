@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, Users, Shield, ChevronDown, ChevronRight, LogOut, Menu, X, Home, BarChart3, Upload, TrendingUp, Target, FileText } from 'lucide-react'
+import { Building2, Users, Shield, ChevronDown, ChevronRight, LogOut, Menu, X, Home, BarChart3, Upload, TrendingUp, Target, FileText, MessageSquare } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -48,6 +48,7 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
     { id: 'ponude', label: 'Ponude', href: '/dashboard/ponude', icon: Home },
     { id: 'analiza', label: 'Analiza', icon: BarChart3, hasSubmenu: true, subItems: analizaSubItems },
     { id: 'import-kupaca', label: 'Import kupaca', href: '/dashboard/import-kupaca', icon: Upload },
+    { id: 'poruke-sajt', label: 'Poruke-sajt', href: '/dashboard/poruke-sajt', icon: MessageSquare },
   ]
 
   // Agent vidi samo Ponude direktno (bez submenija)

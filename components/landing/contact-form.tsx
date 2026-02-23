@@ -97,7 +97,7 @@ export function ContactForm({ t }: ContactFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-xl mx-auto mt-12" noValidate>
+    <form onSubmit={handleSubmit} className="max-w-xl mx-auto mt-12" noValidate autoComplete="off">
       <div className="space-y-4">
         <div>
           <label htmlFor="contact-name" className="block text-sm font-medium text-foreground mb-1">
@@ -109,6 +109,7 @@ export function ContactForm({ t }: ContactFormProps) {
             value={formData.name}
             onChange={handleChange('name')}
             placeholder={t.contact.form.namePlaceholder}
+            autoComplete="off"
             className={`w-full px-4 py-3 bg-surface border rounded-lg text-foreground placeholder-foreground-secondary focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors ${
               errors.name ? 'border-red-500' : 'border-border'
             }`}
@@ -130,6 +131,7 @@ export function ContactForm({ t }: ContactFormProps) {
             value={formData.email}
             onChange={handleChange('email')}
             placeholder={t.contact.form.emailPlaceholder}
+            autoComplete="off"
             className={`w-full px-4 py-3 bg-surface border rounded-lg text-foreground placeholder-foreground-secondary focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors ${
               errors.email ? 'border-red-500' : 'border-border'
             }`}
@@ -151,6 +153,7 @@ export function ContactForm({ t }: ContactFormProps) {
             value={formData.phone}
             onChange={handleChange('phone')}
             placeholder={t.contact.form.phonePlaceholder}
+            autoComplete="off"
             className={`w-full px-4 py-3 bg-surface border rounded-lg text-foreground placeholder-foreground-secondary focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors ${
               errors.phone ? 'border-red-500' : 'border-border'
             }`}
@@ -172,6 +175,7 @@ export function ContactForm({ t }: ContactFormProps) {
             onChange={handleChange('message')}
             placeholder={t.contact.form.messagePlaceholder}
             rows={4}
+            autoComplete="off"
             className={`w-full px-4 py-3 bg-surface border rounded-lg text-foreground placeholder-foreground-secondary focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors resize-none ${
               errors.message ? 'border-red-500' : 'border-border'
             }`}
