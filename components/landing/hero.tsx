@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { type Translations, type Language } from '@/lib/i18n/translations'
 import { LanguageSwitcher } from './language-switcher'
 
@@ -11,13 +12,20 @@ export function Hero({ t, lang }: HeroProps) {
   return (
     <header className="border-b border-border">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <nav className="flex items-center justify-between h-16" aria-label="Main navigation">
+        <nav className="flex items-center justify-between h-20" aria-label="Main navigation">
           <Link 
             href={`/${lang}`} 
-            className="flex items-center gap-2 text-foreground hover:text-accent transition-colors"
+            className="flex items-center gap-3 text-foreground hover:text-accent transition-colors"
             aria-label="AuditClaw - Home"
           >
-            <span className="font-mono text-2xl font-bold text-accent">AC</span>
+            <Image 
+              src="/logo.png" 
+              alt="AuditClaw Logo" 
+              width={48} 
+              height={48}
+              className="rounded"
+              priority
+            />
             <span className="font-sans text-xl font-semibold hidden sm:inline">AuditClaw</span>
           </Link>
           

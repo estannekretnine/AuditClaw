@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Building2, ArrowRight } from 'lucide-react'
+import Image from 'next/image'
+import { ArrowRight } from 'lucide-react'
 
 // Build time se generiše pri kompajliranju
 const BUILD_TIME = process.env.NEXT_PUBLIC_BUILD_TIME || new Date().toISOString()
@@ -82,9 +83,14 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col justify-between p-12 text-white">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center">
-              <Building2 className="w-7 h-7 text-black" />
-            </div>
+            <Image 
+              src="/logo.png" 
+              alt="AuditClaw Logo" 
+              width={64} 
+              height={64}
+              className="rounded"
+              priority
+            />
             <div>
               <h2 className="text-xl font-bold tracking-tight">AUDITCLAW</h2>
               <p className="text-xs text-amber-400 tracking-widest uppercase">Admin Panel</p>
@@ -125,9 +131,14 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center justify-center gap-3 mb-10">
-            <div className="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center">
-              <Building2 className="w-7 h-7 text-black" />
-            </div>
+            <Image 
+              src="/logo.png" 
+              alt="AuditClaw Logo" 
+              width={56} 
+              height={56}
+              className="rounded"
+              priority
+            />
             <div>
               <h2 className="text-xl font-bold tracking-tight text-stone-900">AUDITCLAW</h2>
               <p className="text-xs text-amber-600 tracking-widest uppercase">Admin Panel</p>
