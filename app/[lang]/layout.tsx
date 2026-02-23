@@ -50,11 +50,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: 'AuditClaw',
       locale: lang === 'sr' ? 'sr_RS' : 'en_US',
       type: 'website',
+      images: [
+        {
+          url: '/logo.png',
+          width: 300,
+          height: 300,
+          alt: 'AuditClaw Engineering Logo',
+        },
+      ],
     },
     twitter: {
-      card: 'summary_large_image',
+      card: 'summary',
       title: t.meta.title,
       description: t.meta.description,
+      images: ['/logo.png'],
+    },
+    icons: {
+      icon: '/logo.png',
+      apple: '/logo.png',
     },
     robots: {
       index: true,
