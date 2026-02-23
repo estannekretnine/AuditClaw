@@ -1,4 +1,5 @@
 import { type Translations } from '@/lib/i18n/translations'
+import { ContactForm } from './contact-form'
 
 interface ContactCTAProps {
   t: Translations
@@ -36,6 +37,16 @@ export function ContactCTA({ t }: ContactCTAProps) {
           </svg>
           {t.contact.whatsappButton}
         </a>
+
+        <div className="my-10 flex items-center gap-4 max-w-xl mx-auto">
+          <div className="flex-1 h-px bg-border"></div>
+          <span className="text-sm text-foreground-secondary uppercase tracking-wider">
+            {t.contact.formDivider}
+          </span>
+          <div className="flex-1 h-px bg-border"></div>
+        </div>
+
+        <ContactForm t={t} />
       </div>
     </section>
   )

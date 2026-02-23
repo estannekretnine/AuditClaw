@@ -58,6 +58,31 @@ export const translations = {
       title: 'Zakažite konsultacije',
       whatsappButton: 'Zakažite konsultacije sa inženjerom',
       whatsappMessage: 'Zdravo, zainteresovan sam za tehnički audit nekretnine.',
+      formDivider: 'ili popunite formu',
+      form: {
+        name: 'Ime i prezime',
+        namePlaceholder: 'Vaše ime',
+        email: 'Email adresa',
+        emailPlaceholder: 'vas@email.com',
+        phone: 'Telefon',
+        phonePlaceholder: '+381 63 123 4567',
+        message: 'Poruka',
+        messagePlaceholder: 'Opišite vašu nekretninu ili pitanje...',
+        submit: 'Pošalji poruku',
+        submitting: 'Slanje...',
+        success: 'Poruka je uspešno poslata! Javićemo vam se uskoro.',
+        error: 'Greška pri slanju. Molimo pokušajte ponovo.',
+        validation: {
+          nameRequired: 'Ime je obavezno',
+          nameMin: 'Ime mora imati najmanje 2 karaktera',
+          emailRequired: 'Email je obavezan',
+          emailInvalid: 'Unesite validnu email adresu',
+          phoneRequired: 'Telefon je obavezan',
+          phoneMin: 'Telefon mora imati najmanje 6 cifara',
+          messageRequired: 'Poruka je obavezna',
+          messageMin: 'Poruka mora imati najmanje 10 karaktera',
+        },
+      },
     },
     footer: {
       company: 'AuditClaw Engineering',
@@ -123,6 +148,31 @@ export const translations = {
       title: 'Schedule a Consultation',
       whatsappButton: 'Schedule a consultation with an engineer',
       whatsappMessage: 'Hello, I am interested in a technical property audit.',
+      formDivider: 'or fill out the form',
+      form: {
+        name: 'Full name',
+        namePlaceholder: 'Your name',
+        email: 'Email address',
+        emailPlaceholder: 'you@email.com',
+        phone: 'Phone',
+        phonePlaceholder: '+381 63 123 4567',
+        message: 'Message',
+        messagePlaceholder: 'Describe your property or question...',
+        submit: 'Send message',
+        submitting: 'Sending...',
+        success: 'Message sent successfully! We will get back to you soon.',
+        error: 'Error sending message. Please try again.',
+        validation: {
+          nameRequired: 'Name is required',
+          nameMin: 'Name must be at least 2 characters',
+          emailRequired: 'Email is required',
+          emailInvalid: 'Please enter a valid email address',
+          phoneRequired: 'Phone is required',
+          phoneMin: 'Phone must be at least 6 digits',
+          messageRequired: 'Message is required',
+          messageMin: 'Message must be at least 10 characters',
+        },
+      },
     },
     footer: {
       company: 'AuditClaw Engineering',
@@ -190,6 +240,31 @@ export interface Translations {
     title: string
     whatsappButton: string
     whatsappMessage: string
+    formDivider: string
+    form: {
+      name: string
+      namePlaceholder: string
+      email: string
+      emailPlaceholder: string
+      phone: string
+      phonePlaceholder: string
+      message: string
+      messagePlaceholder: string
+      submit: string
+      submitting: string
+      success: string
+      error: string
+      validation: {
+        nameRequired: string
+        nameMin: string
+        emailRequired: string
+        emailInvalid: string
+        phoneRequired: string
+        phoneMin: string
+        messageRequired: string
+        messageMin: string
+      }
+    }
   }
   footer: {
     company: string
