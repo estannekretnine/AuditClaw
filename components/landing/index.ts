@@ -1,0 +1,8 @@
+export { Hero } from './hero'
+export { Services } from './services'
+export { WhyAuditClaw } from './why-auditclaw'
+export { Trust } from './trust'
+export { ContactCTA } from './contact-cta'
+export { Footer } from './footer'
+export { LanguageSwitcher } from './language-switcher'
+export { StructuredData } from './structured-data'

@@ -11,6 +11,15 @@ export default {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        "foreground-secondary": "var(--foreground-secondary)",
+        accent: "var(--accent)",
+        "accent-hover": "var(--accent-hover)",
+        border: "var(--border)",
+        surface: "var(--surface)",
+      },
+      fontFamily: {
+        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-jetbrains)', 'monospace'],
       },
       animation: {
         shimmer: 'shimmer 3s linear infinite',
