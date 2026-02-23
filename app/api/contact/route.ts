@@ -2,7 +2,13 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { z } from 'zod'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const getResend = () => {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey || apiKey === 're_your_api_key_here') {
+    return null
+  }
+  return new Resend(apiKey)
+}
 
 const contactSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -26,6 +32,15 @@ export async function POST(request: Request) {
     }
 
     const { name, email, phone, message } = result.data
+
+    const resend = getResend()
+    if (!resend) {
+      console.error('Resend API key not configured')
+      return NextResponse.json(
+        { error: 'Email service not configured' },
+        { status: 500 }
+      )
+    }
 
     const { error } = await resend.emails.send({
       from: 'AuditClaw <onboarding@resend.dev>',
