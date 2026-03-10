@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { X, Brain, MessageSquare, Settings, ChevronDown, ChevronUp, Sparkles, Wand2 } from 'lucide-react'
 import { createKampanja, updateKampanja, updateKampanjaAgent } from '@/lib/actions/kampanje'
+import SimpleEditor from './simple-editor'
 import type { Kampanja } from '@/lib/types/kampanja'
 import type { Ponuda } from '@/lib/types/ponuda'
 
@@ -611,14 +612,11 @@ export default function KampanjaForm({ kampanja, ponuda, userId, userStatus, onC
                   <Sparkles className="w-4 h-4" />
                   Opis za web stranu (AI)
                 </label>
-                <textarea
-                  name="opis_ai"
+                <SimpleEditor
                   value={formData.opis_ai}
-                  onChange={handleInputChange}
+                  onChange={(value) => setFormData(prev => ({ ...prev, opis_ai: value }))}
                   disabled={!isAdmin}
-                  rows={4}
-                  className="w-full px-4 py-2.5 border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  placeholder="Kratak opis za web stranu (max 200 karaktera)..."
+                  placeholder="Kratak opis za web stranu..."
                 />
                 <p className="text-xs text-amber-700 mt-1.5">
                   Ovaj opis će se koristiti na javnoj web strani ponude/akcije i u meta tagovima za SEO
