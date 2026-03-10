@@ -17,6 +17,29 @@ body {
   background: var(--background);
 }
 
+/* Fix za input polja sa belom pozadinom - tekst treba da bude taman */
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select {
+  color: #1f2937;
+}
+
+/* Zadrži svetlu boju za input polja sa tamnom pozadinom */
+.bg-slate-800 input,
+.bg-slate-900 input,
+.bg-gray-800 input,
+.bg-gray-900 input,
+[class*="bg-slate-8"] input,
+[class*="bg-slate-9"] input {
+  color: #ffffff;
+}
+
+/* Placeholder boja */
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af;
+}
+
 /* Focus states for accessibility */
 a:focus-visible,
 button:focus-visible {
