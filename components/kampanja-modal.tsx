@@ -280,36 +280,33 @@ export default function KampanjaModal({ ponuda, userId, userStatus, onClose }: K
                                     className="fixed inset-0 z-40" 
                                     onClick={() => setOpenActionMenu(null)}
                                   />
-                                  <div className={`absolute right-0 w-40 bg-white rounded-lg shadow-2xl border border-gray-100 py-1 z-50 ${
-                                    index >= kampanje.length - 2 
-                                      ? 'bottom-full mb-1' 
-                                      : 'top-full mt-1'
-                                  }`}>
+                                  <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-50">
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation()
                                         handleImportKupaca(kampanja)
                                       }}
-                                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+                                      className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
                                     >
-                                      <Users className="w-3 h-3" />
+                                      <Users className="w-4 h-4" />
                                       Import kupaca
                                     </button>
+                                    <div className="border-t border-gray-100 my-1"></div>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation()
                                         handleArhiviraj(kampanja)
                                       }}
-                                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                      className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                                     >
                                       {kampanja.stsaktivan ? (
                                         <>
-                                          <Archive className="w-3 h-3" />
+                                          <Archive className="w-4 h-4" />
                                           Arhiviraj
                                         </>
                                       ) : (
                                         <>
-                                          <ArchiveRestore className="w-3 h-3" />
+                                          <ArchiveRestore className="w-4 h-4" />
                                           Aktiviraj
                                         </>
                                       )}
