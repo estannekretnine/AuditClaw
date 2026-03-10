@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Bold, Italic, Underline, List, ListOrdered, Undo, Redo } from 'lucide-react'
 
 interface SimpleEditorProps {
@@ -21,16 +21,40 @@ export default function SimpleEditor({
 }: SimpleEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const [isFocused, setIsFocused] = useState(false)
+  const savedSelectionRef = useRef<Range | null>(null)
 
-  const execCommand = useCallback((command: string, value?: string) => {
-    document.execCommand(command, false, value)
-    editorRef.current?.focus()
+  // Sačuvaj selekciju pre nego što fokus ode sa editora
+  const saveSelection = useCallback(() => {
+    const selection = window.getSelection()
+    if (selection && selection.rangeCount > 0) {
+      savedSelectionRef.current = selection.getRangeAt(0).cloneRange()
+    }
+  }, [])
+
+  // Vrati sačuvanu selekciju
+  const restoreSelection = useCallback(() => {
+    const selection = window.getSelection()
+    if (selection && savedSelectionRef.current) {
+      selection.removeAllRanges()
+      selection.addRange(savedSelectionRef.current)
+    }
+  }, [])
+
+  const execCommand = useCallback((command: string, commandValue?: string) => {
+    // Vrati fokus na editor i selekciju
+    if (editorRef.current) {
+      editorRef.current.focus()
+      restoreSelection()
+    }
     
-    // Update parent with new content
+    // Izvrši komandu
+    document.execCommand(command, false, commandValue)
+    
+    // Ažuriraj parent sa novim sadržajem
     if (editorRef.current) {
       onChange(editorRef.current.innerHTML)
     }
-  }, [onChange])
+  }, [onChange, restoreSelection])
 
   const handleInput = useCallback(() => {
     if (editorRef.current) {
@@ -44,27 +68,42 @@ export default function SimpleEditor({
     document.execCommand('insertText', false, text)
   }, [])
 
+  // Sačuvaj selekciju na svaku promenu
+  const handleSelect = useCallback(() => {
+    saveSelection()
+  }, [saveSelection])
+
+  const handleMouseUp = useCallback(() => {
+    saveSelection()
+  }, [saveSelection])
+
+  const handleKeyUp = useCallback(() => {
+    saveSelection()
+  }, [saveSelection])
+
+  // Toolbar dugme koje čuva selekciju pre klika
   const ToolbarButton = ({ 
-    onClick, 
+    onAction, 
     icon: Icon, 
-    title,
-    active = false 
+    title 
   }: { 
-    onClick: () => void
+    onAction: () => void
     icon: React.ElementType
     title: string
-    active?: boolean
   }) => (
     <button
       type="button"
-      onClick={onClick}
+      onMouseDown={(e) => {
+        e.preventDefault() // Spreči gubitak fokusa
+        saveSelection()
+      }}
+      onClick={(e) => {
+        e.preventDefault()
+        onAction()
+      }}
       disabled={disabled}
       title={title}
-      className={`p-1.5 rounded transition-colors ${
-        active 
-          ? 'bg-amber-200 text-amber-800' 
-          : 'hover:bg-amber-100 text-gray-600 hover:text-gray-800'
-      } disabled:opacity-50 disabled:cursor-not-allowed`}
+      className="p-1.5 rounded transition-colors hover:bg-amber-100 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <Icon className="w-4 h-4" />
     </button>
@@ -77,17 +116,17 @@ export default function SimpleEditor({
       {/* Toolbar */}
       <div className="flex items-center gap-1 px-2 py-1.5 bg-amber-50 border-b border-amber-200">
         <ToolbarButton 
-          onClick={() => execCommand('bold')} 
+          onAction={() => execCommand('bold')} 
           icon={Bold} 
           title="Bold (Ctrl+B)"
         />
         <ToolbarButton 
-          onClick={() => execCommand('italic')} 
+          onAction={() => execCommand('italic')} 
           icon={Italic} 
           title="Italic (Ctrl+I)"
         />
         <ToolbarButton 
-          onClick={() => execCommand('underline')} 
+          onAction={() => execCommand('underline')} 
           icon={Underline} 
           title="Underline (Ctrl+U)"
         />
@@ -95,12 +134,12 @@ export default function SimpleEditor({
         <div className="w-px h-5 bg-amber-200 mx-1" />
         
         <ToolbarButton 
-          onClick={() => execCommand('insertUnorderedList')} 
+          onAction={() => execCommand('insertUnorderedList')} 
           icon={List} 
           title="Bullet lista"
         />
         <ToolbarButton 
-          onClick={() => execCommand('insertOrderedList')} 
+          onAction={() => execCommand('insertOrderedList')} 
           icon={ListOrdered} 
           title="Numerisana lista"
         />
@@ -108,12 +147,12 @@ export default function SimpleEditor({
         <div className="w-px h-5 bg-amber-200 mx-1" />
         
         <ToolbarButton 
-          onClick={() => execCommand('undo')} 
+          onAction={() => execCommand('undo')} 
           icon={Undo} 
           title="Undo (Ctrl+Z)"
         />
         <ToolbarButton 
-          onClick={() => execCommand('redo')} 
+          onAction={() => execCommand('redo')} 
           icon={Redo} 
           title="Redo (Ctrl+Y)"
         />
@@ -127,6 +166,9 @@ export default function SimpleEditor({
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         onPaste={handlePaste}
+        onSelect={handleSelect}
+        onMouseUp={handleMouseUp}
+        onKeyUp={handleKeyUp}
         dangerouslySetInnerHTML={{ __html: value }}
         data-placeholder={placeholder}
         className={`min-h-[120px] px-4 py-2.5 text-sm text-gray-900 outline-none ${

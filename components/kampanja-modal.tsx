@@ -248,43 +248,43 @@ export default function KampanjaModal({ ponuda, userId, userStatus, onClose }: K
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <div className="relative inline-block">
+                        <div className="flex items-center justify-end gap-2">
+                          {/* Direktno dugme Izmeni */}
                           <button
-                            onClick={() => setOpenActionMenu(openActionMenu === kampanja.id ? null : kampanja.id)}
-                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                            disabled={actionLoading === kampanja.id}
+                            onClick={() => handleEdit(kampanja)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-lg transition-colors"
                           >
-                            {actionLoading === kampanja.id ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-violet-600"></div>
-                            ) : (
-                              <MoreVertical className="w-4 h-4 text-gray-500" />
-                            )}
+                            <Pencil className="w-3 h-3" />
+                            Izmeni
                           </button>
                           
-                          {/* Dropdown meni */}
-                          {openActionMenu === kampanja.id && (
-                            <>
-                              <div 
-                                className="fixed inset-0 z-40" 
-                                onClick={() => setOpenActionMenu(null)}
-                              />
-                              <div className={`absolute right-0 w-36 bg-white rounded-lg shadow-2xl border border-gray-100 py-1 z-50 ${
-                                index >= kampanje.length - 2 
-                                  ? 'bottom-full mb-1' 
-                                  : 'top-full mt-1'
-                              }`}>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleEdit(kampanja)
-                                  }}
-                                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-violet-50 hover:text-violet-700 transition-colors"
-                                >
-                                  <Pencil className="w-3 h-3" />
-                                  Izmeni
-                                </button>
-                                {isAdmin && (
-                                  <>
+                          {/* Dropdown za ostale opcije */}
+                          {isAdmin && (
+                            <div className="relative">
+                              <button
+                                onClick={() => setOpenActionMenu(openActionMenu === kampanja.id ? null : kampanja.id)}
+                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                disabled={actionLoading === kampanja.id}
+                              >
+                                {actionLoading === kampanja.id ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-violet-600"></div>
+                                ) : (
+                                  <MoreVertical className="w-4 h-4 text-gray-500" />
+                                )}
+                              </button>
+                              
+                              {/* Dropdown meni */}
+                              {openActionMenu === kampanja.id && (
+                                <>
+                                  <div 
+                                    className="fixed inset-0 z-40" 
+                                    onClick={() => setOpenActionMenu(null)}
+                                  />
+                                  <div className={`absolute right-0 w-40 bg-white rounded-lg shadow-2xl border border-gray-100 py-1 z-50 ${
+                                    index >= kampanje.length - 2 
+                                      ? 'bottom-full mb-1' 
+                                      : 'top-full mt-1'
+                                  }`}>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation()
@@ -314,10 +314,10 @@ export default function KampanjaModal({ ponuda, userId, userStatus, onClose }: K
                                         </>
                                       )}
                                     </button>
-                                  </>
-                                )}
-                              </div>
-                            </>
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           )}
                         </div>
                       </td>
