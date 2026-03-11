@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Plus, Pencil, MoreVertical, Archive, ArchiveRestore, Check, XCircle, Megaphone, Users } from 'lucide-react'
+import { X, Plus, Pencil, Archive, ArchiveRestore, Check, XCircle, Megaphone, Users } from 'lucide-react'
 import { getKampanjeByPonuda, arhivirajKampanja, aktivirajKampanja } from '@/lib/actions/kampanje'
 import type { Kampanja } from '@/lib/types/kampanja'
 import type { Ponuda } from '@/lib/types/ponuda'
@@ -21,9 +21,7 @@ export default function KampanjaModal({ ponuda, userId, userStatus, onClose }: K
   const [error, setError] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editingKampanja, setEditingKampanja] = useState<Kampanja | null>(null)
-  const [openActionMenu, setOpenActionMenu] = useState<number | null>(null)
   const [actionLoading, setActionLoading] = useState<number | null>(null)
-  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null)
   const [showKupacModal, setShowKupacModal] = useState(false)
   const [selectedKampanjaForKupci, setSelectedKampanjaForKupci] = useState<Kampanja | null>(null)
 
@@ -52,7 +50,6 @@ export default function KampanjaModal({ ponuda, userId, userStatus, onClose }: K
   }
 
   const handleEdit = (kampanja: Kampanja) => {
-    setOpenActionMenu(null)
     setEditingKampanja(kampanja)
     setShowForm(true)
   }
@@ -74,7 +71,6 @@ export default function KampanjaModal({ ponuda, userId, userStatus, onClose }: K
   }
 
   const handleArhiviraj = async (kampanja: Kampanja) => {
-    setOpenActionMenu(null)
     setActionLoading(kampanja.id)
     try {
       if (kampanja.stsaktivan) {
@@ -91,7 +87,6 @@ export default function KampanjaModal({ ponuda, userId, userStatus, onClose }: K
   }
 
   const handleImportKupaca = (kampanja: Kampanja) => {
-    setOpenActionMenu(null)
     setSelectedKampanjaForKupci(kampanja)
     setShowKupacModal(true)
   }
@@ -248,73 +243,49 @@ export default function KampanjaModal({ ponuda, userId, userStatus, onClose }: K
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {/* Direktno dugme Izmeni */}
+                        <div className="flex items-center justify-end gap-1.5">
+                          {/* Izmeni */}
                           <button
                             onClick={() => handleEdit(kampanja)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-lg transition-colors"
+                            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-lg transition-colors"
+                            title="Izmeni kampanju"
                           >
                             <Pencil className="w-3 h-3" />
                             Izmeni
                           </button>
                           
-                          {/* Dropdown za ostale opcije */}
                           {isAdmin && (
-                            <div className="relative">
+                            <>
+                              {/* Import kupaca */}
                               <button
-                                onClick={() => setOpenActionMenu(openActionMenu === kampanja.id ? null : kampanja.id)}
-                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                                disabled={actionLoading === kampanja.id}
+                                onClick={() => handleImportKupaca(kampanja)}
+                                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors"
+                                title="Import kupaca u kampanju"
                               >
-                                {actionLoading === kampanja.id ? (
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-violet-600"></div>
-                                ) : (
-                                  <MoreVertical className="w-4 h-4 text-gray-500" />
-                                )}
+                                <Users className="w-3 h-3" />
+                                Kupci
                               </button>
                               
-                              {/* Dropdown meni */}
-                              {openActionMenu === kampanja.id && (
-                                <>
-                                  <div 
-                                    className="fixed inset-0 z-40" 
-                                    onClick={() => setOpenActionMenu(null)}
-                                  />
-                                  <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-50">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        handleImportKupaca(kampanja)
-                                      }}
-                                      className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
-                                    >
-                                      <Users className="w-4 h-4" />
-                                      Import kupaca
-                                    </button>
-                                    <div className="border-t border-gray-100 my-1"></div>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        handleArhiviraj(kampanja)
-                                      }}
-                                      className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                                    >
-                                      {kampanja.stsaktivan ? (
-                                        <>
-                                          <Archive className="w-4 h-4" />
-                                          Arhiviraj
-                                        </>
-                                      ) : (
-                                        <>
-                                          <ArchiveRestore className="w-4 h-4" />
-                                          Aktiviraj
-                                        </>
-                                      )}
-                                    </button>
-                                  </div>
-                                </>
-                              )}
-                            </div>
+                              {/* Arhiviraj/Aktiviraj */}
+                              <button
+                                onClick={() => handleArhiviraj(kampanja)}
+                                disabled={actionLoading === kampanja.id}
+                                className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                                  kampanja.stsaktivan 
+                                    ? 'text-gray-600 bg-gray-100 hover:bg-gray-200' 
+                                    : 'text-green-700 bg-green-50 hover:bg-green-100'
+                                }`}
+                                title={kampanja.stsaktivan ? 'Arhiviraj kampanju' : 'Aktiviraj kampanju'}
+                              >
+                                {actionLoading === kampanja.id ? (
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                                ) : kampanja.stsaktivan ? (
+                                  <Archive className="w-3 h-3" />
+                                ) : (
+                                  <ArchiveRestore className="w-3 h-3" />
+                                )}
+                              </button>
+                            </>
                           )}
                         </div>
                       </td>
