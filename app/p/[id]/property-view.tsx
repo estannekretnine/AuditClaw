@@ -570,8 +570,11 @@ export default function PropertyView({ ponuda, photos, kampanja, kodkampanje, ku
             {/* Opis iz kampanje */}
             <div className={`${isDarkTheme ? 'bg-gradient-to-r from-amber-900/30 to-orange-900/30 border border-amber-700' : 'bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200'} rounded-2xl p-6`}>
               <div 
-                className={`${isDarkTheme ? 'text-gray-300' : 'text-gray-700'} text-lg leading-relaxed [&_b]:font-bold [&_strong]:font-bold [&_i]:italic [&_em]:italic [&_u]:underline [&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6 [&_li]:mb-1`}
-                dangerouslySetInnerHTML={{ __html: translateDescription(kampanja.opis_ai, lang) || '' }}
+                className={`${isDarkTheme ? 'text-gray-300' : 'text-gray-700'} text-lg leading-relaxed [&_b]:font-bold [&_strong]:font-bold [&_i]:italic [&_em]:italic [&_u]:underline [&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6 [&_li]:mb-1 [&_div]:mb-4 [&_p]:mb-4`}
+                dangerouslySetInnerHTML={{ 
+                  __html: (translateDescription(kampanja.opis_ai, lang) || '')
+                    .replace(/\n/g, '<br />')
+                }}
               />
             </div>
           </div>
