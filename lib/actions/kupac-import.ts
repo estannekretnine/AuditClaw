@@ -65,6 +65,7 @@ function buildMetapodaci(row: CSVRow): Record<string, unknown> | null {
 
 export async function importKupciFromCSV(formData: FormData): Promise<ImportResult> {
   const file = formData.get('file') as File
+  const nekretnineValue = formData.get('nekretnine') as string | null
   
   if (!file) {
     return {
@@ -202,6 +203,7 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
       godisnjaplata,
       stsotvoren: false,
       metapodaci,
+      nekretnine: nekretnineValue?.trim() || null,
     }
 
     let existingKupac = null

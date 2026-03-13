@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { 
   Upload, Users, CheckCircle, AlertCircle, RefreshCw,
-  Mail, Phone, MapPin, Briefcase, Download, FileText
+  Mail, Phone, MapPin, Briefcase, Download, FileText, Home
 } from 'lucide-react'
 import { importKupciFromCSV, getKupciImport } from '@/lib/actions/kupac-import'
 import type { KupacImport, ImportResult } from '@/lib/types/kupac-import'
@@ -15,6 +15,7 @@ export default function ImportKupacaPage() {
   const [totalCount, setTotalCount] = useState(0)
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [nekretnine, setNekretnine] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -51,6 +52,7 @@ export default function ImportKupacaPage() {
     try {
       const formData = new FormData()
       formData.append('file', selectedFile)
+      formData.append('nekretnine', nekretnine)
       
       const result = await importKupciFromCSV(formData)
       setImportResult(result)
@@ -127,7 +129,7 @@ export default function ImportKupacaPage() {
           Učitaj CSV fajl
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           {/* File Input */}
           <div>
             <label className="block text-sm text-gray-300 mb-2">Izaberite fajl</label>
@@ -144,6 +146,24 @@ export default function ImportKupacaPage() {
                 {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
               </p>
             )}
+          </div>
+
+          {/* Nekretnine Input */}
+          <div>
+            <label className="block text-sm text-gray-300 mb-2">
+              <Home className="w-4 h-4 inline mr-1" />
+              Nekretnine
+            </label>
+            <input
+              type="text"
+              value={nekretnine}
+              onChange={(e) => setNekretnine(e.target.value)}
+              placeholder="Npr. Stan Dedinje, Kuća Senjak..."
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Ova vrednost će biti upisana svim importovanim kupcima
+            </p>
           </div>
 
           {/* Actions */}
@@ -346,6 +366,7 @@ export default function ImportKupacaPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Telefon</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Lokacija</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Zanimanje</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Nekretnine</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Datum</th>
                   </tr>
                 </thead>
@@ -370,6 +391,13 @@ export default function ImportKupacaPage() {
                         {kupac.grad ? `${kupac.grad}${kupac.drzava ? `, ${kupac.drzava}` : ''}` : '-'}
                       </td>
                       <td className="px-4 py-3 text-gray-300 text-sm">{kupac.zanimanje || '-'}</td>
+                      <td className="px-4 py-3 text-sm">
+                        {kupac.nekretnine ? (
+                          <span className="px-2 py-1 bg-amber-500/20 text-amber-400 rounded-md text-xs">
+                            {kupac.nekretnine}
+                          </span>
+                        ) : '-'}
+                      </td>
                       <td className="px-4 py-3 text-gray-400 text-sm">
                         {new Date(kupac.created_at).toLocaleDateString('sr-RS')}
                       </td>
@@ -421,6 +449,14 @@ export default function ImportKupacaPage() {
                       <div className="flex items-center gap-1 text-gray-300">
                         <Briefcase className="w-3 h-3 text-amber-400" />
                         <span>{kupac.zanimanje}</span>
+                      </div>
+                    )}
+                    {kupac.nekretnine && (
+                      <div className="flex items-center gap-1 text-gray-300 col-span-2">
+                        <Home className="w-3 h-3 text-amber-400" />
+                        <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded text-xs">
+                          {kupac.nekretnine}
+                        </span>
                       </div>
                     )}
                   </div>
