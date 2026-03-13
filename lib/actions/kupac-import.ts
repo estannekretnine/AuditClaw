@@ -83,18 +83,10 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
     header: true,
     skipEmptyLines: true,
     delimiter: delimiter,
-    transformHeader: (header) => header.trim().toLowerCase(),
+    transformHeader: (header) => header.trim().toLowerCase().replace(/['"]/g, ''),
+    quoteChar: '"',
+    escapeChar: '"',
   })
-
-  if (parseResult.errors.length > 0) {
-    return {
-      total: 0,
-      inserted: 0,
-      updated: 0,
-      errors: parseResult.errors.length,
-      errorMessages: parseResult.errors.map(e => e.message)
-    }
-  }
 
   const supabase = createAdminClient()
   let inserted = 0
