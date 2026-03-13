@@ -11,6 +11,58 @@ import type {
   CSVRow 
 } from '@/lib/types/kupac-import'
 
+function detectDelimiter(text: string): string {
+  const firstLine = text.split('\n')[0] || ''
+  const tabCount = (firstLine.match(/\t/g) || []).length
+  const commaCount = (firstLine.match(/,/g) || []).length
+  return tabCount > commaCount ? '\t' : ','
+}
+
+function extractCountryFromLocation(location: string | undefined): string | null {
+  if (!location) return null
+  const parts = location.split(',').map(p => p.trim())
+  return parts.length > 0 ? parts[parts.length - 1] : null
+}
+
+function isLinkedInFormat(row: CSVRow): boolean {
+  return !!(row['first name'] || row['last name'] || row['linkedin url public'])
+}
+
+function buildMetapodaci(row: CSVRow): Record<string, unknown> | null {
+  const metapodaci: Record<string, unknown> = {}
+  
+  if (row['company name']) metapodaci.companyName = row['company name']
+  if (row['company domain']) metapodaci.companyDomain = row['company domain']
+  if (row['company industry']) metapodaci.companyIndustry = row['company industry']
+  if (row['company description']) metapodaci.companyDescription = row['company description']
+  if (row['company employee range']) metapodaci.companyEmployeeRange = row['company employee range']
+  if (row['company employee exact count']) metapodaci.companyEmployeeCount = row['company employee exact count']
+  if (row['company revenue min (millions usd)']) metapodaci.companyRevenueMin = row['company revenue min (millions usd)']
+  if (row['company revenue max (millions usd)']) metapodaci.companyRevenueMax = row['company revenue max (millions usd)']
+  if (row['company type']) metapodaci.companyType = row['company type']
+  if (row['company year founded']) metapodaci.companyYearFounded = row['company year founded']
+  if (row['profile headline']) metapodaci.profileHeadline = row['profile headline']
+  if (row['profile summary']) metapodaci.profileSummary = row['profile summary']
+  if (row['profile industry']) metapodaci.profileIndustry = row['profile industry']
+  if (row['job description']) metapodaci.jobDescription = row['job description']
+  if (row.connections) metapodaci.connections = row.connections
+  if (row['follower count']) metapodaci.followerCount = row['follower count']
+  if (row['is open to work']) metapodaci.isOpenToWork = row['is open to work']
+  if (row['is premium']) metapodaci.isPremium = row['is premium']
+  if (row['years in position']) metapodaci.yearsInPosition = row['years in position']
+  if (row['months in position']) metapodaci.monthsInPosition = row['months in position']
+  if (row['years in company']) metapodaci.yearsInCompany = row['years in company']
+  if (row['months in company']) metapodaci.monthsInCompany = row['months in company']
+  if (row.education) metapodaci.education = row.education
+  if (row['top skills (with endorsements)']) metapodaci.topSkills = row['top skills (with endorsements)']
+  if (row.languages) metapodaci.languages = row.languages
+  if (row['matches filters']) metapodaci.matchesFilters = row['matches filters']
+  if (row['no match reasons']) metapodaci.noMatchReasons = row['no match reasons']
+  if (row['email status']) metapodaci.emailStatus = row['email status']
+  
+  return Object.keys(metapodaci).length > 0 ? metapodaci : null
+}
+
 export async function importKupciFromCSV(formData: FormData): Promise<ImportResult> {
   const file = formData.get('file') as File
   
@@ -25,10 +77,12 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
   }
 
   const text = await file.text()
+  const delimiter = detectDelimiter(text)
   
   const parseResult = Papa.parse<CSVRow>(text, {
     header: true,
     skipEmptyLines: true,
+    delimiter: delimiter,
     transformHeader: (header) => header.trim().toLowerCase(),
   })
 
@@ -49,27 +103,61 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
   const errorMessages: string[] = []
 
   for (const row of parseResult.data) {
+    const isLinkedIn = isLinkedInFormat(row)
+    
+    const ime = isLinkedIn 
+      ? (row['first name']?.trim() || null)
+      : (row.ime?.trim() || null)
+    
+    const prezime = isLinkedIn
+      ? (row['last name']?.trim() || null)
+      : (row.prezime?.trim() || null)
+    
     const email = row.email?.trim() || null
+    
+    const linkedinurl = isLinkedIn
+      ? (row['linkedin url public']?.trim() || null)
+      : (row.linkedinurl?.trim() || null)
+    
     const mobprimarni = row.mobprimarni?.trim() || null
+    
+    const grad = isLinkedIn
+      ? (row.location?.trim() || null)
+      : (row.grad?.trim() || null)
+    
+    const drzava = isLinkedIn
+      ? extractCountryFromLocation(row['company location'] || row.location)
+      : (row.drzava?.trim() || null)
+    
+    const zanimanje = isLinkedIn
+      ? (row['current job']?.trim() || null)
+      : (row.zanimanje?.trim() || null)
+    
+    const godisnjaplata = isLinkedIn
+      ? (row['company revenue max (millions usd)']?.trim() || null)
+      : (row.godisnjaplata?.trim() || null)
 
-    if (!email && !mobprimarni) {
+    if (!email && !mobprimarni && !linkedinurl) {
       errors++
-      errorMessages.push(`Red preskočen - nema email ni mobprimarni`)
+      errorMessages.push(`Red preskočen - nema email, mobprimarni ni linkedinurl`)
       continue
     }
 
+    const metapodaci = isLinkedIn ? buildMetapodaci(row) : null
+
     const kupacData: KupacImportInsert = {
-      ime: row.ime?.trim() || null,
-      prezime: row.prezime?.trim() || null,
-      email: email,
-      mobprimarni: mobprimarni,
+      ime,
+      prezime,
+      email,
+      mobprimarni,
       mobsek: row.mobsek?.trim() || null,
-      linkedinurl: row.linkedinurl?.trim() || null,
-      drzava: row.drzava?.trim() || null,
-      grad: row.grad?.trim() || null,
-      zanimanje: row.zanimanje?.trim() || null,
-      godisnjaplata: row.godisnjaplata?.trim() || null,
+      linkedinurl,
+      drzava,
+      grad,
+      zanimanje,
+      godisnjaplata,
       stsotvoren: false,
+      metapodaci,
     }
 
     let existingKupac = null
@@ -88,6 +176,15 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
         .from('kupacimport')
         .select('id')
         .eq('mobprimarni', mobprimarni)
+        .single()
+      existingKupac = data
+    }
+
+    if (!existingKupac && linkedinurl) {
+      const { data } = await supabase
+        .from('kupacimport')
+        .select('id')
+        .eq('linkedinurl', linkedinurl)
         .single()
       existingKupac = data
     }

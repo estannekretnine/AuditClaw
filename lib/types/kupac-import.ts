@@ -53,6 +53,7 @@ export interface ImportResult {
 }
 
 export interface CSVRow {
+  // Standardni format (srpski nazivi kolona)
   ime?: string
   prezime?: string
   email?: string
@@ -63,4 +64,43 @@ export interface CSVRow {
   grad?: string
   zanimanje?: string
   godisnjaplata?: string
+  
+  // LinkedIn Sales Navigator format (engleski nazivi kolona)
+  'first name'?: string
+  'last name'?: string
+  'linkedin url public'?: string
+  'linkedin url unique id'?: string
+  location?: string
+  'current job'?: string
+  'company location'?: string
+  'company name'?: string
+  'company domain'?: string
+  'company industry'?: string
+  'company description'?: string
+  'company employee range'?: string
+  'company employee exact count'?: string
+  'company revenue min (millions usd)'?: string
+  'company revenue max (millions usd)'?: string
+  'company type'?: string
+  'company year founded'?: string
+  'profile headline'?: string
+  'profile summary'?: string
+  'profile industry'?: string
+  'job description'?: string
+  connections?: string
+  'follower count'?: string
+  'is open to work'?: string
+  'is premium'?: string
+  'years in position'?: string
+  'months in position'?: string
+  'years in company'?: string
+  'months in company'?: string
+  education?: string
+  'top skills (with endorsements)'?: string
+  languages?: string
+  'full name'?: string
+  'matches filters'?: string
+  'no match reasons'?: string
+  'email status'?: string
+  [key: string]: string | undefined
 }

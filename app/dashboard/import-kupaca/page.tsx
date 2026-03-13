@@ -82,6 +82,21 @@ export default function ImportKupacaPage() {
     URL.revokeObjectURL(url)
   }
 
+  const downloadLinkedInSampleCSV = () => {
+    const headers = 'First Name\tLast Name\tEmail\tLinkedin URL Public\tLocation\tCurrent Job\tCompany Name\tCompany Industry'
+    const sample1 = 'Marko\tPetrović\tmarko@email.com\thttps://linkedin.com/in/marko\tBeograd, Srbija\tIT Menadžer\tTech Company\tInformation Technology'
+    const sample2 = 'Ana\tJovanović\tana@email.com\thttps://linkedin.com/in/ana\tNovi Sad, Srbija\tDirektor\tFinance Corp\tFinancial Services'
+    const csvContent = `${headers}\n${sample1}\n${sample2}`
+    
+    const blob = new Blob([csvContent], { type: 'text/tab-separated-values;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'kupci_linkedin_primer.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="p-4 md:p-6 bg-slate-900 min-h-screen">
       {/* Header */}
@@ -150,24 +165,50 @@ export default function ImportKupacaPage() {
                 </>
               )}
             </button>
-            <button
-              onClick={downloadSampleCSV}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm"
-            >
-              <Download className="w-4 h-4" />
-              Preuzmi primer CSV
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={downloadSampleCSV}
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-xs"
+                title="Standardni CSV format"
+              >
+                <Download className="w-4 h-4" />
+                Primer CSV
+              </button>
+              <button
+                onClick={downloadLinkedInSampleCSV}
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors text-xs"
+                title="LinkedIn Sales Navigator format"
+              >
+                <Download className="w-4 h-4" />
+                LinkedIn CSV
+              </button>
+            </div>
           </div>
         </div>
 
         {/* CSV Format Info */}
         <div className="bg-slate-700/50 rounded-lg p-3 text-sm">
-          <p className="text-gray-300 font-medium mb-1">Očekivane kolone u CSV fajlu:</p>
-          <code className="text-amber-400 text-xs">
-            ime, prezime, email, mobprimarni, mobsek, linkedinurl, drzava, grad, zanimanje, godisnjaplata
-          </code>
-          <p className="text-gray-400 mt-2 text-xs">
-            * Kupac se identifikuje po email ili mobprimarni. Ako već postoji - ažurira se, ako ne - dodaje se novi.
+          <p className="text-gray-300 font-medium mb-2">Podržani formati CSV fajla:</p>
+          
+          <div className="mb-3">
+            <p className="text-gray-400 text-xs mb-1">LinkedIn Sales Navigator format (tab-separated):</p>
+            <code className="text-amber-400 text-xs block">
+              First Name, Last Name, Email, Linkedin URL Public, Location, Current Job, Company Name...
+            </code>
+          </div>
+          
+          <div className="mb-3">
+            <p className="text-gray-400 text-xs mb-1">Standardni format (comma-separated):</p>
+            <code className="text-amber-400 text-xs block">
+              ime, prezime, email, mobprimarni, mobsek, linkedinurl, drzava, grad, zanimanje, godisnjaplata
+            </code>
+          </div>
+          
+          <p className="text-gray-400 text-xs">
+            * Kupac se identifikuje po email, mobprimarni ili linkedinurl. Ako već postoji - ažurira se, ako ne - dodaje se novi.
+          </p>
+          <p className="text-gray-400 text-xs mt-1">
+            * Dodatni podaci iz LinkedIn formata (Company, Profile Summary, itd.) čuvaju se u metapodacima.
           </p>
         </div>
       </div>
