@@ -76,12 +76,28 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
     }
   }
 
-  let text = await file.text()
-  // Remove BOM if present
-  if (text.charCodeAt(0) === 0xFEFF) {
-    text = text.slice(1)
+  // Read file as ArrayBuffer to handle different encodings
+  const arrayBuffer = await file.arrayBuffer()
+  let text: string
+  
+  // Try to detect encoding - check for UTF-16 BOM
+  const uint8Array = new Uint8Array(arrayBuffer)
+  if (uint8Array[0] === 0xFF && uint8Array[1] === 0xFE) {
+    // UTF-16 LE
+    const decoder = new TextDecoder('utf-16le')
+    text = decoder.decode(arrayBuffer)
+  } else if (uint8Array[0] === 0xFE && uint8Array[1] === 0xFF) {
+    // UTF-16 BE
+    const decoder = new TextDecoder('utf-16be')
+    text = decoder.decode(arrayBuffer)
+  } else {
+    // Default to UTF-8
+    const decoder = new TextDecoder('utf-8')
+    text = decoder.decode(arrayBuffer)
   }
-  text = text.replace(/^\uFEFF/, '')
+  
+  // Remove BOM if present
+  text = text.replace(/^\uFEFF/, '').replace(/^\uFFFE/, '')
   
   const delimiter = detectDelimiter(text)
   
