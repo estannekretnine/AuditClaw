@@ -141,7 +141,7 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
       : (row.grad?.trim() || null)
     
     const drzava = isLinkedIn
-      ? extractCountryFromLocation(companyLocationKey ? row[companyLocationKey] : (locationKey ? row[locationKey] : null))
+      ? extractCountryFromLocation(companyLocationKey ? row[companyLocationKey] : (locationKey ? row[locationKey] : undefined))
       : (row.drzava?.trim() || null)
     
     const zanimanje = isLinkedIn
