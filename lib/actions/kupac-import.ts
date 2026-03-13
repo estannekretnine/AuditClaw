@@ -100,12 +100,17 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
   let errors = 0
   const errorMessages: string[] = []
 
-  // Debug: log first row keys
+  // Debug: log first row keys and delimiter info
   let debugKeys: string[] = []
+  const debugInfo: string[] = []
+  debugInfo.push(`Delimiter: "${delimiter === '\t' ? 'TAB' : delimiter}"`)
+  debugInfo.push(`Rows parsed: ${parseResult.data.length}`)
+  
   if (parseResult.data.length > 0) {
     const firstRow = parseResult.data[0]
     debugKeys = Object.keys(firstRow)
-    console.log('CSV Headers detected:', debugKeys)
+    debugInfo.push(`Columns count: ${debugKeys.length}`)
+    debugInfo.push(`First 5 columns: ${debugKeys.slice(0, 5).join(' | ')}`)
   }
 
   for (const row of parseResult.data) {
@@ -157,8 +162,10 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
       errors++
       if (errors === 1) {
         // Only for first error, show debug info
-        errorMessages.push(`Debug - kolone: ${debugKeys.filter(k => k.includes('linkedin') || k.includes('email')).join(', ')}`)
-        errorMessages.push(`Debug - linkedinKey: ${linkedinKey || 'NOT FOUND'}, value: ${linkedinKey ? row[linkedinKey] : 'N/A'}`)
+        debugInfo.forEach(d => errorMessages.push(d))
+        errorMessages.push(`LinkedIn columns: ${debugKeys.filter(k => k.includes('linkedin')).join(', ') || 'NONE'}`)
+        errorMessages.push(`Email column: ${debugKeys.find(k => k === 'email') || 'NOT FOUND'}`)
+        errorMessages.push(`linkedinKey found: ${linkedinKey || 'NOT FOUND'}`)
       }
       errorMessages.push(`Red preskočen - nema email, mobprimarni ni linkedinurl`)
       continue
