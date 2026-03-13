@@ -76,14 +76,20 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
     }
   }
 
-  const text = await file.text()
+  let text = await file.text()
+  // Remove BOM if present
+  if (text.charCodeAt(0) === 0xFEFF) {
+    text = text.slice(1)
+  }
+  text = text.replace(/^\uFEFF/, '')
+  
   const delimiter = detectDelimiter(text)
   
   const parseResult = Papa.parse<CSVRow>(text, {
     header: true,
     skipEmptyLines: true,
     delimiter: delimiter,
-    transformHeader: (header) => header.trim().toLowerCase().replace(/['"]/g, ''),
+    transformHeader: (header) => header.trim().toLowerCase().replace(/['"﻿]/g, ''),
     quoteChar: '"',
     escapeChar: '"',
   })
@@ -108,7 +114,7 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
     const email = row.email?.trim() || null
     
     const linkedinurl = isLinkedIn
-      ? (row['linkedin url public']?.trim() || null)
+      ? (row['linkedin url public']?.trim() || row['linkedin url unique id']?.trim() || null)
       : (row.linkedinurl?.trim() || null)
     
     const mobprimarni = row.mobprimarni?.trim() || null
