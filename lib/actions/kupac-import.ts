@@ -101,10 +101,11 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
   const errorMessages: string[] = []
 
   // Debug: log first row keys
+  let debugKeys: string[] = []
   if (parseResult.data.length > 0) {
     const firstRow = parseResult.data[0]
-    const keys = Object.keys(firstRow)
-    console.log('CSV Headers detected:', keys.slice(0, 10))
+    debugKeys = Object.keys(firstRow)
+    console.log('CSV Headers detected:', debugKeys)
   }
 
   for (const row of parseResult.data) {
@@ -154,6 +155,11 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
 
     if (!email && !mobprimarni && !linkedinurl) {
       errors++
+      if (errors === 1) {
+        // Only for first error, show debug info
+        errorMessages.push(`Debug - kolone: ${debugKeys.filter(k => k.includes('linkedin') || k.includes('email')).join(', ')}`)
+        errorMessages.push(`Debug - linkedinKey: ${linkedinKey || 'NOT FOUND'}, value: ${linkedinKey ? row[linkedinKey] : 'N/A'}`)
+      }
       errorMessages.push(`Red preskočen - nema email, mobprimarni ni linkedinurl`)
       continue
     }
