@@ -100,35 +100,52 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
   let errors = 0
   const errorMessages: string[] = []
 
+  // Debug: log first row keys
+  if (parseResult.data.length > 0) {
+    const firstRow = parseResult.data[0]
+    const keys = Object.keys(firstRow)
+    console.log('CSV Headers detected:', keys.slice(0, 10))
+  }
+
   for (const row of parseResult.data) {
-    const isLinkedIn = isLinkedInFormat(row)
+    // Get all keys to find linkedin url column dynamically
+    const rowKeys = Object.keys(row)
+    const linkedinKey = rowKeys.find(k => k.includes('linkedin') && k.includes('url') && k.includes('public'))
+    const linkedinUniqueKey = rowKeys.find(k => k.includes('linkedin') && k.includes('url') && k.includes('unique'))
+    const firstNameKey = rowKeys.find(k => k.includes('first') && k.includes('name'))
+    const lastNameKey = rowKeys.find(k => k.includes('last') && k.includes('name'))
+    const currentJobKey = rowKeys.find(k => k.includes('current') && k.includes('job'))
+    const locationKey = rowKeys.find(k => k === 'location')
+    const companyLocationKey = rowKeys.find(k => k.includes('company') && k.includes('location'))
+    
+    const isLinkedIn = !!(firstNameKey || lastNameKey || linkedinKey)
     
     const ime = isLinkedIn 
-      ? (row['first name']?.trim() || null)
+      ? (firstNameKey ? row[firstNameKey]?.trim() : null) || null
       : (row.ime?.trim() || null)
     
     const prezime = isLinkedIn
-      ? (row['last name']?.trim() || null)
+      ? (lastNameKey ? row[lastNameKey]?.trim() : null) || null
       : (row.prezime?.trim() || null)
     
     const email = row.email?.trim() || null
     
     const linkedinurl = isLinkedIn
-      ? (row['linkedin url public']?.trim() || row['linkedin url unique id']?.trim() || null)
+      ? (linkedinKey ? row[linkedinKey]?.trim() : null) || (linkedinUniqueKey ? row[linkedinUniqueKey]?.trim() : null) || null
       : (row.linkedinurl?.trim() || null)
     
     const mobprimarni = row.mobprimarni?.trim() || null
     
     const grad = isLinkedIn
-      ? (row.location?.trim() || null)
+      ? (locationKey ? row[locationKey]?.trim() : null) || null
       : (row.grad?.trim() || null)
     
     const drzava = isLinkedIn
-      ? extractCountryFromLocation(row['company location'] || row.location)
+      ? extractCountryFromLocation(companyLocationKey ? row[companyLocationKey] : (locationKey ? row[locationKey] : null))
       : (row.drzava?.trim() || null)
     
     const zanimanje = isLinkedIn
-      ? (row['current job']?.trim() || null)
+      ? (currentJobKey ? row[currentJobKey]?.trim() : null) || null
       : (row.zanimanje?.trim() || null)
     
     const godisnjaplata = isLinkedIn
