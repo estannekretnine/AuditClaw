@@ -392,9 +392,9 @@ export default function ImportKupacaPage() {
                       </td>
                       <td className="px-4 py-3 text-gray-300 text-sm">{kupac.zanimanje || '-'}</td>
                       <td className="px-4 py-3 text-sm">
-                        {kupac.nekretnine ? (
+                        {kupac.nekretnina ? (
                           <span className="px-2 py-1 bg-amber-500/20 text-amber-400 rounded-md text-xs">
-                            {kupac.nekretnine}
+                            {kupac.nekretnina}
                           </span>
                         ) : '-'}
                       </td>
@@ -451,11 +451,11 @@ export default function ImportKupacaPage() {
                         <span>{kupac.zanimanje}</span>
                       </div>
                     )}
-                    {kupac.nekretnine && (
+                    {kupac.nekretnina && (
                       <div className="flex items-center gap-1 text-gray-300 col-span-2">
                         <Home className="w-3 h-3 text-amber-400" />
                         <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded text-xs">
-                          {kupac.nekretnine}
+                          {kupac.nekretnina}
                         </span>
                       </div>
                     )}

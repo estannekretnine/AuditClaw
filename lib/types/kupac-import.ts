@@ -14,7 +14,7 @@ export interface KupacImport {
   ime: string | null
   prezime: string | null
   metapodaci: Record<string, unknown> | null
-  nekretnine: string | null
+  nekretnina: string | null
 }
 
 export interface KupacImportInsert {
@@ -31,7 +31,7 @@ export interface KupacImportInsert {
   ime?: string | null
   prezime?: string | null
   metapodaci?: Record<string, unknown> | null
-  nekretnine?: string | null
+  nekretnina?: string | null
 }
 
 export interface KupacKampanja {

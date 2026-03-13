@@ -203,7 +203,7 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
       godisnjaplata,
       stsotvoren: false,
       metapodaci,
-      nekretnine: nekretnineValue?.trim() || null,
+      nekretnina: nekretnineValue?.trim() || null,
     }
 
     let existingKupac = null
