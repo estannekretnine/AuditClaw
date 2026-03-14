@@ -159,7 +159,7 @@ export default function ImportKupacaPage() {
               value={nekretnine}
               onChange={(e) => setNekretnine(e.target.value)}
               placeholder="Npr. Stan Dedinje, Kuća Senjak..."
-              className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded-lg text-yellow-300 font-semibold text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3 py-2 bg-slate-900 border-2 border-amber-500 rounded-lg text-yellow-300 font-bold text-base placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400"
             />
             <p className="text-xs text-gray-400 mt-1">
               Ova vrednost će biti upisana svim importovanim kupcima
