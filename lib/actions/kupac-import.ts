@@ -485,8 +485,8 @@ export async function getKupciForCSVExport(kampanjaId: number): Promise<{ data: 
     return { data: [], error: null }
   }
 
-  const csvData: CSVExportRow[] = data.map((row: { url: string | null; kupac: { id: number; ime: string | null; prezime: string | null; linkedinurl: string | null; grad: string | null; metapodaci: Record<string, unknown> | null } | null }) => {
-    const kupac = row.kupac
+  const csvData: CSVExportRow[] = data.map((row) => {
+    const kupac = Array.isArray(row.kupac) ? row.kupac[0] : row.kupac
     const metapodaci = kupac?.metapodaci as Record<string, unknown> | null
     
     return {
