@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Plus, Pencil, Archive, ArchiveRestore, Check, XCircle, Megaphone, Users } from 'lucide-react'
+import { X, Plus, Pencil, Archive, ArchiveRestore, Check, XCircle, Megaphone, Users, Download } from 'lucide-react'
 import { getKampanjeByPonuda, arhivirajKampanja, aktivirajKampanja } from '@/lib/actions/kampanje'
+import { getKupciForCSVExport } from '@/lib/actions/kupac-import'
 import type { Kampanja } from '@/lib/types/kampanja'
 import type { Ponuda } from '@/lib/types/ponuda'
 import KampanjaForm from './kampanja-form'
@@ -24,6 +25,7 @@ export default function KampanjaModal({ ponuda, userId, userStatus, onClose }: K
   const [actionLoading, setActionLoading] = useState<number | null>(null)
   const [showKupacModal, setShowKupacModal] = useState(false)
   const [selectedKampanjaForKupci, setSelectedKampanjaForKupci] = useState<Kampanja | null>(null)
+  const [exportLoading, setExportLoading] = useState<number | null>(null)
 
   const isAdmin = userStatus === 'admin' || userStatus === 'manager'
 
@@ -89,6 +91,55 @@ export default function KampanjaModal({ ponuda, userId, userStatus, onClose }: K
   const handleImportKupaca = (kampanja: Kampanja) => {
     setSelectedKampanjaForKupci(kampanja)
     setShowKupacModal(true)
+  }
+
+  const handleExportCSV = async (kampanja: Kampanja) => {
+    setExportLoading(kampanja.id)
+    try {
+      const result = await getKupciForCSVExport(kampanja.id)
+      
+      if (result.error || !result.data) {
+        console.error('Error exporting CSV:', result.error)
+        return
+      }
+
+      if (result.data.length === 0) {
+        alert('Nema kupaca za eksport u ovoj kampanji')
+        return
+      }
+
+      const headers = ['custom_id', 'first_name', 'last_name', 'profile_url', 'website_link', 'company_name', 'location']
+      
+      const escapeCSV = (value: string | number): string => {
+        const str = String(value)
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`
+        }
+        return str
+      }
+
+      const csvRows = [
+        headers.join(','),
+        ...result.data.map(row => 
+          headers.map(header => escapeCSV(row[header as keyof typeof row])).join(',')
+        )
+      ]
+
+      const csvContent = csvRows.join('\n')
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `kampanja_${kampanja.id}_kupci.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Error exporting CSV:', err)
+    } finally {
+      setExportLoading(null)
+    }
   }
 
   // Format datum
@@ -264,6 +315,21 @@ export default function KampanjaModal({ ponuda, userId, userStatus, onClose }: K
                               >
                                 <Users className="w-3 h-3" />
                                 Kupci
+                              </button>
+                              
+                              {/* CSV Export */}
+                              <button
+                                onClick={() => handleExportCSV(kampanja)}
+                                disabled={exportLoading === kampanja.id}
+                                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
+                                title="Eksportuj kupce u CSV"
+                              >
+                                {exportLoading === kampanja.id ? (
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-emerald-700"></div>
+                                ) : (
+                                  <Download className="w-3 h-3" />
+                                )}
+                                CSV
                               </button>
                               
                               {/* Arhiviraj/Aktiviraj */}

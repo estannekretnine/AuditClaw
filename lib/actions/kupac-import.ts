@@ -447,3 +447,58 @@ export async function getKupciKampanjaCount(kampanjaId: number) {
 
   return { count: count || 0, error: null }
 }
+
+export interface CSVExportRow {
+  custom_id: number
+  first_name: string
+  last_name: string
+  profile_url: string
+  website_link: string
+  company_name: string
+  location: string
+}
+
+export async function getKupciForCSVExport(kampanjaId: number): Promise<{ data: CSVExportRow[] | null; error: string | null }> {
+  const supabase = createAdminClient()
+
+  const { data, error } = await supabase
+    .from('kupackampanja')
+    .select(`
+      url,
+      kupac:kupacimport(
+        id,
+        ime,
+        prezime,
+        linkedinurl,
+        grad,
+        metapodaci
+      )
+    `)
+    .eq('kampanjaid', kampanjaId)
+
+  if (error) {
+    console.error('Error fetching kupci for CSV export:', error)
+    return { data: null, error: error.message }
+  }
+
+  if (!data) {
+    return { data: [], error: null }
+  }
+
+  const csvData: CSVExportRow[] = data.map((row: { url: string | null; kupac: { id: number; ime: string | null; prezime: string | null; linkedinurl: string | null; grad: string | null; metapodaci: Record<string, unknown> | null } | null }) => {
+    const kupac = row.kupac
+    const metapodaci = kupac?.metapodaci as Record<string, unknown> | null
+    
+    return {
+      custom_id: kupac?.id || 0,
+      first_name: kupac?.ime || '',
+      last_name: kupac?.prezime || '',
+      profile_url: kupac?.linkedinurl || '',
+      website_link: row.url || '',
+      company_name: (metapodaci?.companyName as string) || '',
+      location: kupac?.grad || '',
+    }
+  })
+
+  return { data: csvData, error: null }
+}
