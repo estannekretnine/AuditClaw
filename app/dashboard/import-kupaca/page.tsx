@@ -586,24 +586,24 @@ export default function ImportKupacaPage() {
                         {new Date(kupac.created_at).toLocaleDateString('sr-RS')}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <div className="relative">
+                        {isArchived(kupac) ? (
                           <button
-                            onClick={() => setOpenMenuId(openMenuId === kupac.id ? null : kupac.id)}
-                            className="p-1 hover:bg-slate-600 rounded transition-colors"
+                            onClick={() => openRestoreModal(kupac)}
+                            className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs rounded-lg transition-colors flex items-center gap-1 mx-auto"
                           >
-                            <MoreVertical className="w-4 h-4 text-gray-400" />
+                            <RotateCcw className="w-3 h-3" />
+                            Vrati
                           </button>
-                          {openMenuId === kupac.id && (
-                            <div className="absolute right-0 top-8 z-10 bg-slate-700 border border-slate-600 rounded-lg shadow-lg py-1 min-w-[140px]">
-                              {isArchived(kupac) ? (
-                                <button
-                                  onClick={() => openRestoreModal(kupac)}
-                                  className="w-full px-3 py-2 text-left text-sm text-green-400 hover:bg-slate-600 flex items-center gap-2"
-                                >
-                                  <RotateCcw className="w-4 h-4" />
-                                  Vrati
-                                </button>
-                              ) : (
+                        ) : (
+                          <div className="relative">
+                            <button
+                              onClick={() => setOpenMenuId(openMenuId === kupac.id ? null : kupac.id)}
+                              className="p-1 hover:bg-slate-600 rounded transition-colors"
+                            >
+                              <MoreVertical className="w-4 h-4 text-gray-400" />
+                            </button>
+                            {openMenuId === kupac.id && (
+                              <div className="absolute right-0 top-8 z-10 bg-slate-700 border border-slate-600 rounded-lg shadow-lg py-1 min-w-[140px]">
                                 <button
                                   onClick={() => openArchiveModal(kupac)}
                                   className="w-full px-3 py-2 text-left text-sm text-orange-400 hover:bg-slate-600 flex items-center gap-2"
@@ -611,10 +611,10 @@ export default function ImportKupacaPage() {
                                   <Archive className="w-4 h-4" />
                                   Arhiviraj
                                 </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -648,24 +648,24 @@ export default function ImportKupacaPage() {
                         {new Date(kupac.created_at).toLocaleDateString('sr-RS')}
                       </p>
                     </div>
-                    <div className="relative">
+                    {isArchived(kupac) ? (
                       <button
-                        onClick={() => setOpenMenuId(openMenuId === kupac.id ? null : kupac.id)}
-                        className="p-2 hover:bg-slate-600 rounded transition-colors"
+                        onClick={() => openRestoreModal(kupac)}
+                        className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs rounded-lg transition-colors flex items-center gap-1"
                       >
-                        <MoreVertical className="w-4 h-4 text-gray-400" />
+                        <RotateCcw className="w-3 h-3" />
+                        Vrati
                       </button>
-                      {openMenuId === kupac.id && (
-                        <div className="absolute right-0 top-10 z-10 bg-slate-700 border border-slate-600 rounded-lg shadow-lg py-1 min-w-[140px]">
-                          {isArchived(kupac) ? (
-                            <button
-                              onClick={() => openRestoreModal(kupac)}
-                              className="w-full px-3 py-2 text-left text-sm text-green-400 hover:bg-slate-600 flex items-center gap-2"
-                            >
-                              <RotateCcw className="w-4 h-4" />
-                              Vrati
-                            </button>
-                          ) : (
+                    ) : (
+                      <div className="relative">
+                        <button
+                          onClick={() => setOpenMenuId(openMenuId === kupac.id ? null : kupac.id)}
+                          className="p-2 hover:bg-slate-600 rounded transition-colors"
+                        >
+                          <MoreVertical className="w-4 h-4 text-gray-400" />
+                        </button>
+                        {openMenuId === kupac.id && (
+                          <div className="absolute right-0 top-10 z-10 bg-slate-700 border border-slate-600 rounded-lg shadow-lg py-1 min-w-[140px]">
                             <button
                               onClick={() => openArchiveModal(kupac)}
                               className="w-full px-3 py-2 text-left text-sm text-orange-400 hover:bg-slate-600 flex items-center gap-2"
@@ -673,10 +673,10 @@ export default function ImportKupacaPage() {
                               <Archive className="w-4 h-4" />
                               Arhiviraj
                             </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     {kupac.email && (
