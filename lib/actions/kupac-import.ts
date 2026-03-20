@@ -272,12 +272,18 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
   }
 }
 
-export async function getKupciImport(limit: number = 50, offset: number = 0, search?: string) {
+export async function getKupciImport(limit: number = 50, offset: number = 0, search?: string, showArchived: boolean = false) {
   const supabase = createAdminClient()
 
   let query = supabase
     .from('kupacimport')
     .select('*', { count: 'exact' })
+
+  if (showArchived) {
+    query = query.eq('stsarhiva', true)
+  } else {
+    query = query.or('stsarhiva.is.null,stsarhiva.eq.false')
+  }
 
   if (search && search.trim()) {
     const searchTerm = search.trim()
@@ -300,6 +306,46 @@ export async function getKupciImport(limit: number = 50, offset: number = 0, sea
   }
 
   return { data: data as KupacImport[], error: null, count: count || 0 }
+}
+
+export async function archiveKupac(kupacId: number, razlog: string) {
+  const supabase = createAdminClient()
+
+  const { error } = await supabase
+    .from('kupacimport')
+    .update({ 
+      stsarhiva: true, 
+      razlogarhiva: razlog 
+    })
+    .eq('id', kupacId)
+
+  if (error) {
+    console.error('Error archiving kupac:', error)
+    return { error: error.message }
+  }
+
+  revalidatePath('/dashboard/import-kupaca')
+  return { error: null }
+}
+
+export async function restoreKupac(kupacId: number) {
+  const supabase = createAdminClient()
+
+  const { error } = await supabase
+    .from('kupacimport')
+    .update({ 
+      stsarhiva: false, 
+      razlogarhiva: null 
+    })
+    .eq('id', kupacId)
+
+  if (error) {
+    console.error('Error restoring kupac:', error)
+    return { error: error.message }
+  }
+
+  revalidatePath('/dashboard/import-kupaca')
+  return { error: null }
 }
 
 export async function getKupciCountForImport() {

@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { 
   Upload, Users, CheckCircle, AlertCircle, RefreshCw,
-  Mail, Phone, MapPin, Briefcase, Download, FileText, Home, Search, X
+  Mail, Phone, MapPin, Briefcase, Download, FileText, Home, Search, X,
+  Archive, RotateCcw, MoreVertical
 } from 'lucide-react'
-import { importKupciFromCSV, getKupciImport } from '@/lib/actions/kupac-import'
+import { importKupciFromCSV, getKupciImport, archiveKupac, restoreKupac } from '@/lib/actions/kupac-import'
 import type { KupacImport, ImportResult } from '@/lib/types/kupac-import'
 
 export default function ImportKupacaPage() {
@@ -18,6 +19,12 @@ export default function ImportKupacaPage() {
   const [nekretnine, setNekretnine] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [showArchived, setShowArchived] = useState(false)
+  const [archiveModalOpen, setArchiveModalOpen] = useState(false)
+  const [selectedKupac, setSelectedKupac] = useState<KupacImport | null>(null)
+  const [archiveReason, setArchiveReason] = useState('')
+  const [archiving, setArchiving] = useState(false)
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
@@ -28,10 +35,10 @@ export default function ImportKupacaPage() {
     return () => clearTimeout(timer)
   }, [searchQuery])
 
-  const loadKupci = useCallback(async (search?: string) => {
+  const loadKupci = useCallback(async (search?: string, archived?: boolean) => {
     setLoading(true)
     try {
-      const result = await getKupciImport(50, 0, search)
+      const result = await getKupciImport(50, 0, search, archived ?? showArchived)
       if (result.data) {
         setKupci(result.data)
         setTotalCount(result.count)
@@ -39,15 +46,47 @@ export default function ImportKupacaPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [showArchived])
 
   useEffect(() => {
-    loadKupci(debouncedSearch)
-  }, [debouncedSearch, loadKupci])
+    loadKupci(debouncedSearch, showArchived)
+  }, [debouncedSearch, showArchived, loadKupci])
 
   const clearSearch = () => {
     setSearchQuery('')
     searchInputRef.current?.focus()
+  }
+
+  const openArchiveModal = (kupac: KupacImport) => {
+    setSelectedKupac(kupac)
+    setArchiveReason('')
+    setArchiveModalOpen(true)
+    setOpenMenuId(null)
+  }
+
+  const handleArchive = async () => {
+    if (!selectedKupac || !archiveReason.trim()) return
+    
+    setArchiving(true)
+    try {
+      const result = await archiveKupac(selectedKupac.id, archiveReason.trim())
+      if (!result.error) {
+        setArchiveModalOpen(false)
+        setSelectedKupac(null)
+        setArchiveReason('')
+        await loadKupci(debouncedSearch, showArchived)
+      }
+    } finally {
+      setArchiving(false)
+    }
+  }
+
+  const handleRestore = async (kupacId: number) => {
+    setOpenMenuId(null)
+    const result = await restoreKupac(kupacId)
+    if (!result.error) {
+      await loadKupci(debouncedSearch, showArchived)
+    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,14 +166,27 @@ export default function ImportKupacaPage() {
             Učitajte CSV fajl sa podacima o kupcima
           </p>
         </div>
-        <button
-          onClick={() => loadKupci(debouncedSearch)}
-          disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          <span className="hidden md:inline">Osveži</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowArchived(!showArchived)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+              showArchived 
+                ? 'bg-orange-600 hover:bg-orange-500 text-white' 
+                : 'bg-slate-700 hover:bg-slate-600 text-white'
+            }`}
+          >
+            <Archive className="w-4 h-4" />
+            <span className="hidden md:inline">{showArchived ? 'Aktivni' : 'Arhivirani'}</span>
+          </button>
+          <button
+            onClick={() => loadKupci(debouncedSearch, showArchived)}
+            disabled={loading}
+            className="flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden md:inline">Osveži</span>
+          </button>
+        </div>
       </div>
 
       {/* Upload Section */}
@@ -355,8 +407,13 @@ export default function ImportKupacaPage() {
       <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
         <div className="p-4 border-b border-slate-700">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <h2 className="text-lg font-semibold text-white">
-              {debouncedSearch ? `Rezultati pretrage (${totalCount})` : 'Poslednji importovani kupci'}
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              {showArchived && <Archive className="w-5 h-5 text-orange-500" />}
+              {debouncedSearch 
+                ? `Rezultati pretrage (${totalCount})` 
+                : showArchived 
+                  ? `Arhivirani kupci (${totalCount})`
+                  : 'Poslednji importovani kupci'}
             </h2>
             <div className="relative w-full md:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -405,7 +462,11 @@ export default function ImportKupacaPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Lokacija</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Zanimanje</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Nekretnine</th>
+                    {showArchived && (
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Razlog arhive</th>
+                    )}
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Datum</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-300 uppercase">Akcije</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-700">
@@ -414,8 +475,12 @@ export default function ImportKupacaPage() {
                       <td className="px-4 py-3 text-gray-400 text-sm font-mono">{kupac.id}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center">
-                            <span className="text-amber-500 font-semibold text-sm">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            showArchived ? 'bg-orange-500/20' : 'bg-amber-500/20'
+                          }`}>
+                            <span className={`font-semibold text-sm ${
+                              showArchived ? 'text-orange-500' : 'text-amber-500'
+                            }`}>
                               {(kupac.ime?.[0] || '?').toUpperCase()}
                             </span>
                           </div>
@@ -437,8 +502,48 @@ export default function ImportKupacaPage() {
                           </span>
                         ) : '-'}
                       </td>
+                      {showArchived && (
+                        <td className="px-4 py-3 text-sm">
+                          {kupac.razlogarhiva ? (
+                            <span className="px-2 py-1 bg-orange-500/20 text-orange-400 rounded-md text-xs max-w-[200px] truncate block" title={kupac.razlogarhiva}>
+                              {kupac.razlogarhiva}
+                            </span>
+                          ) : '-'}
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-gray-400 text-sm">
                         {new Date(kupac.created_at).toLocaleDateString('sr-RS')}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="relative">
+                          <button
+                            onClick={() => setOpenMenuId(openMenuId === kupac.id ? null : kupac.id)}
+                            className="p-1 hover:bg-slate-600 rounded transition-colors"
+                          >
+                            <MoreVertical className="w-4 h-4 text-gray-400" />
+                          </button>
+                          {openMenuId === kupac.id && (
+                            <div className="absolute right-0 top-8 z-10 bg-slate-700 border border-slate-600 rounded-lg shadow-lg py-1 min-w-[140px]">
+                              {showArchived ? (
+                                <button
+                                  onClick={() => handleRestore(kupac.id)}
+                                  className="w-full px-3 py-2 text-left text-sm text-green-400 hover:bg-slate-600 flex items-center gap-2"
+                                >
+                                  <RotateCcw className="w-4 h-4" />
+                                  Vrati
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => openArchiveModal(kupac)}
+                                  className="w-full px-3 py-2 text-left text-sm text-orange-400 hover:bg-slate-600 flex items-center gap-2"
+                                >
+                                  <Archive className="w-4 h-4" />
+                                  Arhiviraj
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -451,8 +556,10 @@ export default function ImportKupacaPage() {
               {kupci.map((kupac) => (
                 <div key={kupac.id} className="p-4">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center">
-                      <span className="text-amber-500 font-semibold">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      showArchived ? 'bg-orange-500/20' : 'bg-amber-500/20'
+                    }`}>
+                      <span className={`font-semibold ${showArchived ? 'text-orange-500' : 'text-amber-500'}`}>
                         {(kupac.ime?.[0] || '?').toUpperCase()}
                       </span>
                     </div>
@@ -466,6 +573,35 @@ export default function ImportKupacaPage() {
                       <p className="text-gray-400 text-xs">
                         {new Date(kupac.created_at).toLocaleDateString('sr-RS')}
                       </p>
+                    </div>
+                    <div className="relative">
+                      <button
+                        onClick={() => setOpenMenuId(openMenuId === kupac.id ? null : kupac.id)}
+                        className="p-2 hover:bg-slate-600 rounded transition-colors"
+                      >
+                        <MoreVertical className="w-4 h-4 text-gray-400" />
+                      </button>
+                      {openMenuId === kupac.id && (
+                        <div className="absolute right-0 top-10 z-10 bg-slate-700 border border-slate-600 rounded-lg shadow-lg py-1 min-w-[140px]">
+                          {showArchived ? (
+                            <button
+                              onClick={() => handleRestore(kupac.id)}
+                              className="w-full px-3 py-2 text-left text-sm text-green-400 hover:bg-slate-600 flex items-center gap-2"
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                              Vrati
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => openArchiveModal(kupac)}
+                              className="w-full px-3 py-2 text-left text-sm text-orange-400 hover:bg-slate-600 flex items-center gap-2"
+                            >
+                              <Archive className="w-4 h-4" />
+                              Arhiviraj
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
@@ -501,6 +637,14 @@ export default function ImportKupacaPage() {
                         </span>
                       </div>
                     )}
+                    {showArchived && kupac.razlogarhiva && (
+                      <div className="flex items-center gap-1 text-gray-300 col-span-2 mt-2">
+                        <Archive className="w-3 h-3 text-orange-400" />
+                        <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded text-xs">
+                          {kupac.razlogarhiva}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -508,6 +652,79 @@ export default function ImportKupacaPage() {
           </>
         )}
       </div>
+
+      {/* Archive Modal */}
+      {archiveModalOpen && selectedKupac && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-xl border border-slate-700 w-full max-w-md">
+            <div className="p-4 border-b border-slate-700">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Archive className="w-5 h-5 text-orange-500" />
+                Arhiviraj kupca
+              </h3>
+            </div>
+            <div className="p-4">
+              <div className="mb-4 p-3 bg-slate-700/50 rounded-lg">
+                <p className="text-white font-medium">
+                  {selectedKupac.ime || '-'} {selectedKupac.prezime || ''}
+                </p>
+                <p className="text-gray-400 text-sm">
+                  {selectedKupac.email || selectedKupac.mobprimarni || `ID: ${selectedKupac.id}`}
+                </p>
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm text-gray-300 mb-2">
+                  Razlog arhiviranja <span className="text-red-400">*</span>
+                </label>
+                <textarea
+                  value={archiveReason}
+                  onChange={(e) => setArchiveReason(e.target.value)}
+                  placeholder="Unesite razlog arhiviranja..."
+                  rows={3}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setArchiveModalOpen(false)
+                    setSelectedKupac(null)
+                    setArchiveReason('')
+                  }}
+                  className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                >
+                  Otkaži
+                </button>
+                <button
+                  onClick={handleArchive}
+                  disabled={!archiveReason.trim() || archiving}
+                  className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-500 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  {archiving ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Arhiviram...
+                    </>
+                  ) : (
+                    <>
+                      <Archive className="w-4 h-4" />
+                      Arhiviraj
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Click outside to close menu */}
+      {openMenuId !== null && (
+        <div 
+          className="fixed inset-0 z-0" 
+          onClick={() => setOpenMenuId(null)}
+        />
+      )}
     </div>
   )
 }

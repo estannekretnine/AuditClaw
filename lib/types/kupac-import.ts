@@ -15,6 +15,8 @@ export interface KupacImport {
   prezime: string | null
   metapodaci: Record<string, unknown> | null
   nekretnina: string | null
+  stsarhiva: boolean | null
+  razlogarhiva: string | null
 }
 
 export interface KupacImportInsert {
