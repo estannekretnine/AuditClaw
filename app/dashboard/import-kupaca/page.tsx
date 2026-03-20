@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { 
   Upload, Users, CheckCircle, AlertCircle, RefreshCw,
   Mail, Phone, MapPin, Briefcase, Download, FileText, Home, Search, X,
-  Archive, RotateCcw, MoreVertical
+  Archive, RotateCcw
 } from 'lucide-react'
 import { importKupciFromCSV, getKupciImport, archiveKupac, restoreKupac } from '@/lib/actions/kupac-import'
 import type { KupacImport, ImportResult, KupacFilterStatus } from '@/lib/types/kupac-import'
@@ -26,7 +26,6 @@ export default function ImportKupacaPage() {
   const [archiveReason, setArchiveReason] = useState('')
   const [archiving, setArchiving] = useState(false)
   const [restoring, setRestoring] = useState(false)
-  const [openMenuId, setOpenMenuId] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
@@ -67,17 +66,28 @@ export default function ImportKupacaPage() {
   }
 
   const handleArchive = async () => {
-    if (!selectedKupac || !archiveReason.trim()) return
+    if (!selectedKupac || !archiveReason.trim()) {
+      console.log('Missing selectedKupac or archiveReason')
+      return
+    }
     
+    console.log('handleArchive called for kupac:', selectedKupac.id, 'razlog:', archiveReason.trim())
     setArchiving(true)
     try {
       const result = await archiveKupac(selectedKupac.id, archiveReason.trim())
+      console.log('archiveKupac result:', result)
       if (!result.error) {
         setArchiveModalOpen(false)
         setSelectedKupac(null)
         setArchiveReason('')
         await loadKupci(debouncedSearch, filterStatus)
+      } else {
+        console.error('Archive error:', result.error)
+        alert('Greška: ' + result.error)
       }
+    } catch (err) {
+      console.error('Exception in handleArchive:', err)
+      alert('Došlo je do greške prilikom arhiviranja')
     } finally {
       setArchiving(false)
     }
@@ -595,25 +605,13 @@ export default function ImportKupacaPage() {
                             Vrati
                           </button>
                         ) : (
-                          <div className="relative">
-                            <button
-                              onClick={() => setOpenMenuId(openMenuId === kupac.id ? null : kupac.id)}
-                              className="p-1 hover:bg-slate-600 rounded transition-colors"
-                            >
-                              <MoreVertical className="w-4 h-4 text-gray-400" />
-                            </button>
-                            {openMenuId === kupac.id && (
-                              <div className="absolute right-0 top-8 z-10 bg-slate-700 border border-slate-600 rounded-lg shadow-lg py-1 min-w-[140px]">
-                                <button
-                                  onClick={() => openArchiveModal(kupac)}
-                                  className="w-full px-3 py-2 text-left text-sm text-orange-400 hover:bg-slate-600 flex items-center gap-2"
-                                >
-                                  <Archive className="w-4 h-4" />
-                                  Arhiviraj
-                                </button>
-                              </div>
-                            )}
-                          </div>
+                          <button
+                            onClick={() => openArchiveModal(kupac)}
+                            className="px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white text-xs rounded-lg transition-colors flex items-center gap-1 mx-auto"
+                          >
+                            <Archive className="w-3 h-3" />
+                            Arhiviraj
+                          </button>
                         )}
                       </td>
                     </tr>
@@ -657,25 +655,13 @@ export default function ImportKupacaPage() {
                         Vrati
                       </button>
                     ) : (
-                      <div className="relative">
-                        <button
-                          onClick={() => setOpenMenuId(openMenuId === kupac.id ? null : kupac.id)}
-                          className="p-2 hover:bg-slate-600 rounded transition-colors"
-                        >
-                          <MoreVertical className="w-4 h-4 text-gray-400" />
-                        </button>
-                        {openMenuId === kupac.id && (
-                          <div className="absolute right-0 top-10 z-10 bg-slate-700 border border-slate-600 rounded-lg shadow-lg py-1 min-w-[140px]">
-                            <button
-                              onClick={() => openArchiveModal(kupac)}
-                              className="w-full px-3 py-2 text-left text-sm text-orange-400 hover:bg-slate-600 flex items-center gap-2"
-                            >
-                              <Archive className="w-4 h-4" />
-                              Arhiviraj
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                      <button
+                        onClick={() => openArchiveModal(kupac)}
+                        className="px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white text-xs rounded-lg transition-colors flex items-center gap-1"
+                      >
+                        <Archive className="w-3 h-3" />
+                        Arhiviraj
+                      </button>
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
@@ -864,13 +850,6 @@ export default function ImportKupacaPage() {
         </div>
       )}
 
-      {/* Click outside to close menu */}
-      {openMenuId !== null && (
-        <div 
-          className="fixed inset-0 z-0" 
-          onClick={() => setOpenMenuId(null)}
-        />
-      )}
     </div>
   )
 }

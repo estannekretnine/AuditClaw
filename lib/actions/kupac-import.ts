@@ -310,24 +310,50 @@ export async function getKupciImport(limit: number = 50, offset: number = 0, sea
 }
 
 export async function archiveKupac(kupacId: number, razlog: string) {
+  console.log('archiveKupac called with id:', kupacId, 'razlog:', razlog)
+  
   const supabase = createAdminClient()
 
-  const { error } = await supabase
+  // Prvo proverimo da li kupac postoji
+  const { data: existingKupac, error: fetchError } = await supabase
     .from('kupacimport')
-    .update({ 
-      stsarhiva: true, 
+    .select('id, ime, prezime, stsarhiva')
+    .eq('id', kupacId)
+    .single()
+
+  console.log('Existing kupac:', existingKupac, 'Fetch error:', fetchError)
+
+  if (fetchError || !existingKupac) {
+    console.error('Kupac not found:', fetchError)
+    return { error: 'Kupac nije pronađen' }
+  }
+
+  const { data, error } = await supabase
+    .from('kupacimport')
+    .update({
+      stsarhiva: true,
       razlogarhiva: razlog,
       datumarhiviranja: new Date().toISOString()
     })
     .eq('id', kupacId)
+    .select()
+
+  console.log('Archive update result - data:', data, 'error:', error)
 
   if (error) {
     console.error('Error archiving kupac:', error)
     return { error: error.message }
   }
 
+  if (!data || data.length === 0) {
+    console.error('No rows updated during archive')
+    return { error: 'Ažuriranje nije uspelo' }
+  }
+
+  console.log('Successfully archived kupac:', data)
+
   revalidatePath('/dashboard/import-kupaca')
-  return { error: null }
+  return { error: null, success: true }
 }
 
 export async function restoreKupac(kupacId: number) {
