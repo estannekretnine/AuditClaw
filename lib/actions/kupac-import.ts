@@ -8,7 +8,8 @@ import type {
   KupacImportInsert, 
   KupacKampanjaWithDetails, 
   ImportResult, 
-  CSVRow 
+  CSVRow,
+  KupacFilterStatus
 } from '@/lib/types/kupac-import'
 
 function detectDelimiter(text: string): string {
@@ -272,16 +273,16 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
   }
 }
 
-export async function getKupciImport(limit: number = 50, offset: number = 0, search?: string, showArchived: boolean = false) {
+export async function getKupciImport(limit: number = 50, offset: number = 0, search?: string, filterStatus: KupacFilterStatus = 'active') {
   const supabase = createAdminClient()
 
   let query = supabase
     .from('kupacimport')
     .select('*', { count: 'exact' })
 
-  if (showArchived) {
+  if (filterStatus === 'archived') {
     query = query.eq('stsarhiva', true)
-  } else {
+  } else if (filterStatus === 'active') {
     query = query.or('stsarhiva.is.null,stsarhiva.eq.false')
   }
 
@@ -315,7 +316,8 @@ export async function archiveKupac(kupacId: number, razlog: string) {
     .from('kupacimport')
     .update({ 
       stsarhiva: true, 
-      razlogarhiva: razlog 
+      razlogarhiva: razlog,
+      datumarhiviranja: new Date().toISOString()
     })
     .eq('id', kupacId)
 
@@ -335,7 +337,8 @@ export async function restoreKupac(kupacId: number) {
     .from('kupacimport')
     .update({ 
       stsarhiva: false, 
-      razlogarhiva: null 
+      razlogarhiva: null,
+      datumarhiviranja: null
     })
     .eq('id', kupacId)
 

@@ -17,7 +17,10 @@ export interface KupacImport {
   nekretnina: string | null
   stsarhiva: boolean | null
   razlogarhiva: string | null
+  datumarhiviranja: string | null
 }
+
+export type KupacFilterStatus = 'active' | 'archived' | 'all'
 
 export interface KupacImportInsert {
   mobprimarni?: string | null

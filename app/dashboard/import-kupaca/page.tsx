@@ -7,7 +7,7 @@ import {
   Archive, RotateCcw, MoreVertical
 } from 'lucide-react'
 import { importKupciFromCSV, getKupciImport, archiveKupac, restoreKupac } from '@/lib/actions/kupac-import'
-import type { KupacImport, ImportResult } from '@/lib/types/kupac-import'
+import type { KupacImport, ImportResult, KupacFilterStatus } from '@/lib/types/kupac-import'
 
 export default function ImportKupacaPage() {
   const [loading, setLoading] = useState(false)
@@ -19,7 +19,7 @@ export default function ImportKupacaPage() {
   const [nekretnine, setNekretnine] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [showArchived, setShowArchived] = useState(false)
+  const [filterStatus, setFilterStatus] = useState<KupacFilterStatus>('active')
   const [archiveModalOpen, setArchiveModalOpen] = useState(false)
   const [selectedKupac, setSelectedKupac] = useState<KupacImport | null>(null)
   const [archiveReason, setArchiveReason] = useState('')
@@ -35,10 +35,10 @@ export default function ImportKupacaPage() {
     return () => clearTimeout(timer)
   }, [searchQuery])
 
-  const loadKupci = useCallback(async (search?: string, archived?: boolean) => {
+  const loadKupci = useCallback(async (search?: string, status?: KupacFilterStatus) => {
     setLoading(true)
     try {
-      const result = await getKupciImport(50, 0, search, archived ?? showArchived)
+      const result = await getKupciImport(50, 0, search, status ?? filterStatus)
       if (result.data) {
         setKupci(result.data)
         setTotalCount(result.count)
@@ -46,11 +46,11 @@ export default function ImportKupacaPage() {
     } finally {
       setLoading(false)
     }
-  }, [showArchived])
+  }, [filterStatus])
 
   useEffect(() => {
-    loadKupci(debouncedSearch, showArchived)
-  }, [debouncedSearch, showArchived, loadKupci])
+    loadKupci(debouncedSearch, filterStatus)
+  }, [debouncedSearch, filterStatus, loadKupci])
 
   const clearSearch = () => {
     setSearchQuery('')
@@ -74,7 +74,7 @@ export default function ImportKupacaPage() {
         setArchiveModalOpen(false)
         setSelectedKupac(null)
         setArchiveReason('')
-        await loadKupci(debouncedSearch, showArchived)
+        await loadKupci(debouncedSearch, filterStatus)
       }
     } finally {
       setArchiving(false)
@@ -85,9 +85,11 @@ export default function ImportKupacaPage() {
     setOpenMenuId(null)
     const result = await restoreKupac(kupacId)
     if (!result.error) {
-      await loadKupci(debouncedSearch, showArchived)
+      await loadKupci(debouncedSearch, filterStatus)
     }
   }
+
+  const isArchived = (kupac: KupacImport) => kupac.stsarhiva === true
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -167,19 +169,43 @@ export default function ImportKupacaPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex bg-slate-700 rounded-lg p-1">
+            <button
+              onClick={() => setFilterStatus('active')}
+              className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                filterStatus === 'active'
+                  ? 'bg-amber-500 text-black font-medium'
+                  : 'text-gray-300 hover:text-white'
+              }`}
+            >
+              <span className="hidden md:inline">Aktivni</span>
+              <Users className="w-4 h-4 md:hidden" />
+            </button>
+            <button
+              onClick={() => setFilterStatus('archived')}
+              className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                filterStatus === 'archived'
+                  ? 'bg-orange-500 text-black font-medium'
+                  : 'text-gray-300 hover:text-white'
+              }`}
+            >
+              <span className="hidden md:inline">Arhivirani</span>
+              <Archive className="w-4 h-4 md:hidden" />
+            </button>
+            <button
+              onClick={() => setFilterStatus('all')}
+              className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                filterStatus === 'all'
+                  ? 'bg-blue-500 text-white font-medium'
+                  : 'text-gray-300 hover:text-white'
+              }`}
+            >
+              <span className="hidden md:inline">Svi</span>
+              <span className="md:hidden text-xs">Svi</span>
+            </button>
+          </div>
           <button
-            onClick={() => setShowArchived(!showArchived)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
-              showArchived 
-                ? 'bg-orange-600 hover:bg-orange-500 text-white' 
-                : 'bg-slate-700 hover:bg-slate-600 text-white'
-            }`}
-          >
-            <Archive className="w-4 h-4" />
-            <span className="hidden md:inline">{showArchived ? 'Aktivni' : 'Arhivirani'}</span>
-          </button>
-          <button
-            onClick={() => loadKupci(debouncedSearch, showArchived)}
+            onClick={() => loadKupci(debouncedSearch, filterStatus)}
             disabled={loading}
             className="flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm"
           >
@@ -408,12 +434,15 @@ export default function ImportKupacaPage() {
         <div className="p-4 border-b border-slate-700">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              {showArchived && <Archive className="w-5 h-5 text-orange-500" />}
+              {filterStatus === 'archived' && <Archive className="w-5 h-5 text-orange-500" />}
+              {filterStatus === 'all' && <Users className="w-5 h-5 text-blue-500" />}
               {debouncedSearch 
                 ? `Rezultati pretrage (${totalCount})` 
-                : showArchived 
+                : filterStatus === 'archived' 
                   ? `Arhivirani kupci (${totalCount})`
-                  : 'Poslednji importovani kupci'}
+                  : filterStatus === 'all'
+                    ? `Svi kupci (${totalCount})`
+                    : 'Aktivni kupci'}
             </h2>
             <div className="relative w-full md:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -462,31 +491,39 @@ export default function ImportKupacaPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Lokacija</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Zanimanje</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Nekretnine</th>
-                    {showArchived && (
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Razlog arhive</th>
+                    {(filterStatus === 'archived' || filterStatus === 'all') && (
+                      <>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Datum arhive</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Razlog arhive</th>
+                      </>
                     )}
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Datum</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Kreiran</th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-300 uppercase">Akcije</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-700">
                   {kupci.map((kupac) => (
-                    <tr key={kupac.id} className="hover:bg-slate-700/30">
+                    <tr key={kupac.id} className={`hover:bg-slate-700/30 ${isArchived(kupac) ? 'opacity-75' : ''}`}>
                       <td className="px-4 py-3 text-gray-400 text-sm font-mono">{kupac.id}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                            showArchived ? 'bg-orange-500/20' : 'bg-amber-500/20'
+                            isArchived(kupac) ? 'bg-orange-500/20' : 'bg-amber-500/20'
                           }`}>
                             <span className={`font-semibold text-sm ${
-                              showArchived ? 'text-orange-500' : 'text-amber-500'
+                              isArchived(kupac) ? 'text-orange-500' : 'text-amber-500'
                             }`}>
                               {(kupac.ime?.[0] || '?').toUpperCase()}
                             </span>
                           </div>
-                          <span className="text-white text-sm">
-                            {kupac.ime || '-'} {kupac.prezime || ''}
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="text-white text-sm">
+                              {kupac.ime || '-'} {kupac.prezime || ''}
+                            </span>
+                            {isArchived(kupac) && filterStatus === 'all' && (
+                              <span className="text-orange-400 text-xs">Arhiviran</span>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-gray-300 text-sm">{kupac.email || '-'}</td>
@@ -502,14 +539,21 @@ export default function ImportKupacaPage() {
                           </span>
                         ) : '-'}
                       </td>
-                      {showArchived && (
-                        <td className="px-4 py-3 text-sm">
-                          {kupac.razlogarhiva ? (
-                            <span className="px-2 py-1 bg-orange-500/20 text-orange-400 rounded-md text-xs max-w-[200px] truncate block" title={kupac.razlogarhiva}>
-                              {kupac.razlogarhiva}
-                            </span>
-                          ) : '-'}
-                        </td>
+                      {(filterStatus === 'archived' || filterStatus === 'all') && (
+                        <>
+                          <td className="px-4 py-3 text-sm text-orange-400">
+                            {kupac.datumarhiviranja 
+                              ? new Date(kupac.datumarhiviranja).toLocaleDateString('sr-RS')
+                              : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {kupac.razlogarhiva ? (
+                              <span className="px-2 py-1 bg-orange-500/20 text-orange-400 rounded-md text-xs max-w-[200px] truncate block" title={kupac.razlogarhiva}>
+                                {kupac.razlogarhiva}
+                              </span>
+                            ) : '-'}
+                          </td>
+                        </>
                       )}
                       <td className="px-4 py-3 text-gray-400 text-sm">
                         {new Date(kupac.created_at).toLocaleDateString('sr-RS')}
@@ -524,7 +568,7 @@ export default function ImportKupacaPage() {
                           </button>
                           {openMenuId === kupac.id && (
                             <div className="absolute right-0 top-8 z-10 bg-slate-700 border border-slate-600 rounded-lg shadow-lg py-1 min-w-[140px]">
-                              {showArchived ? (
+                              {isArchived(kupac) ? (
                                 <button
                                   onClick={() => handleRestore(kupac.id)}
                                   className="w-full px-3 py-2 text-left text-sm text-green-400 hover:bg-slate-600 flex items-center gap-2"
@@ -554,12 +598,12 @@ export default function ImportKupacaPage() {
             {/* Mobile Cards */}
             <div className="md:hidden divide-y divide-slate-700">
               {kupci.map((kupac) => (
-                <div key={kupac.id} className="p-4">
+                <div key={kupac.id} className={`p-4 ${isArchived(kupac) ? 'opacity-75' : ''}`}>
                   <div className="flex items-center gap-3 mb-2">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      showArchived ? 'bg-orange-500/20' : 'bg-amber-500/20'
+                      isArchived(kupac) ? 'bg-orange-500/20' : 'bg-amber-500/20'
                     }`}>
-                      <span className={`font-semibold ${showArchived ? 'text-orange-500' : 'text-amber-500'}`}>
+                      <span className={`font-semibold ${isArchived(kupac) ? 'text-orange-500' : 'text-amber-500'}`}>
                         {(kupac.ime?.[0] || '?').toUpperCase()}
                       </span>
                     </div>
@@ -568,6 +612,9 @@ export default function ImportKupacaPage() {
                         <p className="text-white font-medium">
                           {kupac.ime || '-'} {kupac.prezime || ''}
                         </p>
+                        {isArchived(kupac) && filterStatus === 'all' && (
+                          <span className="px-1.5 py-0.5 bg-orange-500/20 text-orange-400 rounded text-xs">Arhiviran</span>
+                        )}
                         <span className="text-gray-500 text-xs font-mono">#{kupac.id}</span>
                       </div>
                       <p className="text-gray-400 text-xs">
@@ -583,7 +630,7 @@ export default function ImportKupacaPage() {
                       </button>
                       {openMenuId === kupac.id && (
                         <div className="absolute right-0 top-10 z-10 bg-slate-700 border border-slate-600 rounded-lg shadow-lg py-1 min-w-[140px]">
-                          {showArchived ? (
+                          {isArchived(kupac) ? (
                             <button
                               onClick={() => handleRestore(kupac.id)}
                               className="w-full px-3 py-2 text-left text-sm text-green-400 hover:bg-slate-600 flex items-center gap-2"
@@ -637,13 +684,24 @@ export default function ImportKupacaPage() {
                         </span>
                       </div>
                     )}
-                    {showArchived && kupac.razlogarhiva && (
-                      <div className="flex items-center gap-1 text-gray-300 col-span-2 mt-2">
-                        <Archive className="w-3 h-3 text-orange-400" />
-                        <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded text-xs">
-                          {kupac.razlogarhiva}
-                        </span>
-                      </div>
+                    {(filterStatus === 'archived' || filterStatus === 'all') && isArchived(kupac) && (
+                      <>
+                        {kupac.datumarhiviranja && (
+                          <div className="flex items-center gap-1 text-orange-400 col-span-2 mt-2">
+                            <Archive className="w-3 h-3" />
+                            <span className="text-xs">
+                              Arhivirano: {new Date(kupac.datumarhiviranja).toLocaleDateString('sr-RS')}
+                            </span>
+                          </div>
+                        )}
+                        {kupac.razlogarhiva && (
+                          <div className="col-span-2">
+                            <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded text-xs">
+                              {kupac.razlogarhiva}
+                            </span>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
