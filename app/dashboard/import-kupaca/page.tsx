@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { 
   Upload, Users, CheckCircle, AlertCircle, RefreshCw,
-  Mail, Phone, MapPin, Briefcase, Download, FileText, Home
+  Mail, Phone, MapPin, Briefcase, Download, FileText, Home, Search, X
 } from 'lucide-react'
 import { importKupciFromCSV, getKupciImport } from '@/lib/actions/kupac-import'
 import type { KupacImport, ImportResult } from '@/lib/types/kupac-import'
@@ -16,16 +16,22 @@ export default function ImportKupacaPage() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [nekretnine, setNekretnine] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    loadKupci()
-  }, [])
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
-  const loadKupci = async () => {
+  const loadKupci = useCallback(async (search?: string) => {
     setLoading(true)
     try {
-      const result = await getKupciImport(50, 0)
+      const result = await getKupciImport(50, 0, search)
       if (result.data) {
         setKupci(result.data)
         setTotalCount(result.count)
@@ -33,6 +39,15 @@ export default function ImportKupacaPage() {
     } finally {
       setLoading(false)
     }
+  }, [])
+
+  useEffect(() => {
+    loadKupci(debouncedSearch)
+  }, [debouncedSearch, loadKupci])
+
+  const clearSearch = () => {
+    setSearchQuery('')
+    searchInputRef.current?.focus()
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,7 +73,7 @@ export default function ImportKupacaPage() {
       setImportResult(result)
       
       if (result.inserted > 0 || result.updated > 0) {
-        await loadKupci()
+        await loadKupci(debouncedSearch)
       }
     } finally {
       setImporting(false)
@@ -113,7 +128,7 @@ export default function ImportKupacaPage() {
           </p>
         </div>
         <button
-          onClick={loadKupci}
+          onClick={() => loadKupci(debouncedSearch)}
           disabled={loading}
           className="flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm"
         >
@@ -339,9 +354,30 @@ export default function ImportKupacaPage() {
       {/* Kupci Table */}
       <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
         <div className="p-4 border-b border-slate-700">
-          <h2 className="text-lg font-semibold text-white">
-            Poslednji importovani kupci
-          </h2>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <h2 className="text-lg font-semibold text-white">
+              {debouncedSearch ? `Rezultati pretrage (${totalCount})` : 'Poslednji importovani kupci'}
+            </h2>
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Pretraži po ID, imenu, emailu, telefonu..."
+                className="w-full pl-10 pr-10 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              />
+              {searchQuery && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {loading ? (
@@ -362,6 +398,7 @@ export default function ImportKupacaPage() {
               <table className="w-full">
                 <thead className="bg-slate-700/50">
                   <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">ID</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Ime i prezime</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Email</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Telefon</th>
@@ -374,6 +411,7 @@ export default function ImportKupacaPage() {
                 <tbody className="divide-y divide-slate-700">
                   {kupci.map((kupac) => (
                     <tr key={kupac.id} className="hover:bg-slate-700/30">
+                      <td className="px-4 py-3 text-gray-400 text-sm font-mono">{kupac.id}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center">
@@ -418,10 +456,13 @@ export default function ImportKupacaPage() {
                         {(kupac.ime?.[0] || '?').toUpperCase()}
                       </span>
                     </div>
-                    <div>
-                      <p className="text-white font-medium">
-                        {kupac.ime || '-'} {kupac.prezime || ''}
-                      </p>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-white font-medium">
+                          {kupac.ime || '-'} {kupac.prezime || ''}
+                        </p>
+                        <span className="text-gray-500 text-xs font-mono">#{kupac.id}</span>
+                      </div>
                       <p className="text-gray-400 text-xs">
                         {new Date(kupac.created_at).toLocaleDateString('sr-RS')}
                       </p>

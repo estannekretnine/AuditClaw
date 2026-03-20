@@ -272,12 +272,25 @@ export async function importKupciFromCSV(formData: FormData): Promise<ImportResu
   }
 }
 
-export async function getKupciImport(limit: number = 50, offset: number = 0) {
+export async function getKupciImport(limit: number = 50, offset: number = 0, search?: string) {
   const supabase = createAdminClient()
 
-  const { data, error, count } = await supabase
+  let query = supabase
     .from('kupacimport')
     .select('*', { count: 'exact' })
+
+  if (search && search.trim()) {
+    const searchTerm = search.trim()
+    const isNumeric = /^\d+$/.test(searchTerm)
+    
+    if (isNumeric) {
+      query = query.or(`id.eq.${searchTerm},ime.ilike.%${searchTerm}%,prezime.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,mobprimarni.ilike.%${searchTerm}%,grad.ilike.%${searchTerm}%,drzava.ilike.%${searchTerm}%,zanimanje.ilike.%${searchTerm}%,nekretnina.ilike.%${searchTerm}%`)
+    } else {
+      query = query.or(`ime.ilike.%${searchTerm}%,prezime.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,mobprimarni.ilike.%${searchTerm}%,grad.ilike.%${searchTerm}%,drzava.ilike.%${searchTerm}%,zanimanje.ilike.%${searchTerm}%,nekretnina.ilike.%${searchTerm}%`)
+    }
+  }
+
+  const { data, error, count } = await query
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
