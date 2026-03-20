@@ -331,24 +331,48 @@ export async function archiveKupac(kupacId: number, razlog: string) {
 }
 
 export async function restoreKupac(kupacId: number) {
+  console.log('restoreKupac called with id:', kupacId)
+  
   const supabase = createAdminClient()
 
+  // Prvo proverimo da li kupac postoji
+  const { data: existingKupac, error: fetchError } = await supabase
+    .from('kupacimport')
+    .select('id, ime, prezime, stsarhiva')
+    .eq('id', kupacId)
+    .single()
+
+  console.log('Existing kupac:', existingKupac, 'Fetch error:', fetchError)
+
+  if (fetchError || !existingKupac) {
+    console.error('Kupac not found:', fetchError)
+    return { error: 'Kupac nije pronađen' }
+  }
+
+  // Sada uradimo update
   const { data, error } = await supabase
     .from('kupacimport')
     .update({ 
-      stsarhiva: null, 
+      stsarhiva: false,
       razlogarhiva: null,
       datumarhiviranja: null
     })
     .eq('id', kupacId)
     .select()
 
+  console.log('Update result - data:', data, 'error:', error)
+
   if (error) {
     console.error('Error restoring kupac:', error)
     return { error: error.message }
   }
 
-  console.log('Restored kupac:', data)
+  if (!data || data.length === 0) {
+    console.error('No rows updated')
+    return { error: 'Ažuriranje nije uspelo' }
+  }
+
+  console.log('Successfully restored kupac:', data)
 
   revalidatePath('/dashboard/import-kupaca')
   return { error: null, success: true }

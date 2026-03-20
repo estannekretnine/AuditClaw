@@ -90,16 +90,27 @@ export default function ImportKupacaPage() {
   }
 
   const handleRestore = async () => {
-    if (!selectedKupac) return
+    if (!selectedKupac) {
+      console.log('No selectedKupac')
+      return
+    }
     
+    console.log('handleRestore called for kupac:', selectedKupac.id)
     setRestoring(true)
     try {
       const result = await restoreKupac(selectedKupac.id)
+      console.log('restoreKupac result:', result)
       if (!result.error) {
         setRestoreModalOpen(false)
         setSelectedKupac(null)
         await loadKupci(debouncedSearch, filterStatus)
+      } else {
+        console.error('Restore error:', result.error)
+        alert('Greška: ' + result.error)
       }
+    } catch (err) {
+      console.error('Exception in handleRestore:', err)
+      alert('Došlo je do greške prilikom vraćanja kupca')
     } finally {
       setRestoring(false)
     }
