@@ -62,7 +62,6 @@ export default function ImportKupacaPage() {
     setSelectedKupac(kupac)
     setArchiveReason('')
     setArchiveModalOpen(true)
-    setOpenMenuId(null)
   }
 
   const handleArchive = async () => {
@@ -96,7 +95,6 @@ export default function ImportKupacaPage() {
   const openRestoreModal = (kupac: KupacImport) => {
     setSelectedKupac(kupac)
     setRestoreModalOpen(true)
-    setOpenMenuId(null)
   }
 
   const handleRestore = async () => {
