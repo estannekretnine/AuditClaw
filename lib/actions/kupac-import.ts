@@ -328,12 +328,17 @@ export async function archiveKupac(kupacId: number, razlog: string) {
     return { error: 'Kupac nije pronađen' }
   }
 
+  // Format as time with timezone (HH:MM:SS+TZ) since column is 'time with time zone'
+  // Note: Consider changing column type to 'timestamp with time zone' for full date+time
+  const now = new Date()
+  const timeString = now.toTimeString().split(' ')[0] + '+00'
+  
   const { data, error } = await supabase
     .from('kupacimport')
     .update({
       stsarhiva: true,
       razlogarhiva: razlog,
-      datumarhiviranja: new Date().toISOString()
+      datumarhiviranja: timeString
     })
     .eq('id', kupacId)
     .select()
