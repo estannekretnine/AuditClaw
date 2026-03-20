@@ -333,22 +333,25 @@ export async function archiveKupac(kupacId: number, razlog: string) {
 export async function restoreKupac(kupacId: number) {
   const supabase = createAdminClient()
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('kupacimport')
     .update({ 
-      stsarhiva: false, 
+      stsarhiva: null, 
       razlogarhiva: null,
       datumarhiviranja: null
     })
     .eq('id', kupacId)
+    .select()
 
   if (error) {
     console.error('Error restoring kupac:', error)
     return { error: error.message }
   }
 
+  console.log('Restored kupac:', data)
+
   revalidatePath('/dashboard/import-kupaca')
-  return { error: null }
+  return { error: null, success: true }
 }
 
 export async function getKupciCountForImport() {

@@ -21,9 +21,11 @@ export default function ImportKupacaPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<KupacFilterStatus>('active')
   const [archiveModalOpen, setArchiveModalOpen] = useState(false)
+  const [restoreModalOpen, setRestoreModalOpen] = useState(false)
   const [selectedKupac, setSelectedKupac] = useState<KupacImport | null>(null)
   const [archiveReason, setArchiveReason] = useState('')
   const [archiving, setArchiving] = useState(false)
+  const [restoring, setRestoring] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -81,11 +83,25 @@ export default function ImportKupacaPage() {
     }
   }
 
-  const handleRestore = async (kupacId: number) => {
+  const openRestoreModal = (kupac: KupacImport) => {
+    setSelectedKupac(kupac)
+    setRestoreModalOpen(true)
     setOpenMenuId(null)
-    const result = await restoreKupac(kupacId)
-    if (!result.error) {
-      await loadKupci(debouncedSearch, filterStatus)
+  }
+
+  const handleRestore = async () => {
+    if (!selectedKupac) return
+    
+    setRestoring(true)
+    try {
+      const result = await restoreKupac(selectedKupac.id)
+      if (!result.error) {
+        setRestoreModalOpen(false)
+        setSelectedKupac(null)
+        await loadKupci(debouncedSearch, filterStatus)
+      }
+    } finally {
+      setRestoring(false)
     }
   }
 
@@ -570,7 +586,7 @@ export default function ImportKupacaPage() {
                             <div className="absolute right-0 top-8 z-10 bg-slate-700 border border-slate-600 rounded-lg shadow-lg py-1 min-w-[140px]">
                               {isArchived(kupac) ? (
                                 <button
-                                  onClick={() => handleRestore(kupac.id)}
+                                  onClick={() => openRestoreModal(kupac)}
                                   className="w-full px-3 py-2 text-left text-sm text-green-400 hover:bg-slate-600 flex items-center gap-2"
                                 >
                                   <RotateCcw className="w-4 h-4" />
@@ -632,7 +648,7 @@ export default function ImportKupacaPage() {
                         <div className="absolute right-0 top-10 z-10 bg-slate-700 border border-slate-600 rounded-lg shadow-lg py-1 min-w-[140px]">
                           {isArchived(kupac) ? (
                             <button
-                              onClick={() => handleRestore(kupac.id)}
+                              onClick={() => openRestoreModal(kupac)}
                               className="w-full px-3 py-2 text-left text-sm text-green-400 hover:bg-slate-600 flex items-center gap-2"
                             >
                               <RotateCcw className="w-4 h-4" />
@@ -767,6 +783,67 @@ export default function ImportKupacaPage() {
                     <>
                       <Archive className="w-4 h-4" />
                       Arhiviraj
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Restore Modal */}
+      {restoreModalOpen && selectedKupac && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-xl border border-slate-700 w-full max-w-md">
+            <div className="p-4 border-b border-slate-700">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <RotateCcw className="w-5 h-5 text-green-500" />
+                Vraćanje u aktivne?
+              </h3>
+            </div>
+            <div className="p-4">
+              <div className="mb-4 p-3 bg-slate-700/50 rounded-lg">
+                <p className="text-white font-medium">
+                  {selectedKupac.ime || '-'} {selectedKupac.prezime || ''}
+                </p>
+                <p className="text-gray-400 text-sm">
+                  {selectedKupac.email || selectedKupac.mobprimarni || `ID: ${selectedKupac.id}`}
+                </p>
+                {selectedKupac.razlogarhiva && (
+                  <div className="mt-2 pt-2 border-t border-slate-600">
+                    <p className="text-orange-400 text-xs">Razlog arhiviranja:</p>
+                    <p className="text-gray-300 text-sm">{selectedKupac.razlogarhiva}</p>
+                  </div>
+                )}
+              </div>
+              <p className="text-gray-300 text-sm mb-4">
+                Da li ste sigurni da želite da vratite ovog kupca u aktivne?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setRestoreModalOpen(false)
+                    setSelectedKupac(null)
+                  }}
+                  className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                >
+                  Ne
+                </button>
+                <button
+                  onClick={handleRestore}
+                  disabled={restoring}
+                  className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-500 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  {restoring ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Vraćam...
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="w-4 h-4" />
+                      Da
                     </>
                   )}
                 </button>
