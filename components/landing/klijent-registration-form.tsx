@@ -25,6 +25,8 @@ interface FormErrors {
 
 interface KlijentRegistrationFormProps {
   lang?: 'sr' | 'en'
+  contactid?: string
+  source?: string
 }
 
 const labels = {
@@ -102,7 +104,7 @@ const labels = {
   },
 }
 
-export function KlijentRegistrationForm({ lang = 'sr' }: KlijentRegistrationFormProps) {
+export function KlijentRegistrationForm({ lang = 'sr', contactid, source }: KlijentRegistrationFormProps) {
   const t = labels[lang]
   const [formData, setFormData] = useState<FormData>({
     ime: '',
@@ -162,7 +164,7 @@ export function KlijentRegistrationForm({ lang = 'sr' }: KlijentRegistrationForm
       const res = await fetch('/api/klijent-register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, contactid, source }),
       })
 
       if (!res.ok) {

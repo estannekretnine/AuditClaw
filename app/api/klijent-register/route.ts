@@ -14,6 +14,8 @@ const klijentSchema = z.object({
   stsprijateljsajta: z.boolean().optional().default(false),
   stsprodavac: z.boolean().optional().default(false),
   opis: z.string().optional(),
+  contactid: z.string().optional(),
+  source: z.string().optional(),
 })
 
 const getSupabase = () => {
@@ -64,6 +66,8 @@ export async function POST(request: Request) {
         stsprodavac: data.stsprodavac,
         opis: data.opis || null,
         stsarhiviran: false,
+        contactid: data.contactid || null,
+        source: data.source || null,
       })
 
     if (error) {

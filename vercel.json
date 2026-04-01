@@ -1,6 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/cron/daily-klijenti-report",
+      "schedule": "0 6 * * *"
+    }
+  ],
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "installCommand": "npm install",

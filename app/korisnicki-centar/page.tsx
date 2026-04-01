@@ -7,7 +7,12 @@ export const metadata = {
   description: 'Registrujte se kao klijent AuditClaw platforme. Investitori, kupci i prodavci nekretnina.',
 }
 
-export default function KorisnickiCentarPage() {
+interface PageProps {
+  searchParams: Promise<{ ap_id?: string; source?: string }>
+}
+
+export default async function KorisnickiCentarPage({ searchParams }: PageProps) {
+  const params = await searchParams
   const currentYear = new Date().getFullYear()
 
   return (
@@ -76,7 +81,7 @@ export default function KorisnickiCentarPage() {
             </p>
           </div>
 
-          <KlijentRegistrationForm />
+          <KlijentRegistrationForm contactid={params.ap_id} source={params.source} />
         </div>
       </main>
 

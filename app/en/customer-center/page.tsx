@@ -7,7 +7,12 @@ export const metadata = {
   description: 'Register as an AuditClaw client. Investors, buyers and sellers of real estate.',
 }
 
-export default function CustomerCenterPage() {
+interface PageProps {
+  searchParams: Promise<{ ap_id?: string; source?: string }>
+}
+
+export default async function CustomerCenterPage({ searchParams }: PageProps) {
+  const params = await searchParams
   const currentYear = new Date().getFullYear()
 
   return (
@@ -76,7 +81,7 @@ export default function CustomerCenterPage() {
             </p>
           </div>
 
-          <KlijentRegistrationForm lang="en" />
+          <KlijentRegistrationForm lang="en" contactid={params.ap_id} source={params.source} />
         </div>
       </main>
 
