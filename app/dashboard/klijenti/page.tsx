@@ -381,6 +381,7 @@ export default function KlijentiPage() {
               <table className="w-full">
                 <thead className="bg-slate-700/50">
                   <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">ID</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Ime i prezime</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Firma</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Email</th>
@@ -393,6 +394,7 @@ export default function KlijentiPage() {
                 <tbody className="divide-y divide-slate-700">
                   {klijenti.map((klijent) => (
                     <tr key={klijent.id} className={`hover:bg-slate-700/30 ${isArchived(klijent) ? 'opacity-75' : ''}`}>
+                      <td className="px-4 py-3 text-gray-400 text-sm font-mono">{klijent.id}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
