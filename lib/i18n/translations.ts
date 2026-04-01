@@ -11,6 +11,8 @@ export const translations = {
       about: 'O nama',
       contact: 'Kontakt',
       login: 'Prijava',
+      home: 'Početna',
+      customerCenter: 'Korisnički Centar',
     },
     hero: {
       title: 'Inženjerski Due Diligence: Kupujte nekretninu na osnovu činjenica, ne obećanja.',
@@ -101,6 +103,8 @@ export const translations = {
       about: 'About',
       contact: 'Contact',
       login: 'Login',
+      home: 'Home',
+      customerCenter: 'Customer Center',
     },
     hero: {
       title: 'Engineering Due Diligence: Buy real estate based on facts, not promises.',
@@ -193,6 +197,8 @@ export interface Translations {
     about: string
     contact: string
     login: string
+    home: string
+    customerCenter: string
   }
   hero: {
     title: string

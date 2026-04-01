@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { type Translations } from '@/lib/i18n/translations'
 
 interface FooterProps {
@@ -20,9 +21,17 @@ export function Footer({ t }: FooterProps) {
             </p>
           </div>
           
-          <p className="text-foreground-secondary text-sm">
-            © {currentYear} {t.footer.company}. {t.footer.rights}
-          </p>
+          <div className="flex items-center gap-4">
+            <Link 
+              href="/login" 
+              className="text-foreground-secondary hover:text-foreground transition-colors text-sm"
+            >
+              {t.nav.login}
+            </Link>
+            <p className="text-foreground-secondary text-sm">
+              © {currentYear} {t.footer.company}. {t.footer.rights}
+            </p>
+          </div>
         </div>
       </div>
     </footer>

@@ -31,17 +31,17 @@ export function Hero({ t, lang }: HeroProps) {
           
           <div className="flex items-center gap-4 sm:gap-6">
             <Link 
-              href="/login" 
+              href={`/${lang}`} 
               className="text-foreground-secondary hover:text-foreground transition-colors text-sm"
             >
-              {t.nav.login}
+              {t.nav.home}
             </Link>
             <LanguageSwitcher currentLang={lang} />
             <Link 
-              href="/korisnicki-centar" 
+              href={lang === 'en' ? '/en/customer-center' : '/korisnicki-centar'} 
               className="text-foreground-secondary hover:text-foreground transition-colors text-sm hidden sm:inline"
             >
-              Korisnički Centar
+              {t.nav.customerCenter}
             </Link>
           </div>
         </nav>

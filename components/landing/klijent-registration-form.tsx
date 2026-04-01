@@ -22,7 +22,85 @@ interface FormErrors {
   kontakt?: string
 }
 
-export function KlijentRegistrationForm() {
+interface KlijentRegistrationFormProps {
+  lang?: 'sr' | 'en'
+}
+
+const labels = {
+  sr: {
+    ime: 'Ime',
+    prezime: 'Prezime',
+    firma: 'Firma',
+    email: 'Email adresa',
+    kontakt: 'Telefon',
+    statusi: 'Ja sam (izaberite sve što se odnosi na vas)',
+    investitor: 'Investitor',
+    kupac: 'Kupac',
+    prijateljSajta: 'Prijatelj sajta',
+    prodavac: 'Prodavac',
+    opis: 'Poruka / Opis',
+    submit: 'Registruj se',
+    submitting: 'Slanje...',
+    success: 'Uspešno ste se registrovali! Javićemo vam se uskoro.',
+    error: 'Greška pri registraciji. Molimo pokušajte ponovo.',
+    placeholders: {
+      ime: 'Vaše ime',
+      prezime: 'Vaše prezime',
+      firma: 'Naziv firme (opciono)',
+      email: 'vas@email.com',
+      kontakt: '+381 63 123 4567',
+      opis: 'Opišite vaše potrebe ili ostavite poruku...',
+    },
+    validation: {
+      imeRequired: 'Ime je obavezno',
+      imeMin: 'Ime mora imati najmanje 2 karaktera',
+      prezimeRequired: 'Prezime je obavezno',
+      prezimeMin: 'Prezime mora imati najmanje 2 karaktera',
+      emailRequired: 'Email je obavezan',
+      emailInvalid: 'Unesite validnu email adresu',
+      kontaktRequired: 'Telefon je obavezan',
+      kontaktMin: 'Telefon mora imati najmanje 6 cifara',
+    },
+  },
+  en: {
+    ime: 'First Name',
+    prezime: 'Last Name',
+    firma: 'Company',
+    email: 'Email Address',
+    kontakt: 'Phone',
+    statusi: 'I am (select all that apply)',
+    investitor: 'Investor',
+    kupac: 'Buyer',
+    prijateljSajta: 'Friend of the site',
+    prodavac: 'Seller',
+    opis: 'Message / Description',
+    submit: 'Register',
+    submitting: 'Sending...',
+    success: 'You have successfully registered! We will contact you soon.',
+    error: 'Registration error. Please try again.',
+    placeholders: {
+      ime: 'Your first name',
+      prezime: 'Your last name',
+      firma: 'Company name (optional)',
+      email: 'you@email.com',
+      kontakt: '+381 63 123 4567',
+      opis: 'Describe your needs or leave a message...',
+    },
+    validation: {
+      imeRequired: 'First name is required',
+      imeMin: 'First name must be at least 2 characters',
+      prezimeRequired: 'Last name is required',
+      prezimeMin: 'Last name must be at least 2 characters',
+      emailRequired: 'Email is required',
+      emailInvalid: 'Please enter a valid email address',
+      kontaktRequired: 'Phone is required',
+      kontaktMin: 'Phone must be at least 6 digits',
+    },
+  },
+}
+
+export function KlijentRegistrationForm({ lang = 'sr' }: KlijentRegistrationFormProps) {
+  const t = labels[lang]
   const [formData, setFormData] = useState<FormData>({
     ime: '',
     prezime: '',
@@ -42,27 +120,27 @@ export function KlijentRegistrationForm() {
     const newErrors: FormErrors = {}
 
     if (!formData.ime.trim()) {
-      newErrors.ime = 'Ime je obavezno'
+      newErrors.ime = t.validation.imeRequired
     } else if (formData.ime.trim().length < 2) {
-      newErrors.ime = 'Ime mora imati najmanje 2 karaktera'
+      newErrors.ime = t.validation.imeMin
     }
 
     if (!formData.prezime.trim()) {
-      newErrors.prezime = 'Prezime je obavezno'
+      newErrors.prezime = t.validation.prezimeRequired
     } else if (formData.prezime.trim().length < 2) {
-      newErrors.prezime = 'Prezime mora imati najmanje 2 karaktera'
+      newErrors.prezime = t.validation.prezimeMin
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Email je obavezan'
+      newErrors.email = t.validation.emailRequired
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Unesite validnu email adresu'
+      newErrors.email = t.validation.emailInvalid
     }
 
     if (!formData.kontakt.trim()) {
-      newErrors.kontakt = 'Telefon je obavezan'
+      newErrors.kontakt = t.validation.kontaktRequired
     } else if (formData.kontakt.replace(/\D/g, '').length < 6) {
-      newErrors.kontakt = 'Telefon mora imati najmanje 6 cifara'
+      newErrors.kontakt = t.validation.kontaktMin
     }
 
     setErrors(newErrors)
@@ -121,14 +199,14 @@ export function KlijentRegistrationForm() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="klijent-ime" className="block text-sm font-medium text-foreground mb-1">
-              Ime *
+              {t.ime} *
             </label>
             <input
               id="klijent-ime"
               type="text"
               value={formData.ime}
               onChange={handleChange('ime')}
-              placeholder="Vaše ime"
+              placeholder={t.placeholders.ime}
               autoComplete="off"
               className={`w-full px-4 py-3 bg-surface border rounded-lg text-foreground placeholder-foreground-secondary focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors ${
                 errors.ime ? 'border-red-500' : 'border-border'
@@ -144,14 +222,14 @@ export function KlijentRegistrationForm() {
 
           <div>
             <label htmlFor="klijent-prezime" className="block text-sm font-medium text-foreground mb-1">
-              Prezime *
+              {t.prezime} *
             </label>
             <input
               id="klijent-prezime"
               type="text"
               value={formData.prezime}
               onChange={handleChange('prezime')}
-              placeholder="Vaše prezime"
+              placeholder={t.placeholders.prezime}
               autoComplete="off"
               className={`w-full px-4 py-3 bg-surface border rounded-lg text-foreground placeholder-foreground-secondary focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors ${
                 errors.prezime ? 'border-red-500' : 'border-border'
@@ -168,14 +246,14 @@ export function KlijentRegistrationForm() {
 
         <div>
           <label htmlFor="klijent-firma" className="block text-sm font-medium text-foreground mb-1">
-            Firma
+            {t.firma}
           </label>
           <input
             id="klijent-firma"
             type="text"
             value={formData.firma}
             onChange={handleChange('firma')}
-            placeholder="Naziv firme (opciono)"
+            placeholder={t.placeholders.firma}
             autoComplete="off"
             className="w-full px-4 py-3 bg-surface border border-border rounded-lg text-foreground placeholder-foreground-secondary focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
             style={{ color: 'white' }}
@@ -185,14 +263,14 @@ export function KlijentRegistrationForm() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="klijent-email" className="block text-sm font-medium text-foreground mb-1">
-              Email adresa *
+              {t.email} *
             </label>
             <input
               id="klijent-email"
               type="email"
               value={formData.email}
               onChange={handleChange('email')}
-              placeholder="vas@email.com"
+              placeholder={t.placeholders.email}
               autoComplete="off"
               className={`w-full px-4 py-3 bg-surface border rounded-lg text-foreground placeholder-foreground-secondary focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors ${
                 errors.email ? 'border-red-500' : 'border-border'
@@ -208,14 +286,14 @@ export function KlijentRegistrationForm() {
 
           <div>
             <label htmlFor="klijent-kontakt" className="block text-sm font-medium text-foreground mb-1">
-              Telefon *
+              {t.kontakt} *
             </label>
             <input
               id="klijent-kontakt"
               type="tel"
               value={formData.kontakt}
               onChange={handleChange('kontakt')}
-              placeholder="+381 63 123 4567"
+              placeholder={t.placeholders.kontakt}
               autoComplete="off"
               className={`w-full px-4 py-3 bg-surface border rounded-lg text-foreground placeholder-foreground-secondary focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors ${
                 errors.kontakt ? 'border-red-500' : 'border-border'
@@ -232,7 +310,7 @@ export function KlijentRegistrationForm() {
 
         <div>
           <label className="block text-sm font-medium text-foreground mb-3">
-            Ja sam (izaberite sve što se odnosi na vas)
+            {t.statusi}
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label className="flex items-center gap-3 p-3 bg-surface border border-border rounded-lg cursor-pointer hover:border-accent/50 transition-colors">
@@ -242,7 +320,7 @@ export function KlijentRegistrationForm() {
                 onChange={handleChange('stsinvestitor')}
                 className="w-4 h-4 rounded border-border text-accent focus:ring-accent/50"
               />
-              <span className="text-sm text-foreground">Investitor</span>
+              <span className="text-sm text-foreground">{t.investitor}</span>
             </label>
             <label className="flex items-center gap-3 p-3 bg-surface border border-border rounded-lg cursor-pointer hover:border-accent/50 transition-colors">
               <input
@@ -251,7 +329,7 @@ export function KlijentRegistrationForm() {
                 onChange={handleChange('stskupac')}
                 className="w-4 h-4 rounded border-border text-accent focus:ring-accent/50"
               />
-              <span className="text-sm text-foreground">Kupac</span>
+              <span className="text-sm text-foreground">{t.kupac}</span>
             </label>
             <label className="flex items-center gap-3 p-3 bg-surface border border-border rounded-lg cursor-pointer hover:border-accent/50 transition-colors">
               <input
@@ -260,7 +338,7 @@ export function KlijentRegistrationForm() {
                 onChange={handleChange('stsprijateljsajta')}
                 className="w-4 h-4 rounded border-border text-accent focus:ring-accent/50"
               />
-              <span className="text-sm text-foreground">Prijatelj sajta</span>
+              <span className="text-sm text-foreground">{t.prijateljSajta}</span>
             </label>
             <label className="flex items-center gap-3 p-3 bg-surface border border-border rounded-lg cursor-pointer hover:border-accent/50 transition-colors">
               <input
@@ -269,20 +347,20 @@ export function KlijentRegistrationForm() {
                 onChange={handleChange('stsprodavac')}
                 className="w-4 h-4 rounded border-border text-accent focus:ring-accent/50"
               />
-              <span className="text-sm text-foreground">Prodavac</span>
+              <span className="text-sm text-foreground">{t.prodavac}</span>
             </label>
           </div>
         </div>
 
         <div>
           <label htmlFor="klijent-opis" className="block text-sm font-medium text-foreground mb-1">
-            Poruka / Opis
+            {t.opis}
           </label>
           <textarea
             id="klijent-opis"
             value={formData.opis}
             onChange={handleChange('opis')}
-            placeholder="Opišite vaše potrebe ili ostavite poruku..."
+            placeholder={t.placeholders.opis}
             rows={4}
             autoComplete="off"
             className="w-full px-4 py-3 bg-surface border border-border rounded-lg text-foreground placeholder-foreground-secondary focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors resize-none"
@@ -293,13 +371,13 @@ export function KlijentRegistrationForm() {
 
       {status === 'success' && (
         <div className="mt-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm">
-          Uspešno ste se registrovali! Javićemo vam se uskoro.
+          {t.success}
         </div>
       )}
 
       {status === 'error' && (
         <div className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
-          Greška pri registraciji. Molimo pokušajte ponovo.
+          {t.error}
         </div>
       )}
 
@@ -308,7 +386,7 @@ export function KlijentRegistrationForm() {
         disabled={status === 'submitting'}
         className="mt-6 w-full px-6 py-4 bg-accent hover:bg-accent-hover text-background font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {status === 'submitting' ? 'Slanje...' : 'Registruj se'}
+        {status === 'submitting' ? t.submitting : t.submit}
       </button>
     </form>
   )

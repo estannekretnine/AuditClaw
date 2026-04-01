@@ -3,11 +3,11 @@ import Image from 'next/image'
 import { KlijentRegistrationForm } from '@/components/landing/klijent-registration-form'
 
 export const metadata = {
-  title: 'Korisnički Centar - AuditClaw',
-  description: 'Registrujte se kao klijent AuditClaw platforme. Investitori, kupci i prodavci nekretnina.',
+  title: 'Customer Center - AuditClaw',
+  description: 'Register as an AuditClaw client. Investors, buyers and sellers of real estate.',
 }
 
-export default function KorisnickiCentarPage() {
+export default function CustomerCenterPage() {
   const currentYear = new Date().getFullYear()
 
   return (
@@ -17,7 +17,7 @@ export default function KorisnickiCentarPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex items-center justify-between h-20" aria-label="Main navigation">
             <Link 
-              href="/sr" 
+              href="/en" 
               className="flex items-center gap-3 text-foreground hover:text-accent transition-colors"
               aria-label="AuditClaw - Home"
             >
@@ -34,10 +34,10 @@ export default function KorisnickiCentarPage() {
             
             <div className="flex items-center gap-4 sm:gap-6">
               <Link 
-                href="/sr" 
+                href="/en" 
                 className="text-foreground-secondary hover:text-foreground transition-colors text-sm"
               >
-                Početna
+                Home
               </Link>
               <div className="flex items-center gap-1 text-sm font-mono">
                 <Link
@@ -57,7 +57,7 @@ export default function KorisnickiCentarPage() {
                 </Link>
               </div>
               <span className="px-2 py-1 rounded bg-accent text-background font-semibold text-sm">
-                Korisnički Centar
+                Customer Center
               </span>
             </div>
           </nav>
@@ -69,14 +69,14 @@ export default function KorisnickiCentarPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <h1 className="font-sans text-3xl sm:text-4xl font-bold text-foreground">
-              Korisnički Centar
+              Customer Center
             </h1>
             <p className="mt-4 text-lg text-foreground-secondary max-w-2xl mx-auto">
-              Registrujte se kao klijent i budite u toku sa najnovijim ponudama nekretnina.
+              Register as a client and stay up to date with the latest real estate offers.
             </p>
           </div>
 
-          <KlijentRegistrationForm />
+          <KlijentRegistrationForm lang="en" />
         </div>
       </main>
 
@@ -89,7 +89,7 @@ export default function KorisnickiCentarPage() {
                 AuditClaw Engineering
               </p>
               <p className="text-foreground-secondary text-sm mt-1">
-                Struka ispred prodaje. Verifikovano na LinkedIn-u.
+                Profession before sales. Verified on LinkedIn.
               </p>
             </div>
             
@@ -98,10 +98,10 @@ export default function KorisnickiCentarPage() {
                 href="/login" 
                 className="text-foreground-secondary hover:text-foreground transition-colors text-sm"
               >
-                Prijava
+                Login
               </Link>
               <p className="text-foreground-secondary text-sm">
-                © {currentYear} AuditClaw Engineering. Sva prava zadržana.
+                © {currentYear} AuditClaw Engineering. All rights reserved.
               </p>
             </div>
           </div>
