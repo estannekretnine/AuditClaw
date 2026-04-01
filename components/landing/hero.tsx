@@ -37,6 +37,12 @@ export function Hero({ t, lang }: HeroProps) {
               {t.nav.login}
             </Link>
             <LanguageSwitcher currentLang={lang} />
+            <Link 
+              href="/korisnicki-centar" 
+              className="text-foreground-secondary hover:text-foreground transition-colors text-sm hidden sm:inline"
+            >
+              Korisnički Centar
+            </Link>
           </div>
         </nav>
       </div>
