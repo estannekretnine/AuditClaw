@@ -72,7 +72,7 @@ export default function KorisnickiCentarPage() {
               Korisnički Centar
             </h1>
             <p className="mt-4 text-lg text-foreground-secondary max-w-2xl mx-auto">
-              Registrujte se kao klijent i budite u toku sa najnovijim ponudama nekretnina.
+              Registrujte se i postanite deo našeg tima.
             </p>
           </div>
 

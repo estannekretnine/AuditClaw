@@ -72,7 +72,7 @@ export default function CustomerCenterPage() {
               Customer Center
             </h1>
             <p className="mt-4 text-lg text-foreground-secondary max-w-2xl mx-auto">
-              Register as a client and stay up to date with the latest real estate offers.
+              Register and become part of our team.
             </p>
           </div>
 
