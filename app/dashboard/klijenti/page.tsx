@@ -34,6 +34,7 @@ export default function KlijentiPage() {
     kontakt: '',
     stsagencijazanekretnine: false,
     stsinvestitor: false,
+    stsinvestitoraudit: false,
     stskupac: false,
     stsprijateljsajta: false,
     stsprodavac: false,
@@ -80,6 +81,7 @@ export default function KlijentiPage() {
       kontakt: '',
       stsagencijazanekretnine: false,
       stsinvestitor: false,
+      stsinvestitoraudit: false,
       stskupac: false,
       stsprijateljsajta: false,
       stsprodavac: false,
@@ -103,6 +105,7 @@ export default function KlijentiPage() {
       kontakt: klijent.kontakt || '',
       stsagencijazanekretnine: klijent.stsagencijazanekretnine,
       stsinvestitor: klijent.stsinvestitor,
+      stsinvestitoraudit: klijent.stsinvestitoraudit,
       stskupac: klijent.stskupac,
       stsprijateljsajta: klijent.stsprijateljsajta,
       stsprodavac: klijent.stsprodavac,
@@ -124,6 +127,7 @@ export default function KlijentiPage() {
       fd.append('kontakt', formData.kontakt)
       fd.append('stsagencijazanekretnine', String(formData.stsagencijazanekretnine))
       fd.append('stsinvestitor', String(formData.stsinvestitor))
+      fd.append('stsinvestitoraudit', String(formData.stsinvestitoraudit))
       fd.append('stskupac', String(formData.stskupac))
       fd.append('stsprijateljsajta', String(formData.stsprijateljsajta))
       fd.append('stsprodavac', String(formData.stsprodavac))
@@ -423,6 +427,7 @@ export default function KlijentiPage() {
                         <div className="flex flex-wrap gap-1">
                           <StatusBadge label="Agencija" active={klijent.stsagencijazanekretnine} color="bg-blue-500/20 text-blue-400" />
                           <StatusBadge label="Investitor" active={klijent.stsinvestitor} color="bg-green-500/20 text-green-400" />
+                          <StatusBadge label="AuditClaw-Project" active={klijent.stsinvestitoraudit} color="bg-cyan-500/20 text-cyan-400" />
                           <StatusBadge label="Kupac" active={klijent.stskupac} color="bg-amber-500/20 text-amber-400" />
                           <StatusBadge label="Prijatelj" active={klijent.stsprijateljsajta} color="bg-purple-500/20 text-purple-400" />
                           <StatusBadge label="Prodavac" active={klijent.stsprodavac} color="bg-red-500/20 text-red-400" />
@@ -514,6 +519,7 @@ export default function KlijentiPage() {
                   <div className="flex flex-wrap gap-1 mb-3">
                     <StatusBadge label="Agencija" active={klijent.stsagencijazanekretnine} color="bg-blue-500/20 text-blue-400" />
                     <StatusBadge label="Investitor" active={klijent.stsinvestitor} color="bg-green-500/20 text-green-400" />
+                    <StatusBadge label="AuditClaw-Project" active={klijent.stsinvestitoraudit} color="bg-cyan-500/20 text-cyan-400" />
                     <StatusBadge label="Kupac" active={klijent.stskupac} color="bg-amber-500/20 text-amber-400" />
                     <StatusBadge label="Prijatelj" active={klijent.stsprijateljsajta} color="bg-purple-500/20 text-purple-400" />
                     <StatusBadge label="Prodavac" active={klijent.stsprodavac} color="bg-red-500/20 text-red-400" />
@@ -650,6 +656,15 @@ export default function KlijentiPage() {
                       className="w-4 h-4 rounded border-slate-500 text-green-500 focus:ring-green-500"
                     />
                     <span className="text-sm text-gray-300">Investitor</span>
+                  </label>
+                  <label className="flex items-center gap-2 p-2 bg-slate-700/50 rounded-lg cursor-pointer hover:bg-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={formData.stsinvestitoraudit}
+                      onChange={(e) => setFormData({ ...formData, stsinvestitoraudit: e.target.checked })}
+                      className="w-4 h-4 rounded border-slate-500 text-cyan-500 focus:ring-cyan-500"
+                    />
+                    <span className="text-sm text-gray-300">Investitor AuditClaw-Project</span>
                   </label>
                   <label className="flex items-center gap-2 p-2 bg-slate-700/50 rounded-lg cursor-pointer hover:bg-slate-700">
                     <input

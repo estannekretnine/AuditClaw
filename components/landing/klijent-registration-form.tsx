@@ -9,6 +9,7 @@ interface FormData {
   email: string
   kontakt: string
   stsinvestitor: boolean
+  stsinvestitoraudit: boolean
   stskupac: boolean
   stsprijateljsajta: boolean
   stsprodavac: boolean
@@ -35,6 +36,7 @@ const labels = {
     kontakt: 'Telefon',
     statusi: 'Ja sam (izaberite sve što se odnosi na vas)',
     investitor: 'Investitor',
+    investitorAudit: 'Investitor AuditClaw-Project',
     kupac: 'Kupac',
     prijateljSajta: 'Prijatelj sajta',
     prodavac: 'Prodavac',
@@ -70,6 +72,7 @@ const labels = {
     kontakt: 'Phone',
     statusi: 'I am (select all that apply)',
     investitor: 'Investor',
+    investitorAudit: 'Investor AuditClaw-Project',
     kupac: 'Buyer',
     prijateljSajta: 'Friend of the site',
     prodavac: 'Seller',
@@ -108,6 +111,7 @@ export function KlijentRegistrationForm({ lang = 'sr' }: KlijentRegistrationForm
     email: '',
     kontakt: '',
     stsinvestitor: false,
+    stsinvestitoraudit: false,
     stskupac: false,
     stsprijateljsajta: false,
     stsprodavac: false,
@@ -173,6 +177,7 @@ export function KlijentRegistrationForm({ lang = 'sr' }: KlijentRegistrationForm
         email: '',
         kontakt: '',
         stsinvestitor: false,
+        stsinvestitoraudit: false,
         stskupac: false,
         stsprijateljsajta: false,
         stsprodavac: false,
@@ -321,6 +326,15 @@ export function KlijentRegistrationForm({ lang = 'sr' }: KlijentRegistrationForm
                 className="w-4 h-4 rounded border-border text-accent focus:ring-accent/50"
               />
               <span className="text-sm text-foreground">{t.investitor}</span>
+            </label>
+            <label className="flex items-center gap-3 p-3 bg-surface border border-border rounded-lg cursor-pointer hover:border-accent/50 transition-colors">
+              <input
+                type="checkbox"
+                checked={formData.stsinvestitoraudit}
+                onChange={handleChange('stsinvestitoraudit')}
+                className="w-4 h-4 rounded border-border text-accent focus:ring-accent/50"
+              />
+              <span className="text-sm text-foreground">{t.investitorAudit}</span>
             </label>
             <label className="flex items-center gap-3 p-3 bg-surface border border-border rounded-lg cursor-pointer hover:border-accent/50 transition-colors">
               <input

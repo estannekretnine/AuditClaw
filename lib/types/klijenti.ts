@@ -7,6 +7,7 @@ export interface Klijent {
   kontakt: string | null
   stsagencijazanekretnine: boolean
   stsinvestitor: boolean
+  stsinvestitoraudit: boolean
   stskupac: boolean
   stsprijateljsajta: boolean
   stsprodavac: boolean
@@ -24,6 +25,7 @@ export interface KlijentInsert {
   kontakt?: string | null
   stsagencijazanekretnine?: boolean
   stsinvestitor?: boolean
+  stsinvestitoraudit?: boolean
   stskupac?: boolean
   stsprijateljsajta?: boolean
   stsprodavac?: boolean
