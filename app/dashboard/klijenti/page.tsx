@@ -577,7 +577,8 @@ export default function KlijentiPage() {
                     type="text"
                     value={formData.ime}
                     onChange={(e) => setFormData({ ...formData, ime: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 caret-white"
+                    style={{ color: 'white' }}
                   />
                 </div>
                 <div>
@@ -586,7 +587,8 @@ export default function KlijentiPage() {
                     type="text"
                     value={formData.prezime}
                     onChange={(e) => setFormData({ ...formData, prezime: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 caret-white"
+                    style={{ color: 'white' }}
                   />
                 </div>
               </div>
@@ -597,7 +599,8 @@ export default function KlijentiPage() {
                   type="text"
                   value={formData.firma}
                   onChange={(e) => setFormData({ ...formData, firma: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 caret-white"
+                  style={{ color: 'white' }}
                 />
               </div>
 
@@ -608,7 +611,8 @@ export default function KlijentiPage() {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 caret-white"
+                    style={{ color: 'white' }}
                   />
                 </div>
                 <div>
@@ -618,7 +622,8 @@ export default function KlijentiPage() {
                     value={formData.kontakt}
                     onChange={(e) => setFormData({ ...formData, kontakt: e.target.value })}
                     placeholder="Telefon"
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 caret-white placeholder-gray-400"
+                    style={{ color: 'white' }}
                   />
                 </div>
               </div>
@@ -680,7 +685,8 @@ export default function KlijentiPage() {
                   value={formData.opis}
                   onChange={(e) => setFormData({ ...formData, opis: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none caret-white"
+                  style={{ color: 'white' }}
                 />
               </div>
 
