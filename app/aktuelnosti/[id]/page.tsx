@@ -39,6 +39,19 @@ export default async function AktuelnostDetailPage({ params }: PageProps) {
     })
   }
 
+  const formatContent = (text: string) => {
+    if (text.includes('<p>') || text.includes('<h2>') || text.includes('<strong>')) {
+      return text
+    }
+    return text
+      .split('\n\n')
+      .filter(p => p.trim())
+      .map(p => `<p>${p.replace(/\n/g, '<br/>')}</p>`)
+      .join('')
+  }
+
+  const htmlContent = formatContent(aktuelnost.tekst_sr)
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -142,8 +155,16 @@ export default async function AktuelnostDetailPage({ params }: PageProps) {
             </h1>
 
             <div 
-              className="prose prose-invert prose-lg max-w-none prose-headings:text-foreground prose-p:text-foreground-secondary prose-a:text-accent prose-strong:text-foreground prose-li:text-foreground-secondary"
-              dangerouslySetInnerHTML={{ __html: aktuelnost.tekst_sr }}
+              className="prose prose-invert prose-lg max-w-none 
+                prose-headings:text-foreground prose-headings:font-bold prose-headings:mt-8 prose-headings:mb-4
+                prose-h2:text-2xl prose-h3:text-xl
+                prose-p:text-foreground-secondary prose-p:leading-relaxed prose-p:mb-6
+                prose-a:text-accent prose-a:no-underline hover:prose-a:underline
+                prose-strong:text-foreground prose-strong:font-semibold
+                prose-li:text-foreground-secondary prose-li:my-1
+                prose-ul:my-4 prose-ol:my-4
+                prose-blockquote:border-l-accent prose-blockquote:text-foreground-secondary prose-blockquote:italic"
+              dangerouslySetInnerHTML={{ __html: htmlContent }}
             />
           </article>
         </div>
