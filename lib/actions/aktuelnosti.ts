@@ -20,7 +20,7 @@ export async function getAktuelnosti(
   }
 
   const { data, error, count } = await query
-    .order('datum_objave', { ascending: false })
+    .order('id', { ascending: false })
     .range(offset, offset + limit - 1)
 
   if (error) {

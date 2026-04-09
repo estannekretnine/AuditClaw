@@ -93,9 +93,6 @@ export default async function NewsPage() {
             <h1 className="font-sans text-3xl sm:text-4xl font-bold text-foreground">
               News
             </h1>
-            <p className="mt-4 text-lg text-foreground-secondary max-w-2xl mx-auto">
-              Latest news and articles from the world of real estate and technical audit.
-            </p>
           </div>
 
           {/* Articles Grid */}

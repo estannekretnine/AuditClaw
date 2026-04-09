@@ -93,9 +93,6 @@ export default async function AktuelnostiPage() {
             <h1 className="font-sans text-3xl sm:text-4xl font-bold text-foreground">
               Aktuelnosti
             </h1>
-            <p className="mt-4 text-lg text-foreground-secondary max-w-2xl mx-auto">
-              Najnovije vesti i članci iz sveta nekretnina i tehničkog audita.
-            </p>
           </div>
 
           {/* Articles Grid */}
