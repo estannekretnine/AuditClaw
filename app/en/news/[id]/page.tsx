@@ -1,19 +1,49 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { KlijentRegistrationForm } from '@/components/landing/klijent-registration-form'
-
-export const metadata = {
-  title: 'Customer Center - AuditClaw',
-  description: 'Register as an AuditClaw client. Investors, buyers and sellers of real estate.',
-}
+import { Calendar, ArrowLeft } from 'lucide-react'
+import { getActiveAktuelnostById } from '@/lib/actions/aktuelnosti'
+import { notFound } from 'next/navigation'
 
 interface PageProps {
-  searchParams: Promise<{ ap_id?: string; source?: string }>
+  params: Promise<{ id: string }>
 }
 
-export default async function CustomerCenterPage({ searchParams }: PageProps) {
-  const params = await searchParams
+export async function generateMetadata({ params }: PageProps) {
+  const { id } = await params
+  const { data: aktuelnost } = await getActiveAktuelnostById(parseInt(id))
+  
+  if (!aktuelnost) {
+    return { title: 'Article not found - AuditClaw' }
+  }
+
+  const title = aktuelnost.naslov_en || aktuelnost.naslov_sr
+  const description = (aktuelnost.tekst_en || aktuelnost.tekst_sr).substring(0, 160)
+
+  return {
+    title: `${title} - AuditClaw`,
+    description,
+  }
+}
+
+export default async function NewsDetailPage({ params }: PageProps) {
+  const { id } = await params
+  const { data: aktuelnost } = await getActiveAktuelnostById(parseInt(id))
   const currentYear = new Date().getFullYear()
+
+  if (!aktuelnost) {
+    notFound()
+  }
+
+  const title = aktuelnost.naslov_en || aktuelnost.naslov_sr
+  const text = aktuelnost.tekst_en || aktuelnost.tekst_sr
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    })
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -44,12 +74,15 @@ export default async function CustomerCenterPage({ searchParams }: PageProps) {
               >
                 Home
               </Link>
-              <span className="px-2 py-1 rounded bg-accent text-background font-semibold text-sm">
+              <Link 
+                href="/en/customer-center" 
+                className="text-foreground-secondary hover:text-foreground transition-colors text-sm hidden sm:inline"
+              >
                 Customer Center
-              </span>
+              </Link>
               <Link 
                 href="/en/news" 
-                className="text-foreground-secondary hover:text-foreground transition-colors text-sm hidden sm:inline"
+                className="px-2 py-1 rounded bg-accent text-background font-semibold text-sm"
               >
                 News
               </Link>
@@ -61,7 +94,7 @@ export default async function CustomerCenterPage({ searchParams }: PageProps) {
               </Link>
               <div className="flex items-center gap-1 text-sm font-mono">
                 <Link
-                  href="/korisnicki-centar"
+                  href={`/aktuelnosti/${id}`}
                   className="px-2 py-1 rounded text-foreground-secondary hover:text-foreground transition-colors"
                   hrefLang="sr"
                 >
@@ -69,7 +102,7 @@ export default async function CustomerCenterPage({ searchParams }: PageProps) {
                 </Link>
                 <span className="text-border">/</span>
                 <Link
-                  href="/en/customer-center"
+                  href={`/en/news/${id}`}
                   className="px-2 py-1 rounded bg-accent/20 text-accent transition-colors"
                   hrefLang="en"
                 >
@@ -83,17 +116,45 @@ export default async function CustomerCenterPage({ searchParams }: PageProps) {
 
       {/* Main Content */}
       <main className="flex-1 py-12 sm:py-16">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <h1 className="font-sans text-3xl sm:text-4xl font-bold text-foreground">
-              Customer Center
-            </h1>
-            <p className="mt-4 text-lg text-foreground-secondary max-w-2xl mx-auto">
-              Register and become part of our team.
-            </p>
-          </div>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Back link */}
+          <Link 
+            href="/en/news"
+            className="inline-flex items-center gap-2 text-foreground-secondary hover:text-accent transition-colors mb-8"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to news
+          </Link>
 
-          <KlijentRegistrationForm lang="en" contactid={params.ap_id} source={params.source} />
+          {/* Article */}
+          <article>
+            {aktuelnost.slika_url && (
+              <div className="aspect-video relative overflow-hidden rounded-xl mb-8">
+                <img
+                  src={aktuelnost.slika_url}
+                  alt={title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 text-sm text-foreground-secondary mb-4">
+              <Calendar className="w-4 h-4" />
+              {formatDate(aktuelnost.datum_objave)}
+            </div>
+
+            <h1 className="font-sans text-3xl sm:text-4xl font-bold text-foreground mb-8">
+              {title}
+            </h1>
+
+            <div className="prose prose-invert prose-lg max-w-none">
+              {text.split('\n\n').map((paragraph, index) => (
+                <p key={index} className="text-foreground-secondary leading-relaxed mb-6">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          </article>
         </div>
       </main>
 

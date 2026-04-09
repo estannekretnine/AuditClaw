@@ -1,19 +1,24 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { KlijentRegistrationForm } from '@/components/landing/klijent-registration-form'
+import { Calendar, ArrowRight } from 'lucide-react'
+import { getAktuelnosti } from '@/lib/actions/aktuelnosti'
 
 export const metadata = {
-  title: 'Korisnički Centar - AuditClaw',
-  description: 'Registrujte se kao klijent AuditClaw platforme. Investitori, kupci i prodavci nekretnina.',
+  title: 'Aktuelnosti - AuditClaw',
+  description: 'Najnovije vesti i članci iz sveta nekretnina i tehničkog audita.',
 }
 
-interface PageProps {
-  searchParams: Promise<{ ap_id?: string; source?: string }>
-}
-
-export default async function KorisnickiCentarPage({ searchParams }: PageProps) {
-  const params = await searchParams
+export default async function AktuelnostiPage() {
+  const { data: aktuelnosti } = await getAktuelnosti(50, 0, true)
   const currentYear = new Date().getFullYear()
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('sr-RS', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    })
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -44,15 +49,15 @@ export default async function KorisnickiCentarPage({ searchParams }: PageProps) 
               >
                 Početna
               </Link>
-              <span className="px-2 py-1 rounded bg-accent text-background font-semibold text-sm">
-                Korisnički Centar
-              </span>
               <Link 
-                href="/aktuelnosti" 
+                href="/korisnicki-centar" 
                 className="text-foreground-secondary hover:text-foreground transition-colors text-sm hidden sm:inline"
               >
-                Aktuelnosti
+                Korisnički Centar
               </Link>
+              <span className="px-2 py-1 rounded bg-accent text-background font-semibold text-sm">
+                Aktuelnosti
+              </span>
               <Link 
                 href="/iskustvo" 
                 className="text-foreground-secondary hover:text-foreground transition-colors text-sm hidden sm:inline"
@@ -61,7 +66,7 @@ export default async function KorisnickiCentarPage({ searchParams }: PageProps) 
               </Link>
               <div className="flex items-center gap-1 text-sm font-mono">
                 <Link
-                  href="/korisnicki-centar"
+                  href="/aktuelnosti"
                   className="px-2 py-1 rounded bg-accent/20 text-accent transition-colors"
                   hrefLang="sr"
                 >
@@ -69,7 +74,7 @@ export default async function KorisnickiCentarPage({ searchParams }: PageProps) 
                 </Link>
                 <span className="text-border">/</span>
                 <Link
-                  href="/en/customer-center"
+                  href="/en/news"
                   className="px-2 py-1 rounded text-foreground-secondary hover:text-foreground transition-colors"
                   hrefLang="en"
                 >
@@ -84,16 +89,58 @@ export default async function KorisnickiCentarPage({ searchParams }: PageProps) 
       {/* Main Content */}
       <main className="flex-1 py-12 sm:py-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
+          <div className="text-center mb-12">
             <h1 className="font-sans text-3xl sm:text-4xl font-bold text-foreground">
-              Korisnički Centar
+              Aktuelnosti
             </h1>
             <p className="mt-4 text-lg text-foreground-secondary max-w-2xl mx-auto">
-              Registrujte se i postanite deo našeg tima.
+              Najnovije vesti i članci iz sveta nekretnina i tehničkog audita.
             </p>
           </div>
 
-          <KlijentRegistrationForm contactid={params.ap_id} source={params.source} />
+          {/* Articles Grid */}
+          {aktuelnosti && aktuelnosti.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {aktuelnosti.map((aktuelnost) => (
+                <Link
+                  key={aktuelnost.id}
+                  href={`/aktuelnosti/${aktuelnost.id}`}
+                  className="group bg-surface border border-border rounded-xl overflow-hidden hover:border-accent/50 transition-all duration-300 hover:shadow-lg hover:shadow-accent/5"
+                >
+                  {aktuelnost.slika_url ? (
+                    <div className="aspect-video relative overflow-hidden">
+                      <img
+                        src={aktuelnost.slika_url}
+                        alt={aktuelnost.naslov_sr}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-video bg-border/30 flex items-center justify-center">
+                      <span className="text-foreground-secondary text-sm">Bez slike</span>
+                    </div>
+                  )}
+                  <div className="p-6">
+                    <div className="flex items-center gap-2 text-sm text-foreground-secondary mb-3">
+                      <Calendar className="w-4 h-4" />
+                      {formatDate(aktuelnost.datum_objave)}
+                    </div>
+                    <h2 className="text-lg font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2">
+                      {aktuelnost.naslov_sr}
+                    </h2>
+                    <div className="mt-4 flex items-center gap-2 text-accent text-sm font-medium">
+                      Pročitaj više
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16">
+              <p className="text-foreground-secondary">Trenutno nema objavljenih članaka.</p>
+            </div>
+          )}
         </div>
       </main>
 

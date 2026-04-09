@@ -1,18 +1,13 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { KlijentRegistrationForm } from '@/components/landing/klijent-registration-form'
+import { Clock } from 'lucide-react'
 
 export const metadata = {
-  title: 'Customer Center - AuditClaw',
-  description: 'Register as an AuditClaw client. Investors, buyers and sellers of real estate.',
+  title: 'Experience - AuditClaw',
+  description: 'Our experience and references in technical real estate audit.',
 }
 
-interface PageProps {
-  searchParams: Promise<{ ap_id?: string; source?: string }>
-}
-
-export default async function CustomerCenterPage({ searchParams }: PageProps) {
-  const params = await searchParams
+export default function ExperiencePage() {
   const currentYear = new Date().getFullYear()
 
   return (
@@ -44,24 +39,24 @@ export default async function CustomerCenterPage({ searchParams }: PageProps) {
               >
                 Home
               </Link>
-              <span className="px-2 py-1 rounded bg-accent text-background font-semibold text-sm">
+              <Link 
+                href="/en/customer-center" 
+                className="text-foreground-secondary hover:text-foreground transition-colors text-sm hidden sm:inline"
+              >
                 Customer Center
-              </span>
+              </Link>
               <Link 
                 href="/en/news" 
                 className="text-foreground-secondary hover:text-foreground transition-colors text-sm hidden sm:inline"
               >
                 News
               </Link>
-              <Link 
-                href="/en/experience" 
-                className="text-foreground-secondary hover:text-foreground transition-colors text-sm hidden sm:inline"
-              >
+              <span className="px-2 py-1 rounded bg-accent text-background font-semibold text-sm">
                 Experience
-              </Link>
+              </span>
               <div className="flex items-center gap-1 text-sm font-mono">
                 <Link
-                  href="/korisnicki-centar"
+                  href="/iskustvo"
                   className="px-2 py-1 rounded text-foreground-secondary hover:text-foreground transition-colors"
                   hrefLang="sr"
                 >
@@ -69,7 +64,7 @@ export default async function CustomerCenterPage({ searchParams }: PageProps) {
                 </Link>
                 <span className="text-border">/</span>
                 <Link
-                  href="/en/customer-center"
+                  href="/en/experience"
                   className="px-2 py-1 rounded bg-accent/20 text-accent transition-colors"
                   hrefLang="en"
                 >
@@ -84,16 +79,21 @@ export default async function CustomerCenterPage({ searchParams }: PageProps) {
       {/* Main Content */}
       <main className="flex-1 py-12 sm:py-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <h1 className="font-sans text-3xl sm:text-4xl font-bold text-foreground">
-              Customer Center
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-accent/10 rounded-full mb-6">
+              <Clock className="w-10 h-10 text-accent" />
+            </div>
+            <h1 className="font-sans text-3xl sm:text-4xl font-bold text-foreground mb-4">
+              Experience
             </h1>
-            <p className="mt-4 text-lg text-foreground-secondary max-w-2xl mx-auto">
-              Register and become part of our team.
+            <p className="text-lg text-foreground-secondary max-w-2xl mx-auto mb-8">
+              This page is under construction.
             </p>
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent/10 text-accent rounded-full text-sm font-medium">
+              <Clock className="w-4 h-4" />
+              Coming Soon
+            </div>
           </div>
-
-          <KlijentRegistrationForm lang="en" contactid={params.ap_id} source={params.source} />
         </div>
       </main>
 

@@ -36,13 +36,25 @@ export function Hero({ t, lang }: HeroProps) {
             >
               {t.nav.home}
             </Link>
-            <LanguageSwitcher currentLang={lang} />
             <Link 
               href={lang === 'en' ? '/en/customer-center' : '/korisnicki-centar'} 
               className="text-foreground-secondary hover:text-foreground transition-colors text-sm hidden sm:inline"
             >
               {t.nav.customerCenter}
             </Link>
+            <Link 
+              href={lang === 'en' ? '/en/news' : '/aktuelnosti'} 
+              className="text-foreground-secondary hover:text-foreground transition-colors text-sm hidden sm:inline"
+            >
+              {t.nav.news}
+            </Link>
+            <Link 
+              href={lang === 'en' ? '/en/experience' : '/iskustvo'} 
+              className="text-foreground-secondary hover:text-foreground transition-colors text-sm hidden sm:inline"
+            >
+              {t.nav.experience}
+            </Link>
+            <LanguageSwitcher currentLang={lang} />
           </div>
         </nav>
       </div>
