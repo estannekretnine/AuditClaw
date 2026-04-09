@@ -141,13 +141,10 @@ export default async function AktuelnostDetailPage({ params }: PageProps) {
               {aktuelnost.naslov_sr}
             </h1>
 
-            <div className="prose prose-invert prose-lg max-w-none">
-              {aktuelnost.tekst_sr.split('\n\n').map((paragraph, index) => (
-                <p key={index} className="text-foreground-secondary leading-relaxed mb-6">
-                  {paragraph}
-                </p>
-              ))}
-            </div>
+            <div 
+              className="prose prose-invert prose-lg max-w-none prose-headings:text-foreground prose-p:text-foreground-secondary prose-a:text-accent prose-strong:text-foreground prose-li:text-foreground-secondary"
+              dangerouslySetInnerHTML={{ __html: aktuelnost.tekst_sr }}
+            />
           </article>
         </div>
       </main>
