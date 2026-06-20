@@ -46,7 +46,7 @@ const labels = {
     submit: 'Registruj se',
     submitting: 'Slanje...',
     success: 'Uspešno ste se registrovali! Javićemo vam se uskoro.',
-    successCodeLabel: 'Vaš preporuka kod',
+    successCodeLabel: 'Kod za preporuku',
     successCodeHint: 'Sačuvajte ovaj kod i podelite ga sa prijateljima.',
     error: 'Greška pri registraciji. Molimo pokušajte ponovo.',
     placeholders: {
@@ -84,7 +84,7 @@ const labels = {
     submit: 'Register',
     submitting: 'Sending...',
     success: 'You have successfully registered! We will contact you soon.',
-    successCodeLabel: 'Your referral code',
+    successCodeLabel: 'Referral code',
     successCodeHint: 'Save this code and share it with your friends.',
     error: 'Registration error. Please try again.',
     placeholders: {
@@ -397,13 +397,15 @@ export function KlijentRegistrationForm({ lang = 'sr', contactid, source }: Klij
           <p>{t.success}</p>
           {preporukaCode && (
             <div className="pt-3 border-t border-green-500/20">
-              <p className="text-xs uppercase tracking-wide text-green-300/80 mb-1">
-                {t.successCodeLabel}
+              <p className="text-sm font-semibold text-green-300 mb-2">
+                {t.successCodeLabel}:
               </p>
-              <p className="font-mono text-lg font-bold text-green-300 select-all">
-                {preporukaCode}
-              </p>
-              <p className="mt-2 text-xs text-green-400/70">{t.successCodeHint}</p>
+              <div className="inline-block px-4 py-2 bg-green-500/20 border border-green-500/40 rounded-md">
+                <span className="font-mono text-xl font-bold text-green-200 tracking-wider select-all">
+                  {preporukaCode}
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-green-400/80">{t.successCodeHint}</p>
             </div>
           )}
         </div>
