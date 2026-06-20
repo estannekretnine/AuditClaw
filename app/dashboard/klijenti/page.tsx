@@ -3,10 +3,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Users, RefreshCw, Search, X, Archive, RotateCcw, Plus, Edit2,
-  Building2, Mail, Phone, Calendar, Copy, Check, Gift
+  Building2, Mail, Phone, Calendar, Copy, Check, Gift, Link2, Share2
 } from 'lucide-react'
 import { getKlijenti, createKlijent, updateKlijent, archiveKlijent, restoreKlijent } from '@/lib/actions/klijenti'
 import type { Klijent, KlijentFilterStatus } from '@/lib/types/klijenti'
+import { getDigitalCardUrl, getReferralFormUrl } from '@/lib/utils/site-url'
 
 export default function KlijentiPage() {
   const [loading, setLoading] = useState(false)
@@ -42,17 +43,20 @@ export default function KlijentiPage() {
     preporukacodeodkoljenta: '',
   })
 
-  const [copiedCode, setCopiedCode] = useState<string | null>(null)
+  const [copiedKey, setCopiedKey] = useState<string | null>(null)
 
-  const copyCode = async (code: string) => {
+  const copyText = async (text: string, key: string) => {
     try {
-      await navigator.clipboard.writeText(code)
-      setCopiedCode(code)
-      setTimeout(() => setCopiedCode(null), 1500)
+      await navigator.clipboard.writeText(text)
+      setCopiedKey(key)
+      setTimeout(() => setCopiedKey(null), 1500)
     } catch {
       // ignore — buffer možda nije dostupan u nekim browser-ima
     }
   }
+
+  const getKlijentFullName = (k: Klijent) =>
+    [k.ime, k.prezime].filter(Boolean).join(' ') || 'Klijent'
 
   const searchInputRef = useRef<HTMLInputElement>(null)
 
@@ -443,19 +447,63 @@ export default function KlijentiPage() {
                       <td className="px-4 py-3">
                         <div className="flex flex-col gap-1.5 text-xs">
                           {klijent.preporukacode ? (
-                            <button
-                              type="button"
-                              onClick={() => copyCode(klijent.preporukacode!)}
-                              className="group inline-flex items-center gap-1.5 px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded text-amber-300 font-mono text-xs transition-colors w-fit"
-                              title="Kopiraj kod"
-                            >
-                              {copiedCode === klijent.preporukacode ? (
-                                <Check className="w-3 h-3 text-green-400" />
-                              ) : (
-                                <Copy className="w-3 h-3 opacity-60 group-hover:opacity-100" />
-                              )}
-                              <span>{klijent.preporukacode}</span>
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => copyText(klijent.preporukacode!, `code-${klijent.id}`)}
+                                className="group inline-flex items-center gap-1.5 px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded text-amber-300 font-mono text-xs transition-colors w-fit"
+                                title="Kopiraj kod"
+                              >
+                                {copiedKey === `code-${klijent.id}` ? (
+                                  <Check className="w-3 h-3 text-green-400" />
+                                ) : (
+                                  <Copy className="w-3 h-3 opacity-60 group-hover:opacity-100" />
+                                )}
+                                <span>{klijent.preporukacode}</span>
+                              </button>
+                              <div className="flex flex-wrap gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    copyText(
+                                      getDigitalCardUrl(klijent.preporukacode!, 'sr'),
+                                      `card-${klijent.id}`
+                                    )
+                                  }
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded text-gray-300 text-[10px] transition-colors"
+                                  title="Kopiraj link digitalne kartice"
+                                >
+                                  {copiedKey === `card-${klijent.id}` ? (
+                                    <Check className="w-2.5 h-2.5 text-green-400" />
+                                  ) : (
+                                    <Link2 className="w-2.5 h-2.5" />
+                                  )}
+                                  Link kartice
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    copyText(
+                                      getReferralFormUrl(
+                                        klijent.preporukacode!,
+                                        getKlijentFullName(klijent),
+                                        'sr'
+                                      ),
+                                      `ref-${klijent.id}`
+                                    )
+                                  }
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded text-gray-300 text-[10px] transition-colors"
+                                  title="Kopiraj link za preporuku"
+                                >
+                                  {copiedKey === `ref-${klijent.id}` ? (
+                                    <Check className="w-2.5 h-2.5 text-green-400" />
+                                  ) : (
+                                    <Share2 className="w-2.5 h-2.5" />
+                                  )}
+                                  Link preporuke
+                                </button>
+                              </div>
+                            </>
                           ) : (
                             <span className="text-gray-500">-</span>
                           )}
@@ -574,18 +622,60 @@ export default function KlijentiPage() {
                   {(klijent.preporukacode || klijent.preporukacodeodkoljenta) && (
                     <div className="flex flex-col gap-1.5 mb-3 text-xs">
                       {klijent.preporukacode && (
-                        <button
-                          type="button"
-                          onClick={() => copyCode(klijent.preporukacode!)}
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-amber-500/10 border border-amber-500/30 rounded text-amber-300 font-mono w-fit"
-                        >
-                          {copiedCode === klijent.preporukacode ? (
-                            <Check className="w-3 h-3 text-green-400" />
-                          ) : (
-                            <Copy className="w-3 h-3" />
-                          )}
-                          <span>{klijent.preporukacode}</span>
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => copyText(klijent.preporukacode!, `code-${klijent.id}`)}
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-amber-500/10 border border-amber-500/30 rounded text-amber-300 font-mono w-fit"
+                          >
+                            {copiedKey === `code-${klijent.id}` ? (
+                              <Check className="w-3 h-3 text-green-400" />
+                            ) : (
+                              <Copy className="w-3 h-3" />
+                            )}
+                            <span>{klijent.preporukacode}</span>
+                          </button>
+                          <div className="flex flex-wrap gap-1">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                copyText(
+                                  getDigitalCardUrl(klijent.preporukacode!, 'sr'),
+                                  `card-${klijent.id}`
+                                )
+                              }
+                              className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-700 border border-slate-600 rounded text-gray-300 text-[10px]"
+                            >
+                              {copiedKey === `card-${klijent.id}` ? (
+                                <Check className="w-2.5 h-2.5 text-green-400" />
+                              ) : (
+                                <Link2 className="w-2.5 h-2.5" />
+                              )}
+                              Link kartice
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                copyText(
+                                  getReferralFormUrl(
+                                    klijent.preporukacode!,
+                                    getKlijentFullName(klijent),
+                                    'sr'
+                                  ),
+                                  `ref-${klijent.id}`
+                                )
+                              }
+                              className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-700 border border-slate-600 rounded text-gray-300 text-[10px]"
+                            >
+                              {copiedKey === `ref-${klijent.id}` ? (
+                                <Check className="w-2.5 h-2.5 text-green-400" />
+                              ) : (
+                                <Share2 className="w-2.5 h-2.5" />
+                              )}
+                              Link preporuke
+                            </button>
+                          </div>
+                        </>
                       )}
                       {klijent.preporukacodeodkoljenta && (
                         <div className="flex flex-col gap-0.5">
@@ -809,11 +899,13 @@ export default function KlijentiPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => copyCode(editingKlijent.preporukacode!)}
+                      onClick={() =>
+                        copyText(editingKlijent.preporukacode!, `edit-code-${editingKlijent.id}`)
+                      }
                       className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors flex items-center gap-1.5 text-sm"
                       title="Kopiraj kod"
                     >
-                      {copiedCode === editingKlijent.preporukacode ? (
+                      {copiedKey === `edit-code-${editingKlijent.id}` ? (
                         <>
                           <Check className="w-4 h-4 text-green-400" />
                           <span className="text-green-400">Kopirano</span>
@@ -824,6 +916,46 @@ export default function KlijentiPage() {
                           <span>Kopiraj</span>
                         </>
                       )}
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        copyText(
+                          getDigitalCardUrl(editingKlijent.preporukacode!, 'sr'),
+                          `edit-card-${editingKlijent.id}`
+                        )
+                      }
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-gray-300 rounded-lg text-xs transition-colors"
+                    >
+                      {copiedKey === `edit-card-${editingKlijent.id}` ? (
+                        <Check className="w-3 h-3 text-green-400" />
+                      ) : (
+                        <Link2 className="w-3 h-3" />
+                      )}
+                      Link kartice
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        copyText(
+                          getReferralFormUrl(
+                            editingKlijent.preporukacode!,
+                            getKlijentFullName(editingKlijent),
+                            'sr'
+                          ),
+                          `edit-ref-${editingKlijent.id}`
+                        )
+                      }
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-gray-300 rounded-lg text-xs transition-colors"
+                    >
+                      {copiedKey === `edit-ref-${editingKlijent.id}` ? (
+                        <Check className="w-3 h-3 text-green-400" />
+                      ) : (
+                        <Share2 className="w-3 h-3" />
+                      )}
+                      Link preporuke
                     </button>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">

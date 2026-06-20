@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { Lock } from 'lucide-react'
 
 interface FormData {
   ime: string
@@ -45,6 +47,8 @@ const labels = {
     prodavac: 'Prodavac',
     opis: 'Poruka / Opis',
     preporukaOdKlijenta: 'Imate kod preporuke od drugog klijenta?',
+    preporukaOdLocked: 'Kod preporuke je automatski popunjen',
+    preporucioVas: 'Preporučio vas',
     submit: 'Registruj se',
     submitting: 'Slanje...',
     success: 'Uspešno ste se registrovali! Javićemo vam se uskoro.',
@@ -85,6 +89,8 @@ const labels = {
     prodavac: 'Seller',
     opis: 'Message / Description',
     preporukaOdKlijenta: 'Do you have a referral code from another client?',
+    preporukaOdLocked: 'Referral code is automatically filled in',
+    preporucioVas: 'Referred by',
     submit: 'Register',
     submitting: 'Sending...',
     success: 'You have successfully registered! We will contact you soon.',
@@ -115,6 +121,11 @@ const labels = {
 
 export function KlijentRegistrationForm({ lang = 'sr', contactid, source }: KlijentRegistrationFormProps) {
   const t = labels[lang]
+  const searchParams = useSearchParams()
+  const refFromUrl = searchParams.get('ref')?.trim().toUpperCase() || ''
+  const referrerNameFromUrl = searchParams.get('od')?.trim() || ''
+  const isRefLocked = refFromUrl.length > 0
+
   const [formData, setFormData] = useState<FormData>({
     ime: '',
     prezime: '',
@@ -132,6 +143,13 @@ export function KlijentRegistrationForm({ lang = 'sr', contactid, source }: Klij
   const [errors, setErrors] = useState<FormErrors>({})
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [preporukaCode, setPreporukaCode] = useState<string | null>(null)
+
+  // Pre-popuni kod preporuke iz URL parametra ?ref=
+  useEffect(() => {
+    if (refFromUrl) {
+      setFormData(prev => ({ ...prev, preporukacodeodkoljenta: refFromUrl }))
+    }
+  }, [refFromUrl])
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {}
@@ -216,6 +234,13 @@ export function KlijentRegistrationForm({ lang = 'sr', contactid, source }: Klij
 
   return (
     <form onSubmit={handleSubmit} className="max-w-xl mx-auto mt-8" noValidate autoComplete="off">
+      {referrerNameFromUrl && (
+        <div className="mb-6 p-4 bg-accent/10 border border-accent/30 rounded-lg text-center">
+          <p className="text-sm text-foreground-secondary">{t.preporucioVas}:</p>
+          <p className="text-lg font-semibold text-accent mt-1">{referrerNameFromUrl}</p>
+        </div>
+      )}
+
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -400,7 +425,14 @@ export function KlijentRegistrationForm({ lang = 'sr', contactid, source }: Klij
 
         <div>
           <label htmlFor="klijent-preporuka-od" className="block text-sm font-medium text-foreground mb-1">
-            {t.preporukaOdKlijenta}
+            {isRefLocked ? (
+              <span className="inline-flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-accent" />
+                {t.preporukaOdLocked}
+              </span>
+            ) : (
+              t.preporukaOdKlijenta
+            )}
           </label>
           <input
             id="klijent-preporuka-od"
@@ -410,7 +442,13 @@ export function KlijentRegistrationForm({ lang = 'sr', contactid, source }: Klij
             placeholder={t.placeholders.preporukaOdKlijenta}
             autoComplete="off"
             spellCheck={false}
-            className="w-full px-4 py-3 bg-surface border border-border rounded-lg text-foreground placeholder-foreground-secondary focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors font-mono uppercase"
+            readOnly={isRefLocked}
+            aria-readonly={isRefLocked}
+            className={`w-full px-4 py-3 bg-surface border rounded-lg text-foreground placeholder-foreground-secondary focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors font-mono uppercase ${
+              isRefLocked
+                ? 'border-accent/40 bg-accent/5 cursor-not-allowed opacity-90'
+                : 'border-border'
+            }`}
             style={{ color: 'white' }}
           />
         </div>

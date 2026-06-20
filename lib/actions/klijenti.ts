@@ -236,3 +236,34 @@ export async function getKlijentById(id: number) {
 
   return { data: data as Klijent, error: null }
 }
+
+/**
+ * Dohvata klijenta po preporukacode za javnu digitalnu karticu.
+ * Arhivirani klijenti se ne vraćaju (404 na stranici).
+ */
+export async function getKlijentByCode(kod: string) {
+  const supabase = createAdminClient()
+  const normalized = kod.trim().toUpperCase()
+
+  if (!normalized) {
+    return { data: null, error: 'Invalid code' }
+  }
+
+  const { data, error } = await supabase
+    .from('klijenti')
+    .select('*')
+    .eq('preporukacode', normalized)
+    .or('stsarhiviran.is.null,stsarhiviran.eq.false')
+    .maybeSingle()
+
+  if (error) {
+    console.error('Error fetching klijent by code:', error)
+    return { data: null, error: error.message }
+  }
+
+  if (!data) {
+    return { data: null, error: 'Not found' }
+  }
+
+  return { data: data as Klijent, error: null }
+}

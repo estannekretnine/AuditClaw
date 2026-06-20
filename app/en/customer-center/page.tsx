@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { KlijentRegistrationForm } from '@/components/landing/klijent-registration-form'
 import { PublicHeader } from '@/components/landing/public-header'
 
@@ -35,7 +36,9 @@ export default async function CustomerCenterPage({ searchParams }: PageProps) {
             </p>
           </div>
 
-          <KlijentRegistrationForm lang="en" contactid={params.ap_id} source={params.source} />
+          <Suspense fallback={<div className="text-center text-foreground-secondary py-8">Loading form...</div>}>
+            <KlijentRegistrationForm lang="en" contactid={params.ap_id} source={params.source} />
+          </Suspense>
         </div>
       </main>
 
