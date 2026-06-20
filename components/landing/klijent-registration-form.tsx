@@ -46,6 +46,8 @@ const labels = {
     submit: 'Registruj se',
     submitting: 'Slanje...',
     success: 'Uspešno ste se registrovali! Javićemo vam se uskoro.',
+    successCodeLabel: 'Vaš preporuka kod',
+    successCodeHint: 'Sačuvajte ovaj kod i podelite ga sa prijateljima.',
     error: 'Greška pri registraciji. Molimo pokušajte ponovo.',
     placeholders: {
       ime: 'Vaše ime',
@@ -82,6 +84,8 @@ const labels = {
     submit: 'Register',
     submitting: 'Sending...',
     success: 'You have successfully registered! We will contact you soon.',
+    successCodeLabel: 'Your referral code',
+    successCodeHint: 'Save this code and share it with your friends.',
     error: 'Registration error. Please try again.',
     placeholders: {
       ime: 'Your first name',
@@ -121,6 +125,7 @@ export function KlijentRegistrationForm({ lang = 'sr', contactid, source }: Klij
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [preporukaCode, setPreporukaCode] = useState<string | null>(null)
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {}
@@ -171,6 +176,8 @@ export function KlijentRegistrationForm({ lang = 'sr', contactid, source }: Klij
         throw new Error('Failed to send')
       }
 
+      const json = (await res.json()) as { success?: boolean; preporukacode?: string }
+      setPreporukaCode(json.preporukacode ?? null)
       setStatus('success')
       setFormData({
         ime: '',
@@ -386,8 +393,19 @@ export function KlijentRegistrationForm({ lang = 'sr', contactid, source }: Klij
       </div>
 
       {status === 'success' && (
-        <div className="mt-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm">
-          {t.success}
+        <div className="mt-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm space-y-3">
+          <p>{t.success}</p>
+          {preporukaCode && (
+            <div className="pt-3 border-t border-green-500/20">
+              <p className="text-xs uppercase tracking-wide text-green-300/80 mb-1">
+                {t.successCodeLabel}
+              </p>
+              <p className="font-mono text-lg font-bold text-green-300 select-all">
+                {preporukaCode}
+              </p>
+              <p className="mt-2 text-xs text-green-400/70">{t.successCodeHint}</p>
+            </div>
+          )}
         </div>
       )}
 

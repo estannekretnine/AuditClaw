@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@supabase/supabase-js'
+import { generatePreporukaCode } from '@/lib/utils/preporuka-code'
 
 const klijentSchema = z.object({
   ime: z.string().min(2, 'Ime mora imati najmanje 2 karaktera'),
@@ -27,6 +28,9 @@ const getSupabase = () => {
   return createClient(url, key)
 }
 
+// Maks. broj pokušaja u slučaju kolizije UNIQUE constraint-a
+const MAX_CODE_ATTEMPTS = 5
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -50,35 +54,66 @@ export async function POST(request: Request) {
       )
     }
 
-    const { error } = await supabase
-      .from('klijenti')
-      .insert({
-        ime: data.ime,
-        prezime: data.prezime,
-        firma: data.firma || null,
-        email: data.email,
-        kontakt: data.kontakt,
-        stsagencijazanekretnine: false,
-        stsinvestitor: data.stsinvestitor,
-        stsinvestitoraudit: data.stsinvestitoraudit,
-        stskupac: data.stskupac,
-        stsprijateljsajta: data.stsprijateljsajta,
-        stsprodavac: data.stsprodavac,
-        opis: data.opis || null,
-        stsarhiviran: false,
-        contactid: data.contactid || null,
-        source: data.source || null,
-      })
+    // Retry petlja: u (izuzetno retkom) slučaju kolizije UNIQUE koda,
+    // generišemo nov kod i pokušavamo ponovo.
+    let preporukacode: string | null = null
+    let lastError: unknown = null
 
-    if (error) {
-      console.error('Supabase error:', error)
+    for (let attempt = 0; attempt < MAX_CODE_ATTEMPTS; attempt++) {
+      const candidate = generatePreporukaCode()
+
+      const { error } = await supabase
+        .from('klijenti')
+        .insert({
+          ime: data.ime,
+          prezime: data.prezime,
+          firma: data.firma || null,
+          email: data.email,
+          kontakt: data.kontakt,
+          stsagencijazanekretnine: false,
+          stsinvestitor: data.stsinvestitor,
+          stsinvestitoraudit: data.stsinvestitoraudit,
+          stskupac: data.stskupac,
+          stsprijateljsajta: data.stsprijateljsajta,
+          stsprodavac: data.stsprodavac,
+          opis: data.opis || null,
+          stsarhiviran: false,
+          contactid: data.contactid || null,
+          source: data.source || null,
+          preporukacode: candidate,
+        })
+
+      if (!error) {
+        preporukacode = candidate
+        break
+      }
+
+      lastError = error
+      // Postgres unique_violation kod = '23505' → kolizija, idemo u retry
+      const isUniqueViolation =
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code?: string }).code === '23505'
+
+      if (!isUniqueViolation) {
+        console.error('Supabase error:', error)
+        return NextResponse.json(
+          { error: 'Failed to save klijent' },
+          { status: 500 }
+        )
+      }
+    }
+
+    if (!preporukacode) {
+      console.error('Failed to generate unique preporuka code after retries:', lastError)
       return NextResponse.json(
-        { error: 'Failed to save klijent' },
+        { error: 'Failed to generate unique referral code' },
         { status: 500 }
       )
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, preporukacode })
   } catch (error) {
     console.error('Klijent register API error:', error)
     return NextResponse.json(
