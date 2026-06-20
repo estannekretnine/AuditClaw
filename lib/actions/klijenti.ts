@@ -2,7 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
-import type { Klijent, KlijentInsert, KlijentFilterStatus } from '@/lib/types/klijenti'
+import type { Klijent, KlijentInsert, KlijentFilterStatus, KlijentReferrer } from '@/lib/types/klijenti'
 import { generatePreporukaCode } from '@/lib/utils/preporuka-code'
 
 const MAX_CODE_ATTEMPTS = 5
@@ -47,7 +47,40 @@ export async function getKlijenti(
     return { data: null, error: error.message, count: 0 }
   }
 
-  return { data: data as Klijent[], error: null, count: count || 0 }
+  const klijenti = (data as Klijent[]) || []
+
+  // Popuni preporukaOd za sve klijente koji imaju preporukacodeodkoljenta.
+  // Radi se u jednom batch upitu (ne N+1).
+  const referrerCodes = Array.from(
+    new Set(
+      klijenti
+        .map(k => k.preporukacodeodkoljenta)
+        .filter((c): c is string => !!c && c.trim().length > 0)
+    )
+  )
+
+  if (referrerCodes.length > 0) {
+    const { data: referrers, error: refErr } = await supabase
+      .from('klijenti')
+      .select('id, ime, prezime, preporukacode')
+      .in('preporukacode', referrerCodes)
+
+    if (refErr) {
+      console.error('Error fetching referrers:', refErr)
+    } else if (referrers) {
+      const map = new Map<string, KlijentReferrer>()
+      for (const r of referrers as Array<KlijentReferrer & { preporukacode: string }>) {
+        map.set(r.preporukacode, { id: r.id, ime: r.ime, prezime: r.prezime })
+      }
+      for (const k of klijenti) {
+        if (k.preporukacodeodkoljenta) {
+          k.preporukaOd = map.get(k.preporukacodeodkoljenta) ?? null
+        }
+      }
+    }
+  }
+
+  return { data: klijenti, error: null, count: count || 0 }
 }
 
 export async function createKlijent(formData: FormData) {

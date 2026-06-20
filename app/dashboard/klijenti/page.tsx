@@ -460,10 +460,21 @@ export default function KlijentiPage() {
                             <span className="text-gray-500">-</span>
                           )}
                           {klijent.preporukacodeodkoljenta && (
-                            <span className="inline-flex items-center gap-1 text-gray-400" title="Preporučio ga je">
-                              <Gift className="w-3 h-3 text-purple-400" />
-                              <span className="font-mono">{klijent.preporukacodeodkoljenta}</span>
-                            </span>
+                            <div className="flex flex-col gap-0.5" title="Preporučio ga je">
+                              <span className="inline-flex items-center gap-1 text-gray-400">
+                                <Gift className="w-3 h-3 text-purple-400" />
+                                <span className="font-mono">{klijent.preporukacodeodkoljenta}</span>
+                              </span>
+                              {klijent.preporukaOd ? (
+                                <span className="text-purple-300 text-[11px] pl-4">
+                                  #{klijent.preporukaOd.id} {klijent.preporukaOd.ime || ''} {klijent.preporukaOd.prezime || ''}
+                                </span>
+                              ) : (
+                                <span className="text-red-400/70 text-[11px] pl-4 italic">
+                                  kod nije pronađen
+                                </span>
+                              )}
+                            </div>
                           )}
                         </div>
                       </td>
@@ -561,12 +572,12 @@ export default function KlijentiPage() {
                   </div>
 
                   {(klijent.preporukacode || klijent.preporukacodeodkoljenta) && (
-                    <div className="flex flex-wrap gap-2 mb-3 text-xs">
+                    <div className="flex flex-col gap-1.5 mb-3 text-xs">
                       {klijent.preporukacode && (
                         <button
                           type="button"
                           onClick={() => copyCode(klijent.preporukacode!)}
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-amber-500/10 border border-amber-500/30 rounded text-amber-300 font-mono"
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-amber-500/10 border border-amber-500/30 rounded text-amber-300 font-mono w-fit"
                         >
                           {copiedCode === klijent.preporukacode ? (
                             <Check className="w-3 h-3 text-green-400" />
@@ -577,10 +588,21 @@ export default function KlijentiPage() {
                         </button>
                       )}
                       {klijent.preporukacodeodkoljenta && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-500/10 border border-purple-500/30 rounded text-purple-300 font-mono">
-                          <Gift className="w-3 h-3" />
-                          <span>{klijent.preporukacodeodkoljenta}</span>
-                        </span>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-500/10 border border-purple-500/30 rounded text-purple-300 font-mono w-fit">
+                            <Gift className="w-3 h-3" />
+                            <span>{klijent.preporukacodeodkoljenta}</span>
+                          </span>
+                          {klijent.preporukaOd ? (
+                            <span className="text-purple-300 text-[11px] pl-2">
+                              Preporučio: #{klijent.preporukaOd.id} {klijent.preporukaOd.ime || ''} {klijent.preporukaOd.prezime || ''}
+                            </span>
+                          ) : (
+                            <span className="text-red-400/70 text-[11px] pl-2 italic">
+                              kod nije pronađen
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
@@ -826,9 +848,19 @@ export default function KlijentiPage() {
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-amber-500 caret-white placeholder-gray-400"
                   style={{ color: 'white' }}
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Ako je klijent stigao preko preporuke drugog klijenta, unesite njegov kod ovde.
-                </p>
+                {editingKlijent?.preporukaOd ? (
+                  <p className="text-xs text-purple-300 mt-1">
+                    Preporučio: <span className="font-medium">#{editingKlijent.preporukaOd.id} {editingKlijent.preporukaOd.ime || ''} {editingKlijent.preporukaOd.prezime || ''}</span>
+                  </p>
+                ) : editingKlijent?.preporukacodeodkoljenta ? (
+                  <p className="text-xs text-red-400/80 mt-1 italic">
+                    Kod nije pronađen u bazi klijenata.
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Ako je klijent stigao preko preporuke drugog klijenta, unesite njegov kod ovde.
+                  </p>
+                )}
               </div>
 
               <div className="flex gap-3 pt-2">

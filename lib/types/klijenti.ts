@@ -1,3 +1,9 @@
+export interface KlijentReferrer {
+  id: number
+  ime: string | null
+  prezime: string | null
+}
+
 export interface Klijent {
   id: number
   ime: string | null
@@ -17,6 +23,9 @@ export interface Klijent {
   stsarhiviran: boolean
   preporukacode: string | null
   preporukacodeodkoljenta: string | null
+  // Virtuelno polje — popunjeno u server action-u za prikaz preporučioca u UI.
+  // NIJE kolona u tabeli klijenti.
+  preporukaOd?: KlijentReferrer | null
 }
 
 export interface KlijentInsert {
