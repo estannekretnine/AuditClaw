@@ -15,6 +15,8 @@ export interface Klijent {
   datumpromene: string | null
   opis: string | null
   stsarhiviran: boolean
+  preporukacode: string | null
+  preporukacodeodkoljenta: string | null
 }
 
 export interface KlijentInsert {
@@ -30,6 +32,8 @@ export interface KlijentInsert {
   stsprijateljsajta?: boolean
   stsprodavac?: boolean
   opis?: string | null
+  preporukacode?: string | null
+  preporukacodeodkoljenta?: string | null
 }
 
 export interface KlijentUpdate extends KlijentInsert {

@@ -3,6 +3,15 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import type { Klijent, KlijentInsert, KlijentFilterStatus } from '@/lib/types/klijenti'
+import { generatePreporukaCode } from '@/lib/utils/preporuka-code'
+
+const MAX_CODE_ATTEMPTS = 5
+
+const normalizeCode = (val: string | null | undefined): string | null => {
+  if (!val) return null
+  const trimmed = val.trim().toUpperCase()
+  return trimmed.length > 0 ? trimmed : null
+}
 
 export async function getKlijenti(
   limit: number = 50,
@@ -25,7 +34,7 @@ export async function getKlijenti(
   if (search && search.trim()) {
     const searchTerm = search.trim()
     query = query.or(
-      `ime.ilike.%${searchTerm}%,prezime.ilike.%${searchTerm}%,firma.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,kontakt.ilike.%${searchTerm}%,opis.ilike.%${searchTerm}%`
+      `ime.ilike.%${searchTerm}%,prezime.ilike.%${searchTerm}%,firma.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,kontakt.ilike.%${searchTerm}%,opis.ilike.%${searchTerm}%,preporukacode.ilike.%${searchTerm}%,preporukacodeodkoljenta.ilike.%${searchTerm}%`
     )
   }
 
@@ -44,7 +53,7 @@ export async function getKlijenti(
 export async function createKlijent(formData: FormData) {
   const supabase = createAdminClient()
 
-  const klijentData: KlijentInsert = {
+  const baseData: KlijentInsert = {
     ime: formData.get('ime') as string || null,
     prezime: formData.get('prezime') as string || null,
     firma: formData.get('firma') as string || null,
@@ -57,21 +66,37 @@ export async function createKlijent(formData: FormData) {
     stsprijateljsajta: formData.get('stsprijateljsajta') === 'true',
     stsprodavac: formData.get('stsprodavac') === 'true',
     opis: formData.get('opis') as string || null,
+    preporukacodeodkoljenta: normalizeCode(formData.get('preporukacodeodkoljenta') as string | null),
   }
 
-  const { data, error } = await supabase
-    .from('klijenti')
-    .insert([klijentData])
-    .select()
-    .single()
+  let lastError: { message: string; code?: string } | null = null
 
-  if (error) {
-    console.error('Error creating klijent:', error)
-    return { data: null, error: error.message }
+  for (let attempt = 0; attempt < MAX_CODE_ATTEMPTS; attempt++) {
+    const klijentData: KlijentInsert = {
+      ...baseData,
+      preporukacode: generatePreporukaCode(),
+    }
+
+    const { data, error } = await supabase
+      .from('klijenti')
+      .insert([klijentData])
+      .select()
+      .single()
+
+    if (!error) {
+      revalidatePath('/dashboard/klijenti')
+      return { data: data as Klijent, error: null }
+    }
+
+    lastError = error
+    if (error.code !== '23505') {
+      console.error('Error creating klijent:', error)
+      return { data: null, error: error.message }
+    }
   }
 
-  revalidatePath('/dashboard/klijenti')
-  return { data: data as Klijent, error: null }
+  console.error('Failed to generate unique preporuka code:', lastError)
+  return { data: null, error: 'Nije moguće generisati jedinstven kod, pokušajte ponovo.' }
 }
 
 export async function updateKlijent(id: number, formData: FormData) {
@@ -90,8 +115,11 @@ export async function updateKlijent(id: number, formData: FormData) {
     stsprijateljsajta: formData.get('stsprijateljsajta') === 'true',
     stsprodavac: formData.get('stsprodavac') === 'true',
     opis: formData.get('opis') as string || null,
+    preporukacodeodkoljenta: normalizeCode(formData.get('preporukacodeodkoljenta') as string | null),
     datumpromene: new Date().toISOString(),
   }
+  // Napomena: preporukacode se NE menja iz admin panela (read-only),
+  // generiše se automatski samo pri kreiranju i deli sa klijentima.
 
   const { data, error } = await supabase
     .from('klijenti')

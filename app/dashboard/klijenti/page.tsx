@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Users, RefreshCw, Search, X, Archive, RotateCcw, Plus, Edit2,
-  Building2, Mail, Phone, Calendar, FileText
+  Building2, Mail, Phone, Calendar, Copy, Check, Gift
 } from 'lucide-react'
 import { getKlijenti, createKlijent, updateKlijent, archiveKlijent, restoreKlijent } from '@/lib/actions/klijenti'
 import type { Klijent, KlijentFilterStatus } from '@/lib/types/klijenti'
@@ -39,7 +39,20 @@ export default function KlijentiPage() {
     stsprijateljsajta: false,
     stsprodavac: false,
     opis: '',
+    preporukacodeodkoljenta: '',
   })
+
+  const [copiedCode, setCopiedCode] = useState<string | null>(null)
+
+  const copyCode = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code)
+      setCopiedCode(code)
+      setTimeout(() => setCopiedCode(null), 1500)
+    } catch {
+      // ignore — buffer možda nije dostupan u nekim browser-ima
+    }
+  }
 
   const searchInputRef = useRef<HTMLInputElement>(null)
 
@@ -86,6 +99,7 @@ export default function KlijentiPage() {
       stsprijateljsajta: false,
       stsprodavac: false,
       opis: '',
+      preporukacodeodkoljenta: '',
     })
     setEditingKlijent(null)
   }
@@ -110,6 +124,7 @@ export default function KlijentiPage() {
       stsprijateljsajta: klijent.stsprijateljsajta,
       stsprodavac: klijent.stsprodavac,
       opis: klijent.opis || '',
+      preporukacodeodkoljenta: klijent.preporukacodeodkoljenta || '',
     })
     setFormModalOpen(true)
   }
@@ -132,6 +147,7 @@ export default function KlijentiPage() {
       fd.append('stsprijateljsajta', String(formData.stsprijateljsajta))
       fd.append('stsprodavac', String(formData.stsprodavac))
       fd.append('opis', formData.opis)
+      fd.append('preporukacodeodkoljenta', formData.preporukacodeodkoljenta)
 
       let result
       if (editingKlijent) {
@@ -390,6 +406,7 @@ export default function KlijentiPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Firma</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Email</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Kontakt</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Kod / Preporuka od</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Statusi</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Datum upisa</th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-300 uppercase">Akcije</th>
@@ -423,6 +440,33 @@ export default function KlijentiPage() {
                       <td className="px-4 py-3 text-gray-300 text-sm">{klijent.firma || '-'}</td>
                       <td className="px-4 py-3 text-gray-300 text-sm">{klijent.email || '-'}</td>
                       <td className="px-4 py-3 text-gray-300 text-sm">{klijent.kontakt || '-'}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-1.5 text-xs">
+                          {klijent.preporukacode ? (
+                            <button
+                              type="button"
+                              onClick={() => copyCode(klijent.preporukacode!)}
+                              className="group inline-flex items-center gap-1.5 px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded text-amber-300 font-mono text-xs transition-colors w-fit"
+                              title="Kopiraj kod"
+                            >
+                              {copiedCode === klijent.preporukacode ? (
+                                <Check className="w-3 h-3 text-green-400" />
+                              ) : (
+                                <Copy className="w-3 h-3 opacity-60 group-hover:opacity-100" />
+                              )}
+                              <span>{klijent.preporukacode}</span>
+                            </button>
+                          ) : (
+                            <span className="text-gray-500">-</span>
+                          )}
+                          {klijent.preporukacodeodkoljenta && (
+                            <span className="inline-flex items-center gap-1 text-gray-400" title="Preporučio ga je">
+                              <Gift className="w-3 h-3 text-purple-400" />
+                              <span className="font-mono">{klijent.preporukacodeodkoljenta}</span>
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
                           <StatusBadge label="Agencija" active={klijent.stsagencijazanekretnine} color="bg-blue-500/20 text-blue-400" />
@@ -515,6 +559,31 @@ export default function KlijentiPage() {
                       <span className="text-xs">{new Date(klijent.datumupisa).toLocaleDateString('sr-RS')}</span>
                     </div>
                   </div>
+
+                  {(klijent.preporukacode || klijent.preporukacodeodkoljenta) && (
+                    <div className="flex flex-wrap gap-2 mb-3 text-xs">
+                      {klijent.preporukacode && (
+                        <button
+                          type="button"
+                          onClick={() => copyCode(klijent.preporukacode!)}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-amber-500/10 border border-amber-500/30 rounded text-amber-300 font-mono"
+                        >
+                          {copiedCode === klijent.preporukacode ? (
+                            <Check className="w-3 h-3 text-green-400" />
+                          ) : (
+                            <Copy className="w-3 h-3" />
+                          )}
+                          <span>{klijent.preporukacode}</span>
+                        </button>
+                      )}
+                      {klijent.preporukacodeodkoljenta && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-500/10 border border-purple-500/30 rounded text-purple-300 font-mono">
+                          <Gift className="w-3 h-3" />
+                          <span>{klijent.preporukacodeodkoljenta}</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   <div className="flex flex-wrap gap-1 mb-3">
                     <StatusBadge label="Agencija" active={klijent.stsagencijazanekretnine} color="bg-blue-500/20 text-blue-400" />
@@ -705,6 +774,61 @@ export default function KlijentiPage() {
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none caret-white"
                   style={{ color: 'white' }}
                 />
+              </div>
+
+              {editingKlijent?.preporukacode && (
+                <div>
+                  <label className="block text-sm text-gray-300 mb-1">
+                    Kod za preporuku (auto-generisan)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-amber-300 font-mono text-sm">
+                      {editingKlijent.preporukacode}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => copyCode(editingKlijent.preporukacode!)}
+                      className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors flex items-center gap-1.5 text-sm"
+                      title="Kopiraj kod"
+                    >
+                      {copiedCode === editingKlijent.preporukacode ? (
+                        <>
+                          <Check className="w-4 h-4 text-green-400" />
+                          <span className="text-green-400">Kopirano</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" />
+                          <span>Kopiraj</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Kod je jedinstven i ne može se menjati. Klijent ga koristi za preporuku drugima.
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm text-gray-300 mb-1">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Gift className="w-4 h-4 text-purple-400" />
+                    Preporuka od (kod drugog klijenta)
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.preporukacodeodkoljenta}
+                  onChange={(e) => setFormData({ ...formData, preporukacodeodkoljenta: e.target.value })}
+                  placeholder="AC-XXXXXXXX (opciono)"
+                  spellCheck={false}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-amber-500 caret-white placeholder-gray-400"
+                  style={{ color: 'white' }}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Ako je klijent stigao preko preporuke drugog klijenta, unesite njegov kod ovde.
+                </p>
               </div>
 
               <div className="flex gap-3 pt-2">
