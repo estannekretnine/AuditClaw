@@ -17,6 +17,7 @@ const klijentSchema = z.object({
   opis: z.string().optional(),
   contactid: z.string().optional(),
   source: z.string().optional(),
+  preporukacodeodkoljenta: z.string().optional(),
 })
 
 const getSupabase = () => {
@@ -81,6 +82,7 @@ export async function POST(request: Request) {
           contactid: data.contactid || null,
           source: data.source || null,
           preporukacode: candidate,
+          preporukacodeodkoljenta: data.preporukacodeodkoljenta?.trim().toUpperCase() || null,
         })
 
       if (!error) {

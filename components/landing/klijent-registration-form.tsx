@@ -14,6 +14,7 @@ interface FormData {
   stsprijateljsajta: boolean
   stsprodavac: boolean
   opis: string
+  preporukacodeodkoljenta: string
 }
 
 interface FormErrors {
@@ -43,6 +44,7 @@ const labels = {
     prijateljSajta: 'Prijatelj sajta',
     prodavac: 'Prodavac',
     opis: 'Poruka / Opis',
+    preporukaOdKlijenta: 'Imate kod preporuke od drugog klijenta?',
     submit: 'Registruj se',
     submitting: 'Slanje...',
     success: 'Uspešno ste se registrovali! Javićemo vam se uskoro.',
@@ -56,6 +58,7 @@ const labels = {
       email: 'vas@email.com',
       kontakt: '+381 63 123 4567',
       opis: 'Opišite vaše potrebe ili ostavite poruku...',
+      preporukaOdKlijenta: 'AC-XXXXXXXX (opciono)',
     },
     validation: {
       imeRequired: 'Ime je obavezno',
@@ -81,6 +84,7 @@ const labels = {
     prijateljSajta: 'Friend of the site',
     prodavac: 'Seller',
     opis: 'Message / Description',
+    preporukaOdKlijenta: 'Do you have a referral code from another client?',
     submit: 'Register',
     submitting: 'Sending...',
     success: 'You have successfully registered! We will contact you soon.',
@@ -94,6 +98,7 @@ const labels = {
       email: 'you@email.com',
       kontakt: '+381 63 123 4567',
       opis: 'Describe your needs or leave a message...',
+      preporukaOdKlijenta: 'AC-XXXXXXXX (optional)',
     },
     validation: {
       imeRequired: 'First name is required',
@@ -122,6 +127,7 @@ export function KlijentRegistrationForm({ lang = 'sr', contactid, source }: Klij
     stsprijateljsajta: false,
     stsprodavac: false,
     opis: '',
+    preporukacodeodkoljenta: '',
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
@@ -191,6 +197,7 @@ export function KlijentRegistrationForm({ lang = 'sr', contactid, source }: Klij
         stsprijateljsajta: false,
         stsprodavac: false,
         opis: '',
+        preporukacodeodkoljenta: '',
       })
     } catch {
       setStatus('error')
@@ -387,6 +394,23 @@ export function KlijentRegistrationForm({ lang = 'sr', contactid, source }: Klij
             rows={4}
             autoComplete="off"
             className="w-full px-4 py-3 bg-surface border border-border rounded-lg text-foreground placeholder-foreground-secondary focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors resize-none"
+            style={{ color: 'white' }}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="klijent-preporuka-od" className="block text-sm font-medium text-foreground mb-1">
+            {t.preporukaOdKlijenta}
+          </label>
+          <input
+            id="klijent-preporuka-od"
+            type="text"
+            value={formData.preporukacodeodkoljenta}
+            onChange={handleChange('preporukacodeodkoljenta')}
+            placeholder={t.placeholders.preporukaOdKlijenta}
+            autoComplete="off"
+            spellCheck={false}
+            className="w-full px-4 py-3 bg-surface border border-border rounded-lg text-foreground placeholder-foreground-secondary focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors font-mono uppercase"
             style={{ color: 'white' }}
           />
         </div>
