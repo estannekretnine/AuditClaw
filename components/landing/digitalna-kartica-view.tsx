@@ -28,6 +28,7 @@ const labels = {
       kupac: 'Kupac',
       prijatelj: 'Prijatelj sajta',
       prodavac: 'Prodavac',
+      ekspert: 'Ekspert',
     },
     footer: 'AuditClaw Engineering — Struka ispred prodaje.',
     home: 'Početna',
@@ -49,6 +50,7 @@ const labels = {
       kupac: 'Buyer',
       prijatelj: 'Friend of the site',
       prodavac: 'Seller',
+      ekspert: 'Expert',
     },
     footer: 'AuditClaw Engineering — Profession before sales.',
     home: 'Home',
@@ -80,6 +82,7 @@ export function DigitalnaKarticaView({ klijent, lang }: DigitalnaKarticaViewProp
   if (klijent.stskupac) statuses.push(t.statuses.kupac)
   if (klijent.stsprijateljsajta) statuses.push(t.statuses.prijatelj)
   if (klijent.stsprodavac) statuses.push(t.statuses.prodavac)
+  if (klijent.stsekspert) statuses.push(t.statuses.ekspert)
 
   const copyToClipboard = async (text: string, type: 'card') => {
     try {

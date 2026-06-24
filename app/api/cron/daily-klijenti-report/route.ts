@@ -68,6 +68,7 @@ export async function GET(request: Request) {
       if (k.stskupac) types.push('Kupac')
       if (k.stsprijateljsajta) types.push('Prijatelj sajta')
       if (k.stsprodavac) types.push('Prodavac')
+      if (k.stsekspert) types.push('Ekspert')
       if (k.stsinvestitoraudit) types.push('Investitor Audit')
       return types.length > 0 ? types.join(', ') : '-'
     }

@@ -98,6 +98,7 @@ export async function createKlijent(formData: FormData) {
     stskupac: formData.get('stskupac') === 'true',
     stsprijateljsajta: formData.get('stsprijateljsajta') === 'true',
     stsprodavac: formData.get('stsprodavac') === 'true',
+    stsekspert: formData.get('stsekspert') === 'true',
     opis: formData.get('opis') as string || null,
     preporukacodeodkoljenta: normalizeCode(formData.get('preporukacodeodkoljenta') as string | null),
   }
@@ -147,6 +148,7 @@ export async function updateKlijent(id: number, formData: FormData) {
     stskupac: formData.get('stskupac') === 'true',
     stsprijateljsajta: formData.get('stsprijateljsajta') === 'true',
     stsprodavac: formData.get('stsprodavac') === 'true',
+    stsekspert: formData.get('stsekspert') === 'true',
     opis: formData.get('opis') as string || null,
     preporukacodeodkoljenta: normalizeCode(formData.get('preporukacodeodkoljenta') as string | null),
     datumpromene: new Date().toISOString(),

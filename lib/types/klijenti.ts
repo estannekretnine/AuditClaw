@@ -17,6 +17,7 @@ export interface Klijent {
   stskupac: boolean
   stsprijateljsajta: boolean
   stsprodavac: boolean
+  stsekspert: boolean
   datumupisa: string
   datumpromene: string | null
   opis: string | null
@@ -40,6 +41,7 @@ export interface KlijentInsert {
   stskupac?: boolean
   stsprijateljsajta?: boolean
   stsprodavac?: boolean
+  stsekspert?: boolean
   opis?: string | null
   preporukacode?: string | null
   preporukacodeodkoljenta?: string | null

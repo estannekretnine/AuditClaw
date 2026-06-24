@@ -15,6 +15,7 @@ interface FormData {
   stskupac: boolean
   stsprijateljsajta: boolean
   stsprodavac: boolean
+  stsekspert: boolean
   opis: string
   preporukacodeodkoljenta: string
 }
@@ -45,6 +46,7 @@ const labels = {
     kupac: 'Kupac',
     prijateljSajta: 'Prijatelj sajta',
     prodavac: 'Prodavac',
+    ekspert: 'Ekspert',
     opis: 'Poruka / Opis',
     preporukaOdKlijenta: 'Imate kod preporuke od drugog klijenta?',
     preporukaOdLocked: 'Kod preporuke je automatski popunjen',
@@ -87,6 +89,7 @@ const labels = {
     kupac: 'Buyer',
     prijateljSajta: 'Friend of the site',
     prodavac: 'Seller',
+    ekspert: 'Expert',
     opis: 'Message / Description',
     preporukaOdKlijenta: 'Do you have a referral code from another client?',
     preporukaOdLocked: 'Referral code is automatically filled in',
@@ -137,6 +140,7 @@ export function KlijentRegistrationForm({ lang = 'sr', contactid, source }: Klij
     stskupac: false,
     stsprijateljsajta: false,
     stsprodavac: false,
+    stsekspert: false,
     opis: '',
     preporukacodeodkoljenta: '',
   })
@@ -214,6 +218,7 @@ export function KlijentRegistrationForm({ lang = 'sr', contactid, source }: Klij
         stskupac: false,
         stsprijateljsajta: false,
         stsprodavac: false,
+        stsekspert: false,
         opis: '',
         preporukacodeodkoljenta: '',
       })
@@ -403,6 +408,15 @@ export function KlijentRegistrationForm({ lang = 'sr', contactid, source }: Klij
                 className="w-4 h-4 rounded border-border text-accent focus:ring-accent/50"
               />
               <span className="text-sm text-foreground">{t.prodavac}</span>
+            </label>
+            <label className="flex items-center gap-3 p-3 bg-surface border border-border rounded-lg cursor-pointer hover:border-accent/50 transition-colors">
+              <input
+                type="checkbox"
+                checked={formData.stsekspert}
+                onChange={handleChange('stsekspert')}
+                className="w-4 h-4 rounded border-border text-accent focus:ring-accent/50"
+              />
+              <span className="text-sm text-foreground">{t.ekspert}</span>
             </label>
           </div>
         </div>

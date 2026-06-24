@@ -39,6 +39,7 @@ export default function KlijentiPage() {
     stskupac: false,
     stsprijateljsajta: false,
     stsprodavac: false,
+    stsekspert: false,
     opis: '',
     preporukacodeodkoljenta: '',
   })
@@ -102,6 +103,7 @@ export default function KlijentiPage() {
       stskupac: false,
       stsprijateljsajta: false,
       stsprodavac: false,
+      stsekspert: false,
       opis: '',
       preporukacodeodkoljenta: '',
     })
@@ -127,6 +129,7 @@ export default function KlijentiPage() {
       stskupac: klijent.stskupac,
       stsprijateljsajta: klijent.stsprijateljsajta,
       stsprodavac: klijent.stsprodavac,
+      stsekspert: klijent.stsekspert,
       opis: klijent.opis || '',
       preporukacodeodkoljenta: klijent.preporukacodeodkoljenta || '',
     })
@@ -150,6 +153,7 @@ export default function KlijentiPage() {
       fd.append('stskupac', String(formData.stskupac))
       fd.append('stsprijateljsajta', String(formData.stsprijateljsajta))
       fd.append('stsprodavac', String(formData.stsprodavac))
+      fd.append('stsekspert', String(formData.stsekspert))
       fd.append('opis', formData.opis)
       fd.append('preporukacodeodkoljenta', formData.preporukacodeodkoljenta)
 
@@ -534,6 +538,7 @@ export default function KlijentiPage() {
                           <StatusBadge label="Kupac" active={klijent.stskupac} color="bg-amber-500/20 text-amber-400" />
                           <StatusBadge label="Prijatelj" active={klijent.stsprijateljsajta} color="bg-purple-500/20 text-purple-400" />
                           <StatusBadge label="Prodavac" active={klijent.stsprodavac} color="bg-red-500/20 text-red-400" />
+                          <StatusBadge label="Ekspert" active={klijent.stsekspert} color="bg-teal-500/20 text-teal-400" />
                         </div>
                       </td>
                       <td className="px-4 py-3 text-gray-400 text-sm">
@@ -704,6 +709,7 @@ export default function KlijentiPage() {
                     <StatusBadge label="Kupac" active={klijent.stskupac} color="bg-amber-500/20 text-amber-400" />
                     <StatusBadge label="Prijatelj" active={klijent.stsprijateljsajta} color="bg-purple-500/20 text-purple-400" />
                     <StatusBadge label="Prodavac" active={klijent.stsprodavac} color="bg-red-500/20 text-red-400" />
+                    <StatusBadge label="Ekspert" active={klijent.stsekspert} color="bg-teal-500/20 text-teal-400" />
                   </div>
 
                   <div className="flex gap-2">
@@ -865,7 +871,7 @@ export default function KlijentiPage() {
                     />
                     <span className="text-sm text-gray-300">Prijatelj sajta</span>
                   </label>
-                  <label className="flex items-center gap-2 p-2 bg-slate-700/50 rounded-lg cursor-pointer hover:bg-slate-700 col-span-2">
+                  <label className="flex items-center gap-2 p-2 bg-slate-700/50 rounded-lg cursor-pointer hover:bg-slate-700">
                     <input
                       type="checkbox"
                       checked={formData.stsprodavac}
@@ -873,6 +879,15 @@ export default function KlijentiPage() {
                       className="w-4 h-4 rounded border-slate-500 text-red-500 focus:ring-red-500"
                     />
                     <span className="text-sm text-gray-300">Prodavac</span>
+                  </label>
+                  <label className="flex items-center gap-2 p-2 bg-slate-700/50 rounded-lg cursor-pointer hover:bg-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={formData.stsekspert}
+                      onChange={(e) => setFormData({ ...formData, stsekspert: e.target.checked })}
+                      className="w-4 h-4 rounded border-slate-500 text-teal-500 focus:ring-teal-500"
+                    />
+                    <span className="text-sm text-gray-300">Ekspert</span>
                   </label>
                 </div>
               </div>
