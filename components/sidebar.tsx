@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, Users, Shield, ChevronDown, ChevronRight, LogOut, Menu, X, Home, BarChart3, Upload, TrendingUp, Target, FileText, MessageSquare, UserCheck, Newspaper } from 'lucide-react'
+import { Building2, Users, Shield, ChevronDown, ChevronRight, LogOut, Menu, X, Home, BarChart3, Upload, TrendingUp, Target, FileText, MessageSquare, UserCheck, Newspaper, Bot, Mic, MessageCircle } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -23,7 +23,7 @@ interface AnalyzaSubItem {
 export default function Sidebar({ user, collapsed = false, onToggle }: SidebarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isAdminOpen, setIsAdminOpen] = useState(true)
-  const [isAnalizaOpen, setIsAnalizaOpen] = useState(true)
+  const [openNestedMenus, setOpenNestedMenus] = useState<Record<string, boolean>>({ analiza: true, vapi: true })
   const pathname = usePathname()
 
   const isAdmin = user?.stsstatus === 'admin' || user?.stsstatus === 'manager'
@@ -34,6 +34,11 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
     { id: 'kampanje', label: 'Kampanje', href: '/dashboard/analiza/kampanje', icon: Target },
     { id: 'kupci', label: 'Kupci analiza', href: '/dashboard/analiza/kupci', icon: Users },
     { id: 'log-strane', label: 'Log Strane', href: '/dashboard/analiza/log-strane', icon: FileText },
+  ]
+
+  const vapiSubItems: AnalyzaSubItem[] = [
+    { id: 'vapi-assistants', label: 'Vapi Assistants', href: '/dashboard/vapi/assistants', icon: Bot },
+    { id: 'vapi-odgovor', label: 'Vapi Odgovor', href: '/dashboard/vapi/odgovor', icon: MessageCircle },
   ]
 
   const adminSubItems: Array<{
@@ -51,6 +56,7 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
     { id: 'klijenti', label: 'Klijenti', href: '/dashboard/klijenti', icon: UserCheck },
     { id: 'aktuelnosti', label: 'Aktuelnosti', href: '/dashboard/aktuelnosti', icon: Newspaper },
     { id: 'poruke-sajt', label: 'Poruke-sajt', href: '/dashboard/poruke-sajt', icon: MessageSquare },
+    { id: 'vapi', label: 'Vapi', icon: Mic, hasSubmenu: true, subItems: vapiSubItems },
   ]
 
   // Agent vidi samo Ponude direktno (bez submenija)
@@ -245,7 +251,7 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
                           return (
                             <li key={subItem.id}>
                               <button
-                                onClick={() => setIsAnalizaOpen(!isAnalizaOpen)}
+                                onClick={() => setOpenNestedMenus(prev => ({ ...prev, [subItem.id]: !prev[subItem.id] }))}
                                 className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
                                   isSubItemActive
                                     ? 'bg-white/10 text-amber-400'
@@ -257,9 +263,9 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
                                   <SubIcon className="w-4 h-4" />
                                   <span className="text-sm font-medium">{subItem.label}</span>
                                 </div>
-                                <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${isAnalizaOpen ? 'rotate-90' : ''}`} />
+                                <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${openNestedMenus[subItem.id] ? 'rotate-90' : ''}`} />
                               </button>
-                              {isAnalizaOpen && subItem.subItems && (
+                              {openNestedMenus[subItem.id] && subItem.subItems && (
                                 <ul className="mt-1 ml-4 pl-3 border-l border-amber-500/10 space-y-1">
                                   {subItem.subItems.map((nestedItem: AnalyzaSubItem) => {
                                     const NestedIcon = nestedItem.icon
