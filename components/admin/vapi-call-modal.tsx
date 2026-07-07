@@ -56,6 +56,11 @@ function isDeviceInUseMessage(message: string): boolean {
   return lower.includes('in use') || lower.includes('notreadable') || lower.includes('not allowed')
 }
 
+function ucenikLabel(ucenik: VapiUcenik): string {
+  const puno = `${ucenik.ime} ${ucenik.prezime || ''}`.trim()
+  return ucenik.razred ? `${puno} — ${ucenik.razred}` : puno
+}
+
 function stopDailyLocalTrack(state: unknown): void {
   if (!state || typeof state !== 'object') return
   const track = (state as { track?: MediaStreamTrack }).track
@@ -162,6 +167,8 @@ export function VapiCallModal({
   const [transcript, setTranscript] = useState<TranscriptLine[]>([])
   const [error, setError] = useState<string | null>(null)
   const [selectedUcenikId, setSelectedUcenikId] = useState('')
+  const [ucenikQuery, setUcenikQuery] = useState('')
+  const [showUcenikList, setShowUcenikList] = useState(false)
 
   const cleanupCall = useCallback(async () => {
     if (cleanupInProgressRef.current) return
@@ -290,6 +297,8 @@ export function VapiCallModal({
       setError(null)
       setCallEnded(false)
       setSelectedUcenikId('')
+      setUcenikQuery('')
+      setShowUcenikList(false)
     }
   }, [open, cleanupCall])
 
@@ -355,6 +364,28 @@ export function VapiCallModal({
     await cleanupCall()
     onClose()
   }
+
+  const handleSelectUcenik = (ucenik: VapiUcenik) => {
+    setSelectedUcenikId(String(ucenik.id))
+    setUcenikQuery(ucenikLabel(ucenik))
+    setShowUcenikList(false)
+  }
+
+  const handleUcenikInputChange = (value: string) => {
+    setUcenikQuery(value)
+    setSelectedUcenikId('')
+    setShowUcenikList(true)
+  }
+
+  const filteredUcenici = (() => {
+    const q = ucenikQuery.trim().toLowerCase()
+    if (!q) return ucenici
+    return ucenici.filter((u) =>
+      ucenikLabel(u).toLowerCase().includes(q) ||
+      `${u.ime} ${u.prezime || ''}`.toLowerCase().includes(q) ||
+      (u.razred || '').toLowerCase().includes(q)
+    )
+  })()
 
   if (!open) return null
 
@@ -433,23 +464,44 @@ export function VapiCallModal({
               </div>
 
               {!isConnected && !callEnded && (
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Učenik <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    value={selectedUcenikId}
-                    onChange={(e) => setSelectedUcenikId(e.target.value)}
+                  <input
+                    type="text"
+                    value={ucenikQuery}
+                    onChange={(e) => handleUcenikInputChange(e.target.value)}
+                    onFocus={() => setShowUcenikList(true)}
+                    onBlur={() => setTimeout(() => setShowUcenikList(false), 150)}
                     disabled={isStarting || isReleasing}
+                    placeholder="Kucajte ime, prezime ili razred..."
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all disabled:opacity-50"
-                  >
-                    <option value="">-- Izaberite učenika --</option>
-                    {ucenici.map((ucenik) => (
-                      <option key={ucenik.id} value={ucenik.id}>
-                        {ucenik.ime} {ucenik.prezime || ''}{ucenik.razred ? ` — ${ucenik.razred}` : ''}
-                      </option>
-                    ))}
-                  </select>
+                    autoComplete="off"
+                  />
+                  {showUcenikList && filteredUcenici.length > 0 && (
+                    <ul className="absolute z-10 mt-1 w-full max-h-56 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-lg">
+                      {filteredUcenici.map((ucenik) => (
+                        <li key={ucenik.id}>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => handleSelectUcenik(ucenik)}
+                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-amber-50 transition-colors ${
+                              String(ucenik.id) === selectedUcenikId ? 'bg-amber-50 font-semibold' : 'text-gray-700'
+                            }`}
+                          >
+                            {ucenikLabel(ucenik)}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {showUcenikList && ucenikQuery.trim() && filteredUcenici.length === 0 && (
+                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg px-4 py-2.5 text-sm text-gray-400">
+                      Nema rezultata za „{ucenikQuery}“
+                    </div>
+                  )}
                   {ucenici.length === 0 && (
                     <p className="text-xs text-amber-600 mt-2">
                       Nema unetih učenika. Dodajte učenika u sekciji „Učenik“ pre poziva.
