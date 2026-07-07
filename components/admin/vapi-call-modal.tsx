@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Vapi from '@vapi-ai/web'
 import DailyIframe, { type DailyCall } from '@daily-co/daily-js'
 import { Bot, Mic, PhoneOff, X } from 'lucide-react'
+import type { VapiUcenik } from '@/lib/types/vapi'
 
 export interface VapiStartConfig {
   assistantDbId: number
@@ -25,6 +26,7 @@ interface VapiCallModalProps {
   config: VapiStartConfig | null
   loading?: boolean
   loadError?: string | null
+  ucenici?: VapiUcenik[]
 }
 
 function extractVapiError(event: unknown): string {
@@ -148,6 +150,7 @@ export function VapiCallModal({
   config,
   loading = false,
   loadError = null,
+  ucenici = [],
 }: VapiCallModalProps) {
   const vapiRef = useRef<Vapi | null>(null)
   const hasStartedRef = useRef(false)
@@ -158,6 +161,7 @@ export function VapiCallModal({
   const [callEnded, setCallEnded] = useState(false)
   const [transcript, setTranscript] = useState<TranscriptLine[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [selectedUcenikId, setSelectedUcenikId] = useState('')
 
   const cleanupCall = useCallback(async () => {
     if (cleanupInProgressRef.current) return
@@ -285,6 +289,7 @@ export function VapiCallModal({
       setTranscript([])
       setError(null)
       setCallEnded(false)
+      setSelectedUcenikId('')
     }
   }, [open, cleanupCall])
 
@@ -304,6 +309,11 @@ export function VapiCallModal({
       return
     }
 
+    if (!selectedUcenikId) {
+      setError('Prvo izaberite učenika pre pokretanja poziva.')
+      return
+    }
+
     setError(null)
     setCallEnded(false)
     setIsStarting(true)
@@ -319,6 +329,7 @@ export function VapiCallModal({
       await vapi.start(config.assistantId, {
         metadata: {
           assistantDbId: String(config.assistantDbId),
+          ucenikid: selectedUcenikId,
         },
       })
     } catch (e) {
@@ -347,7 +358,7 @@ export function VapiCallModal({
 
   if (!open) return null
 
-  const startDisabled = isStarting || isReleasing
+  const startDisabled = isStarting || isReleasing || !selectedUcenikId
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -420,6 +431,32 @@ export function VapiCallModal({
                   </p>
                 </div>
               </div>
+
+              {!isConnected && !callEnded && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Učenik <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={selectedUcenikId}
+                    onChange={(e) => setSelectedUcenikId(e.target.value)}
+                    disabled={isStarting || isReleasing}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all disabled:opacity-50"
+                  >
+                    <option value="">-- Izaberite učenika --</option>
+                    {ucenici.map((ucenik) => (
+                      <option key={ucenik.id} value={ucenik.id}>
+                        {ucenik.ime} {ucenik.prezime || ''}{ucenik.razred ? ` — ${ucenik.razred}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {ucenici.length === 0 && (
+                    <p className="text-xs text-amber-600 mt-2">
+                      Nema unetih učenika. Dodajte učenika u sekciji „Učenik“ pre poziva.
+                    </p>
+                  )}
+                </div>
+              )}
 
               {error && (
                 <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">

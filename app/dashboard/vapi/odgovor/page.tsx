@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { MessageCircle, Plus, Edit, Trash2, Bot } from 'lucide-react'
+import { MessageCircle, Plus, Edit, Trash2, Bot, User } from 'lucide-react'
 import {
   getVapiOdgovori,
   createVapiOdgovor,
@@ -9,8 +9,8 @@ import {
   deleteVapiOdgovor,
 } from '@/lib/actions/vapi-odgovor'
 import { getVapiAssistants } from '@/lib/actions/vapi-assistants'
-import type { VapiOdgovor } from '@/lib/types/vapi'
-import type { VapiAssistant } from '@/lib/types/vapi'
+import { getVapiUcenici } from '@/lib/actions/vapi-ucenik'
+import type { VapiOdgovor, VapiAssistant, VapiUcenik } from '@/lib/types/vapi'
 
 function truncateText(text: string | null, maxLength: number = 60): string {
   if (!text) return '-'
@@ -39,10 +39,18 @@ function getAssistantLabel(odgovor: VapiOdgovor): string {
   return '-'
 }
 
+function getUcenikLabel(odgovor: VapiOdgovor): string {
+  const ucenik = odgovor.vapi_ucenik
+  if (!ucenik) return '-'
+  const puno = `${ucenik.ime} ${ucenik.prezime || ''}`.trim()
+  return ucenik.razred ? `${puno} (${ucenik.razred})` : puno
+}
+
 export default function VapiOdgovorPage() {
   const [loading, setLoading] = useState(true)
   const [odgovori, setOdgovori] = useState<VapiOdgovor[]>([])
   const [assistants, setAssistants] = useState<VapiAssistant[]>([])
+  const [ucenici, setUcenici] = useState<VapiUcenik[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [showForm, setShowForm] = useState(false)
   const [editingOdgovor, setEditingOdgovor] = useState<VapiOdgovor | null>(null)
@@ -53,14 +61,16 @@ export default function VapiOdgovorPage() {
     obrazlozenjeocene_ai: '',
     ocena_ai: '',
     assistant_id: '',
+    ucenikid: '',
   })
 
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const [odgovoriResult, assistantsResult] = await Promise.all([
+      const [odgovoriResult, assistantsResult, uceniciResult] = await Promise.all([
         getVapiOdgovori(50, 0),
         getVapiAssistants(100, 0),
+        getVapiUcenici(200, 0),
       ])
       if (odgovoriResult.data) {
         setOdgovori(odgovoriResult.data)
@@ -68,6 +78,9 @@ export default function VapiOdgovorPage() {
       }
       if (assistantsResult.data) {
         setAssistants(assistantsResult.data)
+      }
+      if (uceniciResult.data) {
+        setUcenici(uceniciResult.data)
       }
     } finally {
       setLoading(false)
@@ -84,6 +97,7 @@ export default function VapiOdgovorPage() {
       obrazlozenjeocene_ai: '',
       ocena_ai: '',
       assistant_id: '',
+      ucenikid: '',
     })
     setEditingOdgovor(null)
   }
@@ -100,6 +114,7 @@ export default function VapiOdgovorPage() {
       obrazlozenjeocene_ai: odgovor.obrazlozenjeocene_ai || '',
       ocena_ai: odgovor.ocena_ai || '',
       assistant_id: odgovor.assistant_id ? String(odgovor.assistant_id) : '',
+      ucenikid: odgovor.ucenikid ? String(odgovor.ucenikid) : '',
     })
     setShowForm(true)
   }
@@ -114,6 +129,7 @@ export default function VapiOdgovorPage() {
       fd.append('obrazlozenjeocene_ai', formData.obrazlozenjeocene_ai)
       fd.append('ocena_ai', formData.ocena_ai)
       fd.append('assistant_id', formData.assistant_id)
+      fd.append('ucenikid', formData.ucenikid)
 
       let result
       if (editingOdgovor) {
@@ -192,6 +208,7 @@ export default function VapiOdgovorPage() {
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">ID</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Datum i vreme</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Učenik</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Dijalog</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Ocena AI</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Obrazloženje</th>
@@ -207,6 +224,12 @@ export default function VapiOdgovorPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <p className="text-sm text-gray-700">{formatDatumVreme(odgovor.datumvreme)}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1.5 text-sm text-gray-700">
+                        <User className="w-4 h-4 text-gray-400" />
+                        <span className="truncate max-w-[160px]">{getUcenikLabel(odgovor)}</span>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm text-gray-900 font-medium truncate max-w-[250px]">{truncateText(odgovor.dijalog, 80)}</p>
@@ -251,6 +274,10 @@ export default function VapiOdgovorPage() {
                 <div className="mb-3">
                   <span className="inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold text-white bg-gradient-to-r from-gray-900 to-black rounded-lg mb-1">ID: {odgovor.id}</span>
                   <p className="text-xs text-gray-500">{formatDatumVreme(odgovor.datumvreme)}</p>
+                  <div className="flex items-center gap-1.5 text-xs text-gray-700 mt-1">
+                    <User className="w-3.5 h-3.5 text-gray-400" />
+                    {getUcenikLabel(odgovor)}
+                  </div>
                   <p className="text-sm font-medium text-gray-900 mt-1">{truncateText(odgovor.dijalog, 100)}</p>
                   <p className="text-xs text-gray-500 mt-1">Ocena: {odgovor.ocena_ai || '-'}</p>
                   <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
@@ -340,6 +367,22 @@ export default function VapiOdgovorPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Učenik</label>
+                <select
+                  value={formData.ucenikid}
+                  onChange={(e) => setFormData({ ...formData, ucenikid: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                >
+                  <option value="">-- Bez učenika --</option>
+                  {ucenici.map((ucenik) => (
+                    <option key={ucenik.id} value={ucenik.id}>
+                      {ucenik.ime} {ucenik.prezime || ''}{ucenik.razred ? ` — ${ucenik.razred}` : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>

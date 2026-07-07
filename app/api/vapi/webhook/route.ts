@@ -11,6 +11,18 @@ function getSupabase() {
   return createClient(url, key)
 }
 
+function getCallMetadata(payload: Record<string, unknown>): Record<string, unknown> | null {
+  const call = payload.call
+  if (call && typeof call === 'object') {
+    const callRecord = call as Record<string, unknown>
+    const metadata = callRecord.metadata
+    if (metadata && typeof metadata === 'object') {
+      return metadata as Record<string, unknown>
+    }
+  }
+  return null
+}
+
 function resolveAssistantDbId(
   request: NextRequest,
   payload: Record<string, unknown>
@@ -21,20 +33,23 @@ function resolveAssistantDbId(
     if (!Number.isNaN(parsed)) return parsed
   }
 
-  const call = payload.call
-  if (call && typeof call === 'object') {
-    const callRecord = call as Record<string, unknown>
-    const metadata = callRecord.metadata
-    if (metadata && typeof metadata === 'object') {
-      const metaRecord = metadata as Record<string, unknown>
-      const dbId = metaRecord.assistantDbId
-      if (typeof dbId === 'string' || typeof dbId === 'number') {
-        const parsed = Number(dbId)
-        if (!Number.isNaN(parsed)) return parsed
-      }
-    }
+  const metadata = getCallMetadata(payload)
+  const dbId = metadata?.assistantDbId
+  if (typeof dbId === 'string' || typeof dbId === 'number') {
+    const parsed = Number(dbId)
+    if (!Number.isNaN(parsed)) return parsed
   }
 
+  return null
+}
+
+function resolveUcenikId(payload: Record<string, unknown>): number | null {
+  const metadata = getCallMetadata(payload)
+  const ucenikId = metadata?.ucenikid
+  if (typeof ucenikId === 'string' || typeof ucenikId === 'number') {
+    const parsed = Number(ucenikId)
+    if (!Number.isNaN(parsed)) return parsed
+  }
   return null
 }
 
@@ -94,12 +109,15 @@ export async function POST(request: NextRequest) {
       summary,
     })
 
+    const ucenikId = resolveUcenikId(report)
+
     const { error } = await supabase.from('vapi_odgovor').insert([
       {
         dijalog,
         obrazlozenjeocene_ai: analysis?.obrazlozenjeocene_ai || null,
         ocena_ai: analysis?.ocena_ai || null,
         assistant_id: assistantDbId,
+        ucenikid: ucenikId,
         datumvreme: new Date().toISOString(),
       },
     ])

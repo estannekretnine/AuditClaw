@@ -9,7 +9,8 @@ import {
   deleteVapiAssistant,
   getVapiStartConfig,
 } from '@/lib/actions/vapi-assistants'
-import type { VapiAssistant } from '@/lib/types/vapi'
+import { getVapiUcenici } from '@/lib/actions/vapi-ucenik'
+import type { VapiAssistant, VapiUcenik } from '@/lib/types/vapi'
 import { VapiCallModal, type VapiStartConfig } from '@/components/admin/vapi-call-modal'
 
 function truncateText(text: string | null, maxLength: number = 60): string {
@@ -35,6 +36,7 @@ export default function VapiAssistantsPage() {
   const [callConfig, setCallConfig] = useState<VapiStartConfig | null>(null)
   const [callLoading, setCallLoading] = useState(false)
   const [callError, setCallError] = useState<string | null>(null)
+  const [ucenici, setUcenici] = useState<VapiUcenik[]>([])
 
   const [formData, setFormData] = useState({
     assistant_id: '',
@@ -58,9 +60,17 @@ export default function VapiAssistantsPage() {
     }
   }, [])
 
+  const loadUcenici = useCallback(async () => {
+    const result = await getVapiUcenici(200, 0)
+    if (result.data) {
+      setUcenici(result.data)
+    }
+  }, [])
+
   useEffect(() => {
     loadAssistants()
-  }, [loadAssistants])
+    loadUcenici()
+  }, [loadAssistants, loadUcenici])
 
   const topLevel = assistants.filter((a) => a.servisid === null)
   const childrenByParent = assistants.reduce<Record<number, VapiAssistant[]>>((acc, a) => {
@@ -314,6 +324,7 @@ export default function VapiAssistantsPage() {
         config={callConfig}
         loading={callLoading}
         loadError={callError}
+        ucenici={ucenici}
       />
 
       {showForm && (

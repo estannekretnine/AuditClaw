@@ -11,7 +11,11 @@ const vapiOdgovorSchema = z.object({
   obrazlozenjeocene_ai: z.string().optional().nullable(),
   ocena_ai: z.string().optional().nullable(),
   assistant_id: z.number().optional().nullable(),
+  ucenikid: z.number().optional().nullable(),
 })
+
+const ODGOVOR_SELECT =
+  '*, vapi_assistants(assistant_id, opis_servisa), vapi_ucenik(ime, prezime, razred)'
 
 async function requireAdminAccess() {
   const user = await getCurrentUser()
@@ -23,11 +27,13 @@ async function requireAdminAccess() {
 
 function parseOdgovorFormData(formData: FormData) {
   const assistantIdRaw = formData.get('assistant_id') as string
+  const ucenikIdRaw = formData.get('ucenikid') as string
   return {
     dijalog: formData.get('dijalog') as string,
     obrazlozenjeocene_ai: (formData.get('obrazlozenjeocene_ai') as string) || null,
     ocena_ai: (formData.get('ocena_ai') as string) || null,
     assistant_id: assistantIdRaw && assistantIdRaw !== '' ? Number(assistantIdRaw) : null,
+    ucenikid: ucenikIdRaw && ucenikIdRaw !== '' ? Number(ucenikIdRaw) : null,
   }
 }
 
@@ -39,7 +45,7 @@ export async function getVapiOdgovori(
 
   const { data, error, count } = await supabase
     .from('vapi_odgovor')
-    .select('*, vapi_assistants(assistant_id, opis_servisa)', { count: 'exact' })
+    .select(ODGOVOR_SELECT, { count: 'exact' })
     .order('datumvreme', { ascending: false, nullsFirst: false })
     .order('id', { ascending: false })
     .range(offset, offset + limit - 1)
@@ -57,7 +63,7 @@ export async function getVapiOdgovorById(id: number) {
 
   const { data, error } = await supabase
     .from('vapi_odgovor')
-    .select('*, vapi_assistants(assistant_id, opis_servisa)')
+    .select(ODGOVOR_SELECT)
     .eq('id', id)
     .single()
 
@@ -88,7 +94,7 @@ export async function createVapiOdgovor(formData: FormData) {
   const { data, error } = await supabase
     .from('vapi_odgovor')
     .insert([odgovorData])
-    .select('*, vapi_assistants(assistant_id, opis_servisa)')
+    .select(ODGOVOR_SELECT)
     .single()
 
   if (error) {
@@ -116,7 +122,7 @@ export async function updateVapiOdgovor(id: number, formData: FormData) {
     .from('vapi_odgovor')
     .update(result.data)
     .eq('id', id)
-    .select('*, vapi_assistants(assistant_id, opis_servisa)')
+    .select(ODGOVOR_SELECT)
     .single()
 
   if (error) {

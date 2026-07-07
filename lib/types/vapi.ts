@@ -26,9 +26,15 @@ export interface VapiOdgovor {
   ocena_ai: string | null
   assistant_id: number | null
   datumvreme: string | null
+  ucenikid: number | null
   vapi_assistants?: {
     assistant_id: string
     opis_servisa: string | null
+  } | null
+  vapi_ucenik?: {
+    ime: string
+    prezime: string | null
+    razred: string | null
   } | null
 }
 
@@ -38,6 +44,7 @@ export interface VapiOdgovorInsert {
   ocena_ai?: string | null
   assistant_id?: number | null
   datumvreme?: string | null
+  ucenikid?: number | null
 }
 
 export interface VapiOdgovorUpdate extends Partial<VapiOdgovorInsert> {}
@@ -65,4 +72,21 @@ export interface VapiProfesorAssistant {
   id: number
   profesorid: number
   assistantid: number | null
+}
+
+export interface VapiUcenik {
+  id: number
+  ime: string
+  prezime: string | null
+  razred: string | null
+  razrednistaresina: string | null
+  napoemna: string | null
+}
+
+export interface VapiUcenikInsert {
+  ime: string
+  prezime?: string | null
+  razred?: string | null
+  razrednistaresina?: string | null
+  napoemna?: string | null
 }

@@ -40,6 +40,7 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
     { id: 'vapi-assistants', label: 'Vapi Assistants', href: '/dashboard/vapi/assistants', icon: Bot },
     { id: 'vapi-odgovor', label: 'Vapi Odgovor', href: '/dashboard/vapi/odgovor', icon: MessageCircle },
     { id: 'vapi-profesori', label: 'Profesori', href: '/dashboard/vapi/profesori', icon: GraduationCap },
+    { id: 'vapi-ucenik', label: 'Učenik', href: '/dashboard/vapi/ucenik', icon: Users },
   ]
 
   const adminSubItems: Array<{
