@@ -54,6 +54,12 @@ function isDeviceInUseMessage(message: string): boolean {
   return lower.includes('in use') || lower.includes('notreadable') || lower.includes('not allowed')
 }
 
+function stopDailyLocalTrack(state: unknown): void {
+  if (!state || typeof state !== 'object') return
+  const track = (state as { track?: MediaStreamTrack }).track
+  track?.stop?.()
+}
+
 function releaseAllParticipantTracks(daily: DailyCall): void {
   try {
     const participants = daily.participants()
@@ -70,8 +76,8 @@ function releaseAllParticipantTracks(daily: DailyCall): void {
   }
 
   try {
-    daily.localAudio()?.track?.stop()
-    daily.localVideo()?.track?.stop()
+    stopDailyLocalTrack(daily.localAudio())
+    stopDailyLocalTrack(daily.localVideo())
   } catch {
     // ignore
   }
@@ -190,7 +196,7 @@ export function VapiCallModal({
       // ignore
     }
     try {
-      daily.localVideo()?.track?.stop()
+      stopDailyLocalTrack(daily.localVideo())
     } catch {
       // ignore
     }

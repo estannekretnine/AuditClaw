@@ -23,6 +23,7 @@ export interface VapiOdgovor {
   obrazlozenjeocene_ai: string | null
   ocena_ai: string | null
   assistant_id: number | null
+  datumvreme: string | null
   vapi_assistants?: {
     assistant_id: string
     opis_servisa: string | null
@@ -34,6 +35,7 @@ export interface VapiOdgovorInsert {
   obrazlozenjeocene_ai?: string | null
   ocena_ai?: string | null
   assistant_id?: number | null
+  datumvreme?: string | null
 }
 
 export interface VapiOdgovorUpdate extends Partial<VapiOdgovorInsert> {}

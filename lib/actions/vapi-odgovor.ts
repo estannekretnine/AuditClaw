@@ -40,6 +40,7 @@ export async function getVapiOdgovori(
   const { data, error, count } = await supabase
     .from('vapi_odgovor')
     .select('*, vapi_assistants(assistant_id, opis_servisa)', { count: 'exact' })
+    .order('datumvreme', { ascending: false, nullsFirst: false })
     .order('id', { ascending: false })
     .range(offset, offset + limit - 1)
 
@@ -79,7 +80,10 @@ export async function createVapiOdgovor(formData: FormData) {
   }
 
   const supabase = createAdminClient()
-  const odgovorData: VapiOdgovorInsert = result.data
+  const odgovorData: VapiOdgovorInsert = {
+    ...result.data,
+    datumvreme: new Date().toISOString(),
+  }
 
   const { data, error } = await supabase
     .from('vapi_odgovor')

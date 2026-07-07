@@ -18,6 +18,19 @@ function truncateText(text: string | null, maxLength: number = 60): string {
   return `${text.slice(0, maxLength)}...`
 }
 
+function formatDatumVreme(value: string | null): string {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+  return date.toLocaleString('sr-RS', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 function getAssistantLabel(odgovor: VapiOdgovor): string {
   if (odgovor.vapi_assistants?.assistant_id) {
     const opis = odgovor.vapi_assistants.opis_servisa
@@ -178,6 +191,7 @@ export default function VapiOdgovorPage() {
               <thead className="bg-gradient-to-r from-gray-900 to-black">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">ID</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Datum i vreme</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Dijalog</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Ocena AI</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Obrazloženje</th>
@@ -190,6 +204,9 @@ export default function VapiOdgovorPage() {
                   <tr key={odgovor.id} className="hover:bg-amber-50 border-l-4 border-l-transparent hover:border-l-amber-500 transition-all duration-200">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center justify-center px-3 py-1 text-xs font-bold text-white bg-gradient-to-r from-gray-900 to-black rounded-lg">{odgovor.id}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <p className="text-sm text-gray-700">{formatDatumVreme(odgovor.datumvreme)}</p>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm text-gray-900 font-medium truncate max-w-[250px]">{truncateText(odgovor.dijalog, 80)}</p>
@@ -233,7 +250,8 @@ export default function VapiOdgovorPage() {
               <div key={odgovor.id} className="p-4 hover:bg-amber-50 border-l-4 border-l-transparent hover:border-l-amber-500 transition-all duration-200">
                 <div className="mb-3">
                   <span className="inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold text-white bg-gradient-to-r from-gray-900 to-black rounded-lg mb-1">ID: {odgovor.id}</span>
-                  <p className="text-sm font-medium text-gray-900">{truncateText(odgovor.dijalog, 100)}</p>
+                  <p className="text-xs text-gray-500">{formatDatumVreme(odgovor.datumvreme)}</p>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{truncateText(odgovor.dijalog, 100)}</p>
                   <p className="text-xs text-gray-500 mt-1">Ocena: {odgovor.ocena_ai || '-'}</p>
                   <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
                     <Bot className="w-3.5 h-3.5" />
@@ -272,6 +290,18 @@ export default function VapiOdgovorPage() {
               </div>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
+              {editingOdgovor && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Datum i vreme upisa</label>
+                  <input
+                    type="text"
+                    value={formatDatumVreme(editingOdgovor.datumvreme)}
+                    readOnly
+                    className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-600"
+                  />
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Dijalog *</label>
                 <textarea

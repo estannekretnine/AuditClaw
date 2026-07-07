@@ -2,45 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getVapiWebhookSecret } from '@/lib/vapi/server'
 import { analyzeVapiCallTranscript } from '@/lib/vapi/analyze-call'
+import { extractVapiCallDialog, extractVapiCallSummary } from '@/lib/vapi/extract-transcript'
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) return null
   return createClient(url, key)
-}
-
-function extractTranscript(payload: Record<string, unknown>): string {
-  if (typeof payload.transcript === 'string' && payload.transcript.trim()) {
-    return payload.transcript
-  }
-
-  if (typeof payload.summary === 'string' && payload.summary.trim()) {
-    return payload.summary
-  }
-
-  const messages = payload.messages
-  if (Array.isArray(messages)) {
-    return messages
-      .map((msg) => {
-        if (!msg || typeof msg !== 'object') return ''
-        const record = msg as Record<string, unknown>
-        const role = typeof record.role === 'string' ? record.role : 'unknown'
-        const content =
-          typeof record.content === 'string'
-            ? record.content
-            : typeof record.message === 'string'
-              ? record.message
-              : typeof record.text === 'string'
-                ? record.text
-                : ''
-        return content ? `${role}: ${content}` : ''
-      })
-      .filter(Boolean)
-      .join('\n')
-  }
-
-  return ''
 }
 
 function resolveAssistantDbId(
@@ -83,9 +51,10 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = (await request.json()) as Record<string, unknown>
-    const messageType = typeof payload.message === 'object' && payload.message !== null
-      ? (payload.message as Record<string, unknown>).type
-      : payload.type
+    const messageType =
+      typeof payload.message === 'object' && payload.message !== null
+        ? (payload.message as Record<string, unknown>).type
+        : payload.type
 
     if (messageType !== 'end-of-call-report') {
       return NextResponse.json({ received: true })
@@ -96,8 +65,8 @@ export async function POST(request: NextRequest) {
         ? (payload.message as Record<string, unknown>)
         : payload
 
-    const transcript = extractTranscript(report)
-    if (!transcript.trim()) {
+    const dijalog = extractVapiCallDialog(report)
+    if (!dijalog.trim()) {
       return NextResponse.json({ received: true, skipped: 'empty transcript' })
     }
 
@@ -112,14 +81,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
     }
 
-    const analysis = await analyzeVapiCallTranscript(transcript)
+    const { data: assistant } = await supabase
+      .from('vapi_assistants')
+      .select('opis_servisa, System_Prompt')
+      .eq('id', assistantDbId)
+      .single()
+
+    const summary = extractVapiCallSummary(report)
+    const analysis = await analyzeVapiCallTranscript(dijalog, {
+      opisServisa: assistant?.opis_servisa,
+      systemPrompt: assistant?.System_Prompt,
+      summary,
+    })
 
     const { error } = await supabase.from('vapi_odgovor').insert([
       {
-        dijalog: transcript,
+        dijalog,
         obrazlozenjeocene_ai: analysis?.obrazlozenjeocene_ai || null,
         ocena_ai: analysis?.ocena_ai || null,
         assistant_id: assistantDbId,
+        datumvreme: new Date().toISOString(),
       },
     ])
 
