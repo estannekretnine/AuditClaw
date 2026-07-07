@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Vapi from '@vapi-ai/web'
-import DailyIframe from '@daily-co/daily-js'
+import DailyIframe, { type DailyCall } from '@daily-co/daily-js'
 import { Bot, Mic, PhoneOff, X } from 'lucide-react'
 
 export interface VapiStartConfig {
@@ -54,8 +54,62 @@ function isDeviceInUseMessage(message: string): boolean {
   return lower.includes('in use') || lower.includes('notreadable') || lower.includes('not allowed')
 }
 
+function releaseAllParticipantTracks(daily: DailyCall): void {
+  try {
+    const participants = daily.participants()
+    for (const participant of Object.values(participants)) {
+      const tracks = participant.tracks
+      if (!tracks) continue
+      for (const trackEntry of Object.values(tracks)) {
+        const mediaTrack = trackEntry?.persistentTrack ?? trackEntry?.track
+        mediaTrack?.stop?.()
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    daily.localAudio()?.track?.stop()
+    daily.localVideo()?.track?.stop()
+  } catch {
+    // ignore
+  }
+}
+
+async function releaseDailyCall(daily: DailyCall): Promise<void> {
+  try {
+    await daily.setLocalAudio(false)
+  } catch {
+    // ignore
+  }
+  try {
+    await daily.setLocalVideo(false)
+  } catch {
+    // ignore
+  }
+
+  releaseAllParticipantTracks(daily)
+
+  try {
+    await daily.leave()
+  } catch {
+    // ignore
+  }
+  try {
+    await daily.destroy()
+  } catch {
+    // ignore
+  }
+}
+
 async function forceReleaseMediaDevices(vapi: Vapi | null): Promise<void> {
   if (vapi) {
+    const daily = vapi.getDailyCallObject()
+    if (daily) {
+      await releaseDailyCall(daily)
+    }
+
     try {
       vapi.end()
     } catch {
@@ -67,34 +121,19 @@ async function forceReleaseMediaDevices(vapi: Vapi | null): Promise<void> {
       // ignore
     }
 
-    const daily = vapi.getDailyCallObject()
-    if (daily) {
-      try {
-        await daily.leave()
-      } catch {
-        // ignore
-      }
-      try {
-        await daily.destroy()
-      } catch {
-        // ignore
-      }
-    }
-
     vapi.removeAllListeners()
   }
 
   try {
     const existing = DailyIframe.getCallInstance()
     if (existing) {
-      await existing.leave()
-      await existing.destroy()
+      await releaseDailyCall(existing)
     }
   } catch {
     // ignore
   }
 
-  await new Promise((resolve) => setTimeout(resolve, 400))
+  await new Promise((resolve) => setTimeout(resolve, 500))
 }
 
 export function VapiCallModal({
@@ -132,28 +171,46 @@ export function VapiCallModal({
   }, [])
 
   const initVapi = useCallback((publicKey: string) => {
-    if (vapiRef.current) return vapiRef.current
-
-    const vapi = new Vapi(publicKey.trim(), undefined, {
-      alwaysIncludeMicInPermissionPrompt: true,
-    })
+    const vapi = new Vapi(
+      publicKey.trim(),
+      undefined,
+      { alwaysIncludeMicInPermissionPrompt: true },
+      { startAudioOff: false }
+    )
     vapiRef.current = vapi
     return vapi
+  }, [])
+
+  const disableLocalVideo = useCallback(async (vapi: Vapi) => {
+    const daily = vapi.getDailyCallObject()
+    if (!daily) return
+    try {
+      await daily.setLocalVideo(false)
+    } catch {
+      // ignore
+    }
+    try {
+      daily.localVideo()?.track?.stop()
+    } catch {
+      // ignore
+    }
   }, [])
 
   const attachVapiListeners = useCallback((vapi: Vapi) => {
     vapi.removeAllListeners()
 
-    vapi.on('call-start', () => {
+    vapi.on('call-start', async () => {
       hasStartedRef.current = true
       setIsConnected(true)
       setIsStarting(false)
+      await disableLocalVideo(vapi)
     })
 
-    vapi.on('call-start-success', () => {
+    vapi.on('call-start-success', async () => {
       hasStartedRef.current = true
       setIsConnected(true)
       setIsStarting(false)
+      await disableLocalVideo(vapi)
     })
 
     vapi.on('call-start-failed', async (event) => {
@@ -167,10 +224,11 @@ export function VapiCallModal({
       await cleanupCall()
     })
 
-    vapi.on('call-end', () => {
+    vapi.on('call-end', async () => {
       setIsConnected(false)
       setIsStarting(false)
       setCallEnded(true)
+      await cleanupCall()
     })
 
     vapi.on('error', async (event: unknown) => {
@@ -213,7 +271,7 @@ export function VapiCallModal({
         ])
       }
     })
-  }, [cleanupCall])
+  }, [cleanupCall, disableLocalVideo])
 
   useEffect(() => {
     if (!open) {
