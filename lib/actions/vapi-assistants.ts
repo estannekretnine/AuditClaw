@@ -13,6 +13,7 @@ import {
   validateVapiAssistant,
   createVapiWebCall,
   pushAssistantToVapi,
+  SYSTEM_PROMPT_VARIABLE,
 } from '@/lib/vapi/server'
 
 const PENDING_VAPI_ID = 'pending-sync'
@@ -167,6 +168,9 @@ export async function getVapiStartConfig(assistantDbId: number) {
       assistantId: assistant.assistant_id,
       publicKey,
       opisServisa: assistant.opis_servisa,
+      // Prava vrednost system prompta se šalje po pozivu preko variableValues
+      // (Vapi šablon `{{system_prompt}}`), bez prepisivanja deljenog asistenta.
+      variableValues: { [SYSTEM_PROMPT_VARIABLE]: assistant.System_Prompt || '' },
       webhookSynced: sync.ok,
       webhookWarning: sync.ok
         ? null

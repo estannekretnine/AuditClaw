@@ -35,15 +35,22 @@ interface VapiAssistantRemote {
   voice?: Record<string, unknown>
 }
 
-function getDefaultModelConfig(systemPrompt: string | null): Record<string, unknown> {
+// Ime dinamičke promenljive koja nosi system prompt po pozivu.
+// System poruka na Vapi platformi je šablon `{{system_prompt}}`, a prava
+// vrednost se šalje po pozivu preko assistantOverrides.variableValues.
+// Ovo je bezbedno za više paralelnih korisnika (ne prepisuje deljeni prompt).
+export const SYSTEM_PROMPT_VARIABLE = 'system_prompt'
+const SYSTEM_PROMPT_TEMPLATE = `{{${SYSTEM_PROMPT_VARIABLE}}}`
+
+function getDefaultModelConfig(): Record<string, unknown> {
   const provider = process.env.VAPI_DEFAULT_MODEL_PROVIDER?.trim() || 'openai'
   const model = process.env.VAPI_DEFAULT_MODEL?.trim() || 'gpt-4o'
 
-  const config: Record<string, unknown> = { provider, model }
-  if (systemPrompt?.trim()) {
-    config.messages = [{ role: 'system', content: systemPrompt.trim() }]
+  return {
+    provider,
+    model,
+    messages: [{ role: 'system', content: SYSTEM_PROMPT_TEMPLATE }],
   }
-  return config
 }
 
 function getDefaultVoiceConfig(): { ok: true; voice: Record<string, unknown> } | { ok: false; error: string } {
@@ -152,7 +159,7 @@ export async function createVapiAssistantOnPlatform(options: {
       },
       body: JSON.stringify({
         name: options.name.trim() || `AuditClaw #${options.assistantDbId}`,
-        model: getDefaultModelConfig(options.systemPrompt),
+        model: getDefaultModelConfig(),
         voice: voiceResult.voice,
         server: server.server,
         firstMessage: 'Zdravo! Kako vam mogu pomoći?',
@@ -206,8 +213,14 @@ export async function syncVapiAssistantConfig(options: {
   const existingModel =
     remote.data.model && typeof remote.data.model === 'object' ? { ...remote.data.model } : {}
 
-  if (options.systemPrompt?.trim()) {
-    existingModel.messages = [{ role: 'system', content: options.systemPrompt.trim() }]
+  // System poruka je uvek šablon `{{system_prompt}}` — prava vrednost prompta
+  // se šalje po pozivu preko variableValues (bezbedno za više korisnika).
+  existingModel.messages = [{ role: 'system', content: SYSTEM_PROMPT_TEMPLATE }]
+  if (!existingModel.provider) {
+    existingModel.provider = process.env.VAPI_DEFAULT_MODEL_PROVIDER?.trim() || 'openai'
+  }
+  if (!existingModel.model) {
+    existingModel.model = process.env.VAPI_DEFAULT_MODEL?.trim() || 'gpt-4o'
   }
 
   const patchBody: Record<string, unknown> = {
