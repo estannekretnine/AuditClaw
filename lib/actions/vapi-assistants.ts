@@ -9,6 +9,7 @@ import {
   getVapiPrivateKey,
   getVapiPublicKeyForCall,
   syncVapiAssistantConfig,
+  syncVapiAssistantWebhook,
   validateVapiAssistant,
   createVapiWebCall,
   pushAssistantToVapi,
@@ -148,13 +149,14 @@ export async function getVapiStartConfig(assistantDbId: number) {
     }
   }
 
-  const sync = await syncVapiAssistantConfig({
-    vapiAssistantId: assistant.assistant_id,
-    privateApiKey: privateKey,
-    assistantDbId: assistant.id,
-    name: assistant.opis_servisa,
-    systemPrompt: assistant.System_Prompt,
-  })
+  // Pri pokretanju poziva NE prepisujemo system prompt na Vapi platformi
+  // (to bi bilo nebezbedno kod više paralelnih korisnika). Prompt se
+  // postavlja jednom, pri čuvanju asistenta. Ovde samo osiguravamo webhook.
+  const sync = await syncVapiAssistantWebhook(
+    assistant.assistant_id,
+    privateKey,
+    assistant.id
+  )
   if (!sync.ok) {
     console.warn('Vapi webhook sync warning:', sync.error)
   }
@@ -165,7 +167,6 @@ export async function getVapiStartConfig(assistantDbId: number) {
       assistantId: assistant.assistant_id,
       publicKey,
       opisServisa: assistant.opis_servisa,
-      systemPrompt: assistant.System_Prompt,
       webhookSynced: sync.ok,
       webhookWarning: sync.ok
         ? null

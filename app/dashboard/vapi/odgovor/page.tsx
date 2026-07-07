@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { MessageCircle, Plus, Edit, Trash2, Bot, User } from 'lucide-react'
+import { MessageCircle, Plus, Edit, Trash2, Bot, User, Search } from 'lucide-react'
 import {
   getVapiOdgovori,
   createVapiOdgovor,
@@ -11,12 +11,6 @@ import {
 import { getVapiAssistants } from '@/lib/actions/vapi-assistants'
 import { getVapiUcenici } from '@/lib/actions/vapi-ucenik'
 import type { VapiOdgovor, VapiAssistant, VapiUcenik } from '@/lib/types/vapi'
-
-function truncateText(text: string | null, maxLength: number = 60): string {
-  if (!text) return '-'
-  if (text.length <= maxLength) return text
-  return `${text.slice(0, maxLength)}...`
-}
 
 function formatDatumVreme(value: string | null): string {
   if (!value) return '-'
@@ -55,6 +49,7 @@ export default function VapiOdgovorPage() {
   const [showForm, setShowForm] = useState(false)
   const [editingOdgovor, setEditingOdgovor] = useState<VapiOdgovor | null>(null)
   const [saving, setSaving] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const [formData, setFormData] = useState({
     dijalog: '',
@@ -162,6 +157,12 @@ export default function VapiOdgovorPage() {
     }
   }
 
+  const filteredOdgovori = (() => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return odgovori
+    return odgovori.filter((odgovor) => getUcenikLabel(odgovor).toLowerCase().includes(q))
+  })()
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -186,6 +187,19 @@ export default function VapiOdgovorPage() {
         </button>
       </div>
 
+      {odgovori.length > 0 && (
+        <div className="relative max-w-md">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Pretraga po učeniku..."
+            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+          />
+        </div>
+      )}
+
       {odgovori.length === 0 ? (
         <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-16 text-center">
           <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl flex items-center justify-center mx-auto mb-6">
@@ -209,15 +223,13 @@ export default function VapiOdgovorPage() {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">ID</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Datum i vreme</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Učenik</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Dijalog</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Ocena AI</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Obrazloženje</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Assistant</th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-white uppercase tracking-wider">Akcije</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {odgovori.map((odgovor) => (
+                {filteredOdgovori.map((odgovor) => (
                   <tr key={odgovor.id} className="hover:bg-amber-50 border-l-4 border-l-transparent hover:border-l-amber-500 transition-all duration-200">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center justify-center px-3 py-1 text-xs font-bold text-white bg-gradient-to-r from-gray-900 to-black rounded-lg">{odgovor.id}</span>
@@ -232,13 +244,7 @@ export default function VapiOdgovorPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm text-gray-900 font-medium truncate max-w-[250px]">{truncateText(odgovor.dijalog, 80)}</p>
-                    </td>
-                    <td className="px-6 py-4">
                       <p className="text-sm text-gray-500">{odgovor.ocena_ai || '-'}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-gray-500 truncate max-w-[200px]">{truncateText(odgovor.obrazlozenjeocene_ai)}</p>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5 text-sm text-gray-500">
@@ -269,16 +275,15 @@ export default function VapiOdgovorPage() {
           </div>
 
           <div className="md:hidden divide-y divide-gray-100">
-            {odgovori.map((odgovor) => (
+            {filteredOdgovori.map((odgovor) => (
               <div key={odgovor.id} className="p-4 hover:bg-amber-50 border-l-4 border-l-transparent hover:border-l-amber-500 transition-all duration-200">
                 <div className="mb-3">
                   <span className="inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold text-white bg-gradient-to-r from-gray-900 to-black rounded-lg mb-1">ID: {odgovor.id}</span>
                   <p className="text-xs text-gray-500">{formatDatumVreme(odgovor.datumvreme)}</p>
-                  <div className="flex items-center gap-1.5 text-xs text-gray-700 mt-1">
+                  <div className="flex items-center gap-1.5 text-sm text-gray-700 mt-1">
                     <User className="w-3.5 h-3.5 text-gray-400" />
                     {getUcenikLabel(odgovor)}
                   </div>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{truncateText(odgovor.dijalog, 100)}</p>
                   <p className="text-xs text-gray-500 mt-1">Ocena: {odgovor.ocena_ai || '-'}</p>
                   <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
                     <Bot className="w-3.5 h-3.5" />
@@ -302,6 +307,12 @@ export default function VapiOdgovorPage() {
               </div>
             ))}
           </div>
+
+          {filteredOdgovori.length === 0 && (
+            <div className="p-12 text-center">
+              <p className="text-gray-500">Nema rezultata za „{searchQuery}“</p>
+            </div>
+          )}
         </div>
       )}
 

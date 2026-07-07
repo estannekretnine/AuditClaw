@@ -11,7 +11,6 @@ export interface VapiStartConfig {
   assistantId: string
   publicKey: string
   opisServisa: string | null
-  systemPrompt?: string | null
   webhookSynced?: boolean
   webhookWarning?: string | null
 }
@@ -31,15 +30,43 @@ interface VapiCallModalProps {
 }
 
 function extractVapiError(event: unknown): string {
+  if (typeof event === 'string' && event.trim()) return event
   if (!event || typeof event !== 'object') return 'Greška pri audio pozivu.'
+
   const record = event as Record<string, unknown>
+
   if (typeof record.errorMsg === 'string' && record.errorMsg.trim()) return record.errorMsg
   if (typeof record.message === 'string' && record.message.trim()) return record.message
   if (typeof record.error === 'string' && record.error.trim()) return record.error
+
   if (record.error && typeof record.error === 'object') {
     const nested = record.error as Record<string, unknown>
-    if (typeof nested.message === 'string') return nested.message
+    if (typeof nested.message === 'string' && nested.message.trim()) return nested.message
+    if (typeof nested.msg === 'string' && nested.msg.trim()) return nested.msg
+    if (Array.isArray(nested.message)) {
+      const joined = nested.message.filter((m) => typeof m === 'string').join(' ')
+      if (joined.trim()) return joined
+    }
+    try {
+      const serialized = JSON.stringify(nested)
+      if (serialized && serialized !== '{}') return serialized.slice(0, 300)
+    } catch {
+      // ignore
+    }
   }
+
+  if (Array.isArray(record.message)) {
+    const joined = record.message.filter((m) => typeof m === 'string').join(' ')
+    if (joined.trim()) return joined
+  }
+
+  try {
+    const serialized = JSON.stringify(record)
+    if (serialized && serialized !== '{}') return serialized.slice(0, 300)
+  } catch {
+    // ignore
+  }
+
   return 'Greška pri audio pozivu.'
 }
 
@@ -341,12 +368,6 @@ export function VapiCallModal({
           assistantDbId: String(config.assistantDbId),
           ucenikid: selectedUcenikId,
         },
-      }
-
-      if (config.systemPrompt?.trim()) {
-        assistantOverrides.model = {
-          messages: [{ role: 'system', content: config.systemPrompt.trim() }],
-        }
       }
 
       await vapi.start(

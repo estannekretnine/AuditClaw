@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Users, Plus, Edit, Trash2 } from 'lucide-react'
+import { Users, Plus, Edit, Trash2, Search, ArrowUp, ArrowDown } from 'lucide-react'
 import {
   getVapiUcenici,
   createVapiUcenik,
@@ -17,6 +17,9 @@ export default function VapiUcenikPage() {
   const [showForm, setShowForm] = useState(false)
   const [editingUcenik, setEditingUcenik] = useState<VapiUcenik | null>(null)
   const [saving, setSaving] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState<'id' | 'name'>('id')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
 
   const [formData, setFormData] = useState({
     ime: '',
@@ -105,6 +108,49 @@ export default function VapiUcenikPage() {
     }
   }
 
+  const fullName = (u: VapiUcenik) => `${u.ime} ${u.prezime || ''}`.trim()
+
+  const displayedUcenici = (() => {
+    const q = searchQuery.trim().toLowerCase()
+    const filtered = q
+      ? ucenici.filter(
+          (u) =>
+            fullName(u).toLowerCase().includes(q) ||
+            (u.razred || '').toLowerCase().includes(q)
+        )
+      : [...ucenici]
+
+    filtered.sort((a, b) => {
+      let cmp = 0
+      if (sortBy === 'id') {
+        cmp = a.id - b.id
+      } else {
+        cmp = fullName(a).localeCompare(fullName(b), 'sr')
+      }
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+
+    return filtered
+  })()
+
+  const toggleSort = (field: 'id' | 'name') => {
+    if (sortBy === field) {
+      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortBy(field)
+      setSortDir('asc')
+    }
+  }
+
+  const SortIcon = ({ field }: { field: 'id' | 'name' }) => {
+    if (sortBy !== field) return null
+    return sortDir === 'asc' ? (
+      <ArrowUp className="w-3.5 h-3.5 inline ml-1" />
+    ) : (
+      <ArrowDown className="w-3.5 h-3.5 inline ml-1" />
+    )
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -118,7 +164,12 @@ export default function VapiUcenikPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Učenici</h2>
-          <p className="text-gray-500 mt-1">Upravljanje učenicima ({totalCount})</p>
+          <p className="text-gray-500 mt-1">
+            Ukupan broj učenika: <span className="font-semibold text-gray-900">{totalCount}</span>
+            {searchQuery.trim() && (
+              <span className="text-gray-400"> · prikazano {displayedUcenici.length}</span>
+            )}
+          </p>
         </div>
         <button
           onClick={handleAdd}
@@ -128,6 +179,44 @@ export default function VapiUcenikPage() {
           <span>Novi učenik</span>
         </button>
       </div>
+
+      {ucenici.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Pretraga po učeniku ili odeljenju..."
+              className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">Sortiraj:</span>
+            <button
+              onClick={() => toggleSort('id')}
+              className={`flex items-center gap-1 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                sortBy === 'id'
+                  ? 'bg-gray-900 text-white'
+                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              ID<SortIcon field="id" />
+            </button>
+            <button
+              onClick={() => toggleSort('name')}
+              className={`flex items-center gap-1 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                sortBy === 'name'
+                  ? 'bg-gray-900 text-white'
+                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Ime<SortIcon field="name" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {ucenici.length === 0 ? (
         <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-16 text-center">
@@ -149,8 +238,18 @@ export default function VapiUcenikPage() {
             <table className="min-w-full">
               <thead className="bg-gradient-to-r from-gray-900 to-black">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">ID</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Ime i prezime</th>
+                  <th
+                    onClick={() => toggleSort('id')}
+                    className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider cursor-pointer select-none hover:text-amber-300"
+                  >
+                    ID<SortIcon field="id" />
+                  </th>
+                  <th
+                    onClick={() => toggleSort('name')}
+                    className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider cursor-pointer select-none hover:text-amber-300"
+                  >
+                    Ime i prezime<SortIcon field="name" />
+                  </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Razred</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Razredni starešina</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Napomena</th>
@@ -158,7 +257,7 @@ export default function VapiUcenikPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {ucenici.map((ucenik) => (
+                {displayedUcenici.map((ucenik) => (
                   <tr key={ucenik.id} className="hover:bg-amber-50 border-l-4 border-l-transparent hover:border-l-amber-500 transition-all duration-200">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center justify-center px-3 py-1 text-xs font-bold text-white bg-gradient-to-r from-gray-900 to-black rounded-lg">{ucenik.id}</span>
@@ -198,7 +297,7 @@ export default function VapiUcenikPage() {
           </div>
 
           <div className="md:hidden divide-y divide-gray-100">
-            {ucenici.map((ucenik) => (
+            {displayedUcenici.map((ucenik) => (
               <div key={ucenik.id} className="p-4 hover:bg-amber-50 border-l-4 border-l-transparent hover:border-l-amber-500 transition-all duration-200">
                 <div className="mb-3">
                   <span className="inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold text-white bg-gradient-to-r from-gray-900 to-black rounded-lg mb-1">ID: {ucenik.id}</span>
@@ -228,6 +327,12 @@ export default function VapiUcenikPage() {
               </div>
             ))}
           </div>
+
+          {displayedUcenici.length === 0 && (
+            <div className="p-12 text-center">
+              <p className="text-gray-500">Nema rezultata za „{searchQuery}“</p>
+            </div>
+          )}
         </div>
       )}
 
