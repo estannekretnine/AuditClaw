@@ -8,13 +8,16 @@ import type { VapiAssistant, VapiAssistantInsert } from '@/lib/types/vapi'
 import {
   getVapiPrivateKey,
   getVapiPublicKeyForCall,
-  syncVapiAssistantWebhook,
+  syncVapiAssistantConfig,
   validateVapiAssistant,
   createVapiWebCall,
+  pushAssistantToVapi,
 } from '@/lib/vapi/server'
 
+const PENDING_VAPI_ID = 'pending-sync'
+
 const vapiAssistantSchema = z.object({
-  assistant_id: z.string().min(1, 'Assistant ID je obavezan'),
+  assistant_id: z.string().optional().nullable(),
   vapi_api_key: z.string().optional().nullable(),
   vapi_public_key: z.string().optional().nullable(),
   opis_servisa: z.string().optional().nullable(),
@@ -36,12 +39,35 @@ function parseAssistantFormData(formData: FormData) {
   }
 
   return {
-    assistant_id: ((formData.get('assistant_id') as string) || '').trim(),
+    assistant_id: ((formData.get('assistant_id') as string) || '').trim() || null,
     vapi_api_key: trim(formData.get('vapi_api_key')),
     vapi_public_key: trim(formData.get('vapi_public_key')),
     opis_servisa: trim(formData.get('opis_servisa')),
     System_Prompt: trim(formData.get('System_Prompt')),
   }
+}
+
+async function syncAssistantWithVapi(
+  assistant: VapiAssistant,
+  privateKey: string
+): Promise<string | null> {
+  if (assistant.assistant_id === PENDING_VAPI_ID) {
+    return 'Asistent još nije povezan sa Vapi platformom.'
+  }
+
+  const sync = await syncVapiAssistantConfig({
+    vapiAssistantId: assistant.assistant_id,
+    privateApiKey: privateKey,
+    assistantDbId: assistant.id,
+    name: assistant.opis_servisa,
+    systemPrompt: assistant.System_Prompt,
+  })
+
+  if (!sync.ok) {
+    return sync.error || 'Sinhronizacija sa Vapi platformom nije uspela.'
+  }
+
+  return null
 }
 
 export async function getVapiAssistants(
@@ -91,15 +117,15 @@ export async function getVapiStartConfig(assistantDbId: number) {
   }
 
   const assistant = result.data
-  if (!assistant.assistant_id) {
-    return { data: null, error: 'Assistant ID nije podešen.' }
+  if (!assistant.assistant_id || assistant.assistant_id === PENDING_VAPI_ID) {
+    return { data: null, error: 'Asistent još nije povezan sa Vapi platformom. Sačuvajte ga ponovo iz forme.' }
   }
 
   const privateKey = getVapiPrivateKey(assistant.vapi_api_key)
   if (!privateKey) {
     return {
       data: null,
-      error: 'vapi_api_key (private key) nije podešen za ovog asistenta. Dodajte ga u formi za izmenu.',
+      error: 'Vapi Private key nije podešen. Dodajte ga u formi ili VAPI_API_KEY u Vercel env.',
     }
   }
 
@@ -113,15 +139,17 @@ export async function getVapiStartConfig(assistantDbId: number) {
     return {
       data: null,
       error:
-        'Vapi Public key nije podešen. Dodajte vapi_public_key u formi asistenta ili NEXT_PUBLIC_VAPI_PUBLIC_KEY u env.',
+        'Vapi Public key nije podešen. Dodajte ga u formi ili NEXT_PUBLIC_VAPI_PUBLIC_KEY u Vercel env.',
     }
   }
 
-  const sync = await syncVapiAssistantWebhook(
-    assistant.assistant_id,
-    privateKey,
-    assistant.id
-  )
+  const sync = await syncVapiAssistantConfig({
+    vapiAssistantId: assistant.assistant_id,
+    privateApiKey: privateKey,
+    assistantDbId: assistant.id,
+    name: assistant.opis_servisa,
+    systemPrompt: assistant.System_Prompt,
+  })
   if (!sync.ok) {
     console.warn('Vapi webhook sync warning:', sync.error)
   }
@@ -130,7 +158,13 @@ export async function getVapiStartConfig(assistantDbId: number) {
     data: {
       assistantDbId: assistant.id,
       assistantId: assistant.assistant_id,
+      publicKey,
       opisServisa: assistant.opis_servisa,
+      webhookSynced: sync.ok,
+      webhookWarning: sync.ok
+        ? null
+        : sync.error ||
+          'Webhook nije sinhronizovan. Proverite VAPI_WEBHOOK_SECRET u Vercel env.',
     },
     error: null,
   }
@@ -182,16 +216,29 @@ export async function startVapiWebCall(assistantDbId: number) {
 
 export async function createVapiAssistant(formData: FormData) {
   const access = await requireAdminAccess()
-  if (access.error) return { data: null, error: access.error }
+  if (access.error) return { data: null, error: access.error, vapiSyncWarning: null }
 
   const rawData = parseAssistantFormData(formData)
   const result = vapiAssistantSchema.safeParse(rawData)
   if (!result.success) {
-    return { data: null, error: result.error.errors[0].message }
+    return { data: null, error: result.error.errors[0].message, vapiSyncWarning: null }
+  }
+
+  const privateKey = getVapiPrivateKey(result.data.vapi_api_key)
+  if (!privateKey) {
+    return {
+      data: null,
+      error: 'Vapi Private key nije podešen. Dodajte ga u formi ili VAPI_API_KEY u Vercel env.',
+      vapiSyncWarning: null,
+    }
   }
 
   const supabase = createAdminClient()
-  const assistantData: VapiAssistantInsert = result.data
+  const vapiIdFromForm = result.data.assistant_id?.trim() || null
+  const assistantData: VapiAssistantInsert = {
+    ...result.data,
+    assistant_id: vapiIdFromForm || PENDING_VAPI_ID,
+  }
 
   const { data, error } = await supabase
     .from('vapi_assistants')
@@ -201,66 +248,108 @@ export async function createVapiAssistant(formData: FormData) {
 
   if (error) {
     console.error('Error creating vapi assistant:', error)
-    return { data: null, error: error.message }
+    return { data: null, error: error.message, vapiSyncWarning: null }
   }
 
   const created = data as VapiAssistant
-  const privateKey = getVapiPrivateKey(created.vapi_api_key)
-  if (privateKey && created.assistant_id) {
-    const sync = await syncVapiAssistantWebhook(
-      created.assistant_id,
-      privateKey,
-      created.id
-    )
-    if (!sync.ok) {
-      console.warn('Vapi webhook sync after create:', sync.error)
+  let vapiSyncWarning: string | null = null
+
+  const push = await pushAssistantToVapi({
+    vapiAssistantId: vapiIdFromForm,
+    privateApiKey: privateKey,
+    assistantDbId: created.id,
+    name: created.opis_servisa,
+    systemPrompt: created.System_Prompt,
+  })
+
+  if (!push.ok) {
+    vapiSyncWarning = push.error || 'Sinhronizacija sa Vapi platformom nije uspela.'
+  } else if (!vapiIdFromForm && push.assistantId) {
+    const { error: updateError } = await supabase
+      .from('vapi_assistants')
+      .update({ assistant_id: push.assistantId })
+      .eq('id', created.id)
+
+    if (updateError) {
+      vapiSyncWarning = `Asistent je kreiran na Vapi (${push.assistantId}), ali ID nije sačuvan u bazi.`
+    } else {
+      created.assistant_id = push.assistantId
     }
+  } else if (vapiIdFromForm) {
+    vapiSyncWarning = await syncAssistantWithVapi(created, privateKey)
   }
 
   revalidatePath('/dashboard/vapi/assistants')
-  return { data: data as VapiAssistant, error: null }
+  return { data: created, error: null, vapiSyncWarning }
 }
 
 export async function updateVapiAssistant(id: number, formData: FormData) {
   const access = await requireAdminAccess()
-  if (access.error) return { data: null, error: access.error }
+  if (access.error) return { data: null, error: access.error, vapiSyncWarning: null }
 
   const rawData = parseAssistantFormData(formData)
   const result = vapiAssistantSchema.safeParse(rawData)
   if (!result.success) {
-    return { data: null, error: result.error.errors[0].message }
+    return { data: null, error: result.error.errors[0].message, vapiSyncWarning: null }
+  }
+
+  const privateKey = getVapiPrivateKey(result.data.vapi_api_key)
+  if (!privateKey) {
+    return {
+      data: null,
+      error: 'Vapi Private key nije podešen. Dodajte ga u formi ili VAPI_API_KEY u Vercel env.',
+      vapiSyncWarning: null,
+    }
   }
 
   const supabase = createAdminClient()
+  const updatePayload: VapiAssistantInsert = {
+    ...result.data,
+    assistant_id: result.data.assistant_id?.trim() || PENDING_VAPI_ID,
+  }
 
   const { data, error } = await supabase
     .from('vapi_assistants')
-    .update(result.data)
+    .update(updatePayload)
     .eq('id', id)
     .select()
     .single()
 
   if (error) {
     console.error('Error updating vapi assistant:', error)
-    return { data: null, error: error.message }
+    return { data: null, error: error.message, vapiSyncWarning: null }
   }
 
   const updated = data as VapiAssistant
-  const privateKey = getVapiPrivateKey(updated.vapi_api_key)
-  if (privateKey && updated.assistant_id) {
-    const sync = await syncVapiAssistantWebhook(
-      updated.assistant_id,
-      privateKey,
-      updated.id
-    )
-    if (!sync.ok) {
-      console.warn('Vapi webhook sync after update:', sync.error)
+  let vapiSyncWarning: string | null = null
+
+  const vapiId = updated.assistant_id === PENDING_VAPI_ID ? null : updated.assistant_id
+  const push = await pushAssistantToVapi({
+    vapiAssistantId: vapiId,
+    privateApiKey: privateKey,
+    assistantDbId: updated.id,
+    name: updated.opis_servisa,
+    systemPrompt: updated.System_Prompt,
+  })
+
+  if (!push.ok) {
+    vapiSyncWarning = push.error || 'Sinhronizacija sa Vapi platformom nije uspela.'
+  } else if (!vapiId && push.assistantId) {
+    const { error: updateError } = await supabase
+      .from('vapi_assistants')
+      .update({ assistant_id: push.assistantId })
+      .eq('id', updated.id)
+
+    if (updateError) {
+      vapiSyncWarning = `Asistent je sinhronizovan na Vapi (${push.assistantId}), ali ID nije sačuvan u bazi.`
+    } else {
+      updated.assistant_id = push.assistantId
     }
   }
 
   revalidatePath('/dashboard/vapi/assistants')
   revalidatePath('/dashboard/vapi/odgovor')
-  return { data: data as VapiAssistant, error: null }
+  return { data: updated, error: null, vapiSyncWarning }
 }
 
 export async function deleteVapiAssistant(id: number) {

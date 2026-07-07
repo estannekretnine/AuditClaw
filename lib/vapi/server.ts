@@ -28,6 +28,242 @@ interface VapiApiResult {
   error: string | null
 }
 
+interface VapiAssistantRemote {
+  id?: string
+  name?: string
+  model?: Record<string, unknown>
+  voice?: Record<string, unknown>
+}
+
+function getDefaultModelConfig(systemPrompt: string | null): Record<string, unknown> {
+  const provider = process.env.VAPI_DEFAULT_MODEL_PROVIDER?.trim() || 'openai'
+  const model = process.env.VAPI_DEFAULT_MODEL?.trim() || 'gpt-4o'
+
+  const config: Record<string, unknown> = { provider, model }
+  if (systemPrompt?.trim()) {
+    config.messages = [{ role: 'system', content: systemPrompt.trim() }]
+  }
+  return config
+}
+
+function getDefaultVoiceConfig(): { ok: true; voice: Record<string, unknown> } | { ok: false; error: string } {
+  const voiceId = process.env.VAPI_DEFAULT_VOICE_ID?.trim()
+  if (!voiceId) {
+    return {
+      ok: false,
+      error:
+        'VAPI_DEFAULT_VOICE_ID nije podešen u env. Administrator ga jednom postavlja u Vercel (Vapi glas za nove asistente).',
+    }
+  }
+
+  const provider = process.env.VAPI_DEFAULT_VOICE_PROVIDER?.trim() || '11labs'
+  return { ok: true, voice: { provider, voiceId } }
+}
+
+function buildServerPayload(assistantDbId: number, webhookSecret: string) {
+  const serverUrl = getVapiWebhookUrl(assistantDbId)
+  return {
+    server: {
+      url: serverUrl,
+      secret: webhookSecret,
+      timeoutSeconds: 20,
+    },
+    serverUrl,
+    serverUrlSecret: webhookSecret,
+  }
+}
+
+async function patchVapiAssistant(
+  vapiAssistantId: string,
+  privateApiKey: string,
+  body: Record<string, unknown>
+): Promise<VapiApiResult> {
+  const response = await fetch(`${VAPI_API_BASE}/assistant/${vapiAssistantId}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${privateApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+
+  if (response.ok) {
+    return { ok: true, error: null }
+  }
+
+  const text = await response.text()
+  return { ok: false, error: `Vapi API greška (${response.status}): ${text.slice(0, 300)}` }
+}
+
+export async function fetchVapiAssistant(
+  vapiAssistantId: string,
+  privateApiKey: string
+): Promise<{ ok: boolean; error: string | null; data: VapiAssistantRemote | null }> {
+  try {
+    const response = await fetch(`${VAPI_API_BASE}/assistant/${vapiAssistantId}`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${privateApiKey}` },
+    })
+
+    if (!response.ok) {
+      const body = await response.text()
+      return {
+        ok: false,
+        error: `Vapi API greška (${response.status}): ${body.slice(0, 200)}`,
+        data: null,
+      }
+    }
+
+    const data = (await response.json()) as VapiAssistantRemote
+    return { ok: true, error: null, data }
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'Greška pri učitavanju Vapi asistenta',
+      data: null,
+    }
+  }
+}
+
+export async function createVapiAssistantOnPlatform(options: {
+  privateApiKey: string
+  assistantDbId: number
+  name: string
+  systemPrompt: string | null
+}): Promise<{ ok: boolean; error: string | null; assistantId: string | null }> {
+  const webhookSecret = getVapiWebhookSecret()
+  if (!webhookSecret) {
+    return { ok: false, error: 'VAPI_WEBHOOK_SECRET nije konfigurisan u env varijablama.', assistantId: null }
+  }
+
+  const voiceResult = getDefaultVoiceConfig()
+  if (!voiceResult.ok) {
+    return { ok: false, error: voiceResult.error, assistantId: null }
+  }
+
+  const server = buildServerPayload(options.assistantDbId, webhookSecret)
+
+  try {
+    const response = await fetch(`${VAPI_API_BASE}/assistant`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${options.privateApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: options.name.trim() || `AuditClaw #${options.assistantDbId}`,
+        model: getDefaultModelConfig(options.systemPrompt),
+        voice: voiceResult.voice,
+        server: server.server,
+        firstMessage: 'Zdravo! Kako vam mogu pomoći?',
+      }),
+    })
+
+    const body = (await response.json().catch(() => ({}))) as Record<string, unknown>
+
+    if (!response.ok) {
+      const message =
+        typeof body.message === 'string'
+          ? body.message
+          : typeof body.error === 'string'
+            ? body.error
+            : JSON.stringify(body)
+      return { ok: false, error: `Vapi greška (${response.status}): ${message}`, assistantId: null }
+    }
+
+    const assistantId = typeof body.id === 'string' ? body.id : null
+    if (!assistantId) {
+      return { ok: false, error: 'Vapi nije vratio ID novog asistenta.', assistantId: null }
+    }
+
+    return { ok: true, error: null, assistantId }
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'Greška pri kreiranju Vapi asistenta',
+      assistantId: null,
+    }
+  }
+}
+
+export async function syncVapiAssistantConfig(options: {
+  vapiAssistantId: string
+  privateApiKey: string
+  assistantDbId: number
+  name: string | null
+  systemPrompt: string | null
+}): Promise<VapiApiResult> {
+  const webhookSecret = getVapiWebhookSecret()
+  if (!webhookSecret) {
+    return { ok: false, error: 'VAPI_WEBHOOK_SECRET nije konfigurisan u env varijablama.' }
+  }
+
+  const remote = await fetchVapiAssistant(options.vapiAssistantId, options.privateApiKey)
+  if (!remote.ok || !remote.data) {
+    return { ok: false, error: remote.error || 'Asistent nije pronađen na Vapi platformi.' }
+  }
+
+  const existingModel =
+    remote.data.model && typeof remote.data.model === 'object' ? { ...remote.data.model } : {}
+
+  if (options.systemPrompt?.trim()) {
+    existingModel.messages = [{ role: 'system', content: options.systemPrompt.trim() }]
+  }
+
+  const patchBody: Record<string, unknown> = {
+    model: existingModel,
+    server: buildServerPayload(options.assistantDbId, webhookSecret).server,
+  }
+
+  if (options.name?.trim()) {
+    patchBody.name = options.name.trim()
+  }
+
+  const primary = await patchVapiAssistant(options.vapiAssistantId, options.privateApiKey, patchBody)
+  if (primary.ok) {
+    return primary
+  }
+
+  const legacy = await patchVapiAssistant(options.vapiAssistantId, options.privateApiKey, {
+    model: existingModel,
+    serverUrl: buildServerPayload(options.assistantDbId, webhookSecret).serverUrl,
+    serverUrlSecret: webhookSecret,
+  })
+
+  return legacy
+}
+
+export async function pushAssistantToVapi(options: {
+  vapiAssistantId: string | null
+  privateApiKey: string
+  assistantDbId: number
+  name: string | null
+  systemPrompt: string | null
+}): Promise<{ ok: boolean; error: string | null; assistantId: string | null }> {
+  if (!options.vapiAssistantId?.trim()) {
+    return createVapiAssistantOnPlatform({
+      privateApiKey: options.privateApiKey,
+      assistantDbId: options.assistantDbId,
+      name: options.name?.trim() || `AuditClaw #${options.assistantDbId}`,
+      systemPrompt: options.systemPrompt,
+    })
+  }
+
+  const sync = await syncVapiAssistantConfig({
+    vapiAssistantId: options.vapiAssistantId.trim(),
+    privateApiKey: options.privateApiKey,
+    assistantDbId: options.assistantDbId,
+    name: options.name,
+    systemPrompt: options.systemPrompt,
+  })
+
+  return {
+    ok: sync.ok,
+    error: sync.error,
+    assistantId: options.vapiAssistantId.trim(),
+  }
+}
+
 export async function validateVapiAssistant(
   vapiAssistantId: string,
   privateApiKey: string
@@ -143,38 +379,11 @@ export async function syncVapiAssistantWebhook(
   privateApiKey: string,
   assistantDbId: number
 ): Promise<VapiApiResult> {
-  const webhookSecret = getVapiWebhookSecret()
-  if (!webhookSecret) {
-    return { ok: false, error: 'VAPI_WEBHOOK_SECRET nije konfigurisan u env varijablama.' }
-  }
-
-  const serverUrl = getVapiWebhookUrl(assistantDbId)
-
-  try {
-    const response = await fetch(`${VAPI_API_BASE}/assistant/${vapiAssistantId}`, {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${privateApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        serverUrl,
-        serverUrlSecret: webhookSecret,
-      }),
-    })
-
-    if (!response.ok) {
-      const body = await response.text()
-      console.error('Vapi webhook sync failed:', response.status, body)
-      return { ok: false, error: `Vapi API greška (${response.status}): ${body.slice(0, 200)}` }
-    }
-
-    return { ok: true, error: null }
-  } catch (error) {
-    console.error('Vapi webhook sync error:', error)
-    return {
-      ok: false,
-      error: error instanceof Error ? error.message : 'Nepoznata greška pri sinhronizaciji webhook-a',
-    }
-  }
+  return syncVapiAssistantConfig({
+    vapiAssistantId,
+    privateApiKey,
+    assistantDbId,
+    name: null,
+    systemPrompt: null,
+  })
 }

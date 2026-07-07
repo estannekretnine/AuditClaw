@@ -112,6 +112,9 @@ export default function VapiAssistantsPage() {
         setShowForm(false)
         resetForm()
         await loadAssistants()
+        if (result.vapiSyncWarning) {
+          alert('Asistent je sačuvan, ali Vapi sinhronizacija nije uspela:\n\n' + result.vapiSyncWarning)
+        }
       } else {
         alert('Greška: ' + result.error)
       }
@@ -169,9 +172,10 @@ export default function VapiAssistantsPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Vapi Assistants</h2>
-          <p className="text-gray-500 mt-1">Upravljanje Vapi asistentima ({totalCount})</p>
-          <p className="text-xs text-gray-400 mt-1 max-w-xl">
-            Vapi API ključevi se kopiraju iz dashboard.vapi.ai → API Keys (Private za server, Public za web poziv).
+          <p className="text-gray-500 mt-1">Upravljanje glasovnim asistentima ({totalCount})</p>
+          <p className="text-xs text-gray-400 mt-1 max-w-2xl">
+            Sve se automatski sinhronizuje sa Vapi preko API-ja — korisnici ne ulaze u Vapi dashboard i ne klikću Publish.
+            API ključevi se jednom postavljaju u Vercel env ili u formi ispod.
           </p>
         </div>
         <button
@@ -331,36 +335,46 @@ export default function VapiAssistantsPage() {
               </div>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-900 space-y-2">
-                <p className="font-semibold">Šta su Vapi API ključevi?</p>
-                <p className="text-xs text-amber-800 leading-relaxed">
-                  U Vapi dashboardu (API Keys) postoje <strong>dva različita</strong> ključa. Oba su obavezna:
+              <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-sm text-green-900 space-y-2">
+                <p className="font-semibold">Bez Vapi dashboarda</p>
+                <p className="text-xs text-green-800 leading-relaxed">
+                  Unesite opis i System Prompt, sačuvajte — AuditClaw automatski kreira ili ažurira asistenta na Vapi platformi
+                  (webhook, prompt). <strong>Publish u Vapi dashboardu nije potreban.</strong>
                 </p>
-                <ul className="text-xs text-amber-800 space-y-1 list-disc pl-4">
-                  <li><strong>Private Key</strong> — tajni server ključ za webhook i proveru asistenta (nikad u browseru).</li>
-                  <li><strong>Public Key</strong> — javni ključ za pokretanje web glasovnog poziva (dugme Započni).</li>
-                </ul>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Assistant ID *</label>
-                <input
-                  type="text"
-                  value={formData.assistant_id}
-                  onChange={(e) => setFormData({ ...formData, assistant_id: e.target.value })}
-                  required
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                  placeholder="UUID asistenta iz Vapi dashboarda"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Vapi Dashboard → Assistants → izaberi asistenta → kopiraj ID.
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-900 space-y-2">
+                <p className="font-semibold">API ključevi (jednom, opciono u formi)</p>
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  Ako su <code className="bg-amber-100 px-1 rounded">VAPI_API_KEY</code>,{' '}
+                  <code className="bg-amber-100 px-1 rounded">NEXT_PUBLIC_VAPI_PUBLIC_KEY</code> i{' '}
+                  <code className="bg-amber-100 px-1 rounded">VAPI_WEBHOOK_SECRET</code> u Vercel env,
+                  polja za ključeve mogu ostati prazna.
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Vapi Assistant ID
+                  <span className="ml-2 text-xs font-normal text-gray-500">(opciono — automatski se kreira)</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.assistant_id}
+                  onChange={(e) => setFormData({ ...formData, assistant_id: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  placeholder="Ostavite prazno — AuditClaw kreira asistenta na Vapi"
+                  readOnly={!!editingAssistant}
+                />
+                {editingAssistant && (
+                  <p className="text-xs text-gray-500 mt-1">ID se automatski dodeljuje pri kreiranju.</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Vapi Private API Key
-                  <span className="ml-2 text-xs font-normal text-gray-500">(server — webhook)</span>
+                  <span className="ml-2 text-xs font-normal text-gray-500">(server)</span>
                 </label>
                 <input
                   type="text"
