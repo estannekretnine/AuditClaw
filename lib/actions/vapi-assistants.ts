@@ -5,6 +5,11 @@ import { getCurrentUser } from '@/lib/actions/auth'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import type { VapiAssistant, VapiAssistantInsert } from '@/lib/types/vapi'
+import {
+  getVapiPrivateKey,
+  getVapiPublicKey,
+  syncVapiAssistantWebhook,
+} from '@/lib/vapi/server'
 
 const vapiAssistantSchema = z.object({
   assistant_id: z.string().min(1, 'Assistant ID je obavezan'),
@@ -67,6 +72,52 @@ export async function getVapiAssistantById(id: number) {
   return { data: data as VapiAssistant, error: null }
 }
 
+export async function getVapiStartConfig(assistantDbId: number) {
+  const access = await requireAdminAccess()
+  if (access.error) return { data: null, error: access.error }
+
+  const publicKey = getVapiPublicKey()
+  if (!publicKey) {
+    return {
+      data: null,
+      error: 'NEXT_PUBLIC_VAPI_PUBLIC_KEY nije konfigurisan. Dodajte Public Key iz Vapi dashboarda u env varijable.',
+    }
+  }
+
+  const result = await getVapiAssistantById(assistantDbId)
+  if (result.error || !result.data) {
+    return { data: null, error: result.error || 'Asistent nije pronađen.' }
+  }
+
+  const assistant = result.data
+  if (!assistant.assistant_id) {
+    return { data: null, error: 'Assistant ID nije podešen.' }
+  }
+
+  const privateKey = getVapiPrivateKey(assistant.vapi_api_key)
+  if (privateKey) {
+    const sync = await syncVapiAssistantWebhook(
+      assistant.assistant_id,
+      privateKey,
+      assistant.id
+    )
+    if (!sync.ok) {
+      console.warn('Vapi webhook sync warning:', sync.error)
+    }
+  }
+
+  return {
+    data: {
+      assistantDbId: assistant.id,
+      assistantId: assistant.assistant_id,
+      publicKey,
+      systemPrompt: assistant.System_Prompt,
+      opisServisa: assistant.opis_servisa,
+    },
+    error: null,
+  }
+}
+
 export async function createVapiAssistant(formData: FormData) {
   const access = await requireAdminAccess()
   if (access.error) return { data: null, error: access.error }
@@ -89,6 +140,19 @@ export async function createVapiAssistant(formData: FormData) {
   if (error) {
     console.error('Error creating vapi assistant:', error)
     return { data: null, error: error.message }
+  }
+
+  const created = data as VapiAssistant
+  const privateKey = getVapiPrivateKey(created.vapi_api_key)
+  if (privateKey && created.assistant_id) {
+    const sync = await syncVapiAssistantWebhook(
+      created.assistant_id,
+      privateKey,
+      created.id
+    )
+    if (!sync.ok) {
+      console.warn('Vapi webhook sync after create:', sync.error)
+    }
   }
 
   revalidatePath('/dashboard/vapi/assistants')
@@ -117,6 +181,19 @@ export async function updateVapiAssistant(id: number, formData: FormData) {
   if (error) {
     console.error('Error updating vapi assistant:', error)
     return { data: null, error: error.message }
+  }
+
+  const updated = data as VapiAssistant
+  const privateKey = getVapiPrivateKey(updated.vapi_api_key)
+  if (privateKey && updated.assistant_id) {
+    const sync = await syncVapiAssistantWebhook(
+      updated.assistant_id,
+      privateKey,
+      updated.id
+    )
+    if (!sync.ok) {
+      console.warn('Vapi webhook sync after update:', sync.error)
+    }
   }
 
   revalidatePath('/dashboard/vapi/assistants')

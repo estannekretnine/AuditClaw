@@ -1,14 +1,16 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Bot, Plus, Edit, Trash2, Key } from 'lucide-react'
+import { Bot, Plus, Edit, Trash2, Key, Play } from 'lucide-react'
 import {
   getVapiAssistants,
   createVapiAssistant,
   updateVapiAssistant,
   deleteVapiAssistant,
+  getVapiStartConfig,
 } from '@/lib/actions/vapi-assistants'
 import type { VapiAssistant } from '@/lib/types/vapi'
+import { VapiCallModal, type VapiStartConfig } from '@/components/admin/vapi-call-modal'
 
 function maskApiKey(key: string | null): string {
   if (!key) return '-'
@@ -29,6 +31,10 @@ export default function VapiAssistantsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editingAssistant, setEditingAssistant] = useState<VapiAssistant | null>(null)
   const [saving, setSaving] = useState(false)
+  const [showCallModal, setShowCallModal] = useState(false)
+  const [callConfig, setCallConfig] = useState<VapiStartConfig | null>(null)
+  const [callLoading, setCallLoading] = useState(false)
+  const [callError, setCallError] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     assistant_id: '',
@@ -122,6 +128,30 @@ export default function VapiAssistantsPage() {
     }
   }
 
+  const handleStart = async (assistant: VapiAssistant) => {
+    setShowCallModal(true)
+    setCallLoading(true)
+    setCallConfig(null)
+    setCallError(null)
+
+    try {
+      const result = await getVapiStartConfig(assistant.id)
+      if (result.error || !result.data) {
+        setCallError(result.error || 'Nije moguće pokrenuti poziv.')
+        return
+      }
+      setCallConfig(result.data)
+    } finally {
+      setCallLoading(false)
+    }
+  }
+
+  const handleCloseCallModal = () => {
+    setShowCallModal(false)
+    setCallConfig(null)
+    setCallError(null)
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -198,6 +228,12 @@ export default function VapiAssistantsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex justify-end gap-2">
                         <button
+                          onClick={() => handleStart(assistant)}
+                          className="flex items-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md shadow-green-500/20"
+                        >
+                          <Play className="w-4 h-4" /><span className="hidden lg:inline">Započni</span>
+                        </button>
+                        <button
                           onClick={() => handleEdit(assistant)}
                           className="flex items-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-md shadow-amber-500/20"
                         >
@@ -229,7 +265,13 @@ export default function VapiAssistantsPage() {
                     {maskApiKey(assistant.vapi_api_key)}
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => handleStart(assistant)}
+                    className="flex-1 min-w-[120px] flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md shadow-green-500/20 text-sm font-medium"
+                  >
+                    <Play className="w-4 h-4" />Započni
+                  </button>
                   <button
                     onClick={() => handleEdit(assistant)}
                     className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-md shadow-amber-500/20 text-sm font-medium"
@@ -248,6 +290,14 @@ export default function VapiAssistantsPage() {
           </div>
         </div>
       )}
+
+      <VapiCallModal
+        open={showCallModal}
+        onClose={handleCloseCallModal}
+        config={callConfig}
+        loading={callLoading}
+        loadError={callError}
+      />
 
       {showForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
