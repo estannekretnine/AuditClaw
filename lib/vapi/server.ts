@@ -62,6 +62,76 @@ export async function validateVapiAssistant(
   }
 }
 
+export async function createVapiWebCall(
+  vapiAssistantId: string,
+  privateApiKey: string,
+  assistantDbId: number
+): Promise<{
+  ok: boolean
+  error: string | null
+  data: { webCallUrl: string; callId?: string } | null
+}> {
+  try {
+    const response = await fetch(`${VAPI_API_BASE}/call/web`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${privateApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        assistantId: vapiAssistantId,
+        assistantOverrides: {
+          metadata: {
+            assistantDbId: String(assistantDbId),
+          },
+        },
+      }),
+    })
+
+    const body = (await response.json().catch(() => ({}))) as Record<string, unknown>
+
+    if (!response.ok) {
+      const message =
+        typeof body.message === 'string'
+          ? body.message
+          : typeof body.error === 'string'
+            ? body.error
+            : JSON.stringify(body)
+      return { ok: false, error: `Vapi greška (${response.status}): ${message}`, data: null }
+    }
+
+    const transport =
+      typeof body.transport === 'object' && body.transport !== null
+        ? (body.transport as Record<string, unknown>)
+        : null
+
+    const webCallUrl =
+      (typeof body.webCallUrl === 'string' ? body.webCallUrl : null) ||
+      (transport && typeof transport.callUrl === 'string' ? transport.callUrl : null) ||
+      (transport && typeof transport.webCallUrl === 'string' ? transport.webCallUrl : null)
+
+    if (!webCallUrl) {
+      return { ok: false, error: 'Vapi nije vratio webCallUrl za poziv.', data: null }
+    }
+
+    return {
+      ok: true,
+      error: null,
+      data: {
+        webCallUrl,
+        callId: typeof body.id === 'string' ? body.id : undefined,
+      },
+    }
+  } catch (error) {
+    console.error('Vapi create web call error:', error)
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'Greška pri kreiranju Vapi poziva',
+      data: null,
+    }
+  }
+}
+
 export async function syncVapiAssistantWebhook(
   vapiAssistantId: string,
   privateApiKey: string,

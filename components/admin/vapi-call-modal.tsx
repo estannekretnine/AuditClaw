@@ -1,14 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import Vapi from '@vapi-ai/web'
+import DailyIframe, { type DailyCall } from '@daily-co/daily-js'
 import { Bot, Mic, PhoneOff, X } from 'lucide-react'
+import { startVapiWebCall } from '@/lib/actions/vapi-assistants'
 
 export interface VapiStartConfig {
   assistantDbId: number
   assistantId: string
-  publicKey: string
-  systemPrompt: string | null
   opisServisa: string | null
 }
 
@@ -25,34 +24,6 @@ interface VapiCallModalProps {
   loadError?: string | null
 }
 
-function formatVapiError(error: unknown): string {
-  if (!error) return 'Greška pri Vapi pozivu'
-
-  if (error instanceof Error && error.message) {
-    return error.message
-  }
-
-  if (typeof error === 'string') return error
-
-  if (typeof error === 'object') {
-    const record = error as Record<string, unknown>
-
-    if (typeof record.error === 'object' && record.error !== null) {
-      const nested = record.error as Record<string, unknown>
-      if (typeof nested.message === 'string') return nested.message
-    }
-
-    if (typeof record.message === 'string') return record.message
-    if (typeof record.error === 'string') return record.error
-
-    if (record.type === 'start-method-error') {
-      return 'Vapi nije mogao da pokrene web poziv (400). Proverite da je NEXT_PUBLIC_VAPI_PUBLIC_KEY javni ključ iz istog Vapi naloga kao asistent.'
-    }
-  }
-
-  return 'Greška pri Vapi pozivu'
-}
-
 export function VapiCallModal({
   open,
   onClose,
@@ -60,20 +31,23 @@ export function VapiCallModal({
   loading = false,
   loadError = null,
 }: VapiCallModalProps) {
-  const vapiRef = useRef<Vapi | null>(null)
+  const dailyRef = useRef<DailyCall | null>(null)
   const [isConnected, setIsConnected] = useState(false)
-  const [isSpeaking, setIsSpeaking] = useState(false)
   const [isStarting, setIsStarting] = useState(false)
   const [transcript, setTranscript] = useState<TranscriptLine[]>([])
   const [error, setError] = useState<string | null>(null)
 
-  const cleanupCall = useCallback(() => {
-    if (vapiRef.current) {
-      vapiRef.current.stop()
-      vapiRef.current = null
+  const cleanupCall = useCallback(async () => {
+    if (dailyRef.current) {
+      try {
+        await dailyRef.current.leave()
+        await dailyRef.current.destroy()
+      } catch {
+        // ignore cleanup errors
+      }
+      dailyRef.current = null
     }
     setIsConnected(false)
-    setIsSpeaking(false)
     setIsStarting(false)
   }, [])
 
@@ -99,62 +73,72 @@ export function VapiCallModal({
     setTranscript([])
 
     try {
-      cleanupCall()
+      await cleanupCall()
 
-      const vapi = new Vapi(config.publicKey)
-      vapiRef.current = vapi
+      const result = await startVapiWebCall(config.assistantDbId)
+      if (result.error || !result.data?.webCallUrl) {
+        setError(result.error || 'Neuspelo pokretanje poziva.')
+        setIsStarting(false)
+        return
+      }
 
-      vapi.on('call-start', () => {
+      const call = DailyIframe.createCallObject()
+      dailyRef.current = call
+
+      call.on('joined-meeting', () => {
         setIsConnected(true)
         setIsStarting(false)
       })
 
-      vapi.on('call-end', () => {
+      call.on('left-meeting', () => {
         setIsConnected(false)
-        setIsSpeaking(false)
         setIsStarting(false)
       })
 
-      vapi.on('speech-start', () => setIsSpeaking(true))
-      vapi.on('speech-end', () => setIsSpeaking(false))
+      call.on('error', (event) => {
+        setError(event?.errorMsg || 'Greška pri audio pozivu.')
+        setIsStarting(false)
+      })
 
-      vapi.on('message', (message: { type?: string; role?: string; transcript?: string }) => {
-        if (message.type === 'transcript' && message.transcript) {
-          setTranscript((prev) => [
-            ...prev,
-            { role: message.role || 'unknown', text: message.transcript as string },
-          ])
+      call.on('app-message', (event) => {
+        if (!event?.data) return
+
+        if (event.data === 'listening') {
+          setIsConnected(true)
+          setIsStarting(false)
+          return
+        }
+
+        try {
+          const message = JSON.parse(event.data as string) as {
+            type?: string
+            role?: string
+            transcript?: string
+          }
+          if (message.type === 'transcript' && message.transcript) {
+            setTranscript((prev) => [
+              ...prev,
+              { role: message.role || 'unknown', text: message.transcript as string },
+            ])
+          }
+        } catch {
+          // ignore non-json app messages
         }
       })
 
-      vapi.on('call-start-failed', (event: { error?: string }) => {
-        setError(event.error || 'Vapi nije uspeo da pokrene poziv.')
-        setIsStarting(false)
-      })
-
-      vapi.on('error', (e: unknown) => {
-        setError(formatVapiError(e))
-        setIsStarting(false)
-      })
-
-      // Samo metadata — delimičan model override bez provider/model uzrokuje 400 na /call/web
-      await vapi.start(config.assistantId, {
-        metadata: {
-          assistantDbId: String(config.assistantDbId),
-        },
-      })
+      await call.join({ url: result.data.webCallUrl })
     } catch (e) {
-      setError(formatVapiError(e))
+      setError(e instanceof Error ? e.message : 'Neuspelo pokretanje poziva')
       setIsStarting(false)
     }
   }
 
-  const handleStop = () => {
-    cleanupCall()
+  const handleStop = async () => {
+    await cleanupCall()
   }
 
-  const handleClose = () => {
-    cleanupCall()
+  const handleClose = async () => {
+    await cleanupCall()
     onClose()
   }
 
@@ -209,11 +193,9 @@ export function VapiCallModal({
                     {isConnected ? 'Poziv je aktivan' : isStarting ? 'Povezivanje...' : 'Spreman za poziv'}
                   </p>
                   <p className="text-sm text-gray-500">
-                    {isSpeaking
-                      ? 'Asistent govori...'
-                      : isConnected
-                        ? 'Slušajte i govorite u mikrofon'
-                        : 'Kliknite Započni da pokrenete web razgovor'}
+                    {isConnected
+                      ? 'Slušajte i govorite u mikrofon'
+                      : 'Kliknite Započni da pokrenete web razgovor'}
                   </p>
                 </div>
               </div>
@@ -222,7 +204,7 @@ export function VapiCallModal({
                 <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm space-y-2">
                   <p>{error}</p>
                   <p className="text-xs text-red-600">
-                    Proverite: Public Key i Assistant ID moraju biti iz istog Vapi naloga. U bazi `vapi_api_key` mora biti Private key.
+                    Proverite da je u bazi podešen ispravan Vapi Private API key i Assistant ID.
                   </p>
                 </div>
               )}

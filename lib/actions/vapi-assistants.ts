@@ -7,9 +7,9 @@ import { z } from 'zod'
 import type { VapiAssistant, VapiAssistantInsert } from '@/lib/types/vapi'
 import {
   getVapiPrivateKey,
-  getVapiPublicKey,
   syncVapiAssistantWebhook,
   validateVapiAssistant,
+  createVapiWebCall,
 } from '@/lib/vapi/server'
 
 const vapiAssistantSchema = z.object({
@@ -77,13 +77,51 @@ export async function getVapiStartConfig(assistantDbId: number) {
   const access = await requireAdminAccess()
   if (access.error) return { data: null, error: access.error }
 
-  const publicKey = getVapiPublicKey()
-  if (!publicKey) {
+  const result = await getVapiAssistantById(assistantDbId)
+  if (result.error || !result.data) {
+    return { data: null, error: result.error || 'Asistent nije pronađen.' }
+  }
+
+  const assistant = result.data
+  if (!assistant.assistant_id) {
+    return { data: null, error: 'Assistant ID nije podešen.' }
+  }
+
+  const privateKey = getVapiPrivateKey(assistant.vapi_api_key)
+  if (!privateKey) {
     return {
       data: null,
-      error: 'NEXT_PUBLIC_VAPI_PUBLIC_KEY nije konfigurisan. Dodajte Public Key iz Vapi dashboarda u env varijable.',
+      error: 'vapi_api_key (private key) nije podešen za ovog asistenta. Dodajte ga u formi za izmenu.',
     }
   }
+
+  const validation = await validateVapiAssistant(assistant.assistant_id, privateKey)
+  if (!validation.ok) {
+    return { data: null, error: validation.error }
+  }
+
+  const sync = await syncVapiAssistantWebhook(
+    assistant.assistant_id,
+    privateKey,
+    assistant.id
+  )
+  if (!sync.ok) {
+    console.warn('Vapi webhook sync warning:', sync.error)
+  }
+
+  return {
+    data: {
+      assistantDbId: assistant.id,
+      assistantId: assistant.assistant_id,
+      opisServisa: assistant.opis_servisa,
+    },
+    error: null,
+  }
+}
+
+export async function startVapiWebCall(assistantDbId: number) {
+  const access = await requireAdminAccess()
+  if (access.error) return { data: null, error: access.error }
 
   const result = await getVapiAssistantById(assistantDbId)
   if (result.error || !result.data) {
@@ -96,37 +134,24 @@ export async function getVapiStartConfig(assistantDbId: number) {
   }
 
   const privateKey = getVapiPrivateKey(assistant.vapi_api_key)
-  if (privateKey) {
-    const validation = await validateVapiAssistant(assistant.assistant_id, privateKey)
-    if (!validation.ok) {
-      return { data: null, error: validation.error }
-    }
-
-    const sync = await syncVapiAssistantWebhook(
-      assistant.assistant_id,
-      privateKey,
-      assistant.id
-    )
-    if (!sync.ok) {
-      console.warn('Vapi webhook sync warning:', sync.error)
-    }
-  } else {
+  if (!privateKey) {
     return {
       data: null,
-      error: 'vapi_api_key (private key) nije podešen za ovog asistenta. Dodajte ga u formi za izmenu.',
+      error: 'vapi_api_key (private key) nije podešen za ovog asistenta.',
     }
   }
 
-  return {
-    data: {
-      assistantDbId: assistant.id,
-      assistantId: assistant.assistant_id,
-      publicKey,
-      systemPrompt: assistant.System_Prompt,
-      opisServisa: assistant.opis_servisa,
-    },
-    error: null,
+  const webCall = await createVapiWebCall(
+    assistant.assistant_id,
+    privateKey,
+    assistant.id
+  )
+
+  if (!webCall.ok || !webCall.data) {
+    return { data: null, error: webCall.error || 'Neuspelo pokretanje poziva.' }
   }
+
+  return { data: webCall.data, error: null }
 }
 
 export async function createVapiAssistant(formData: FormData) {
