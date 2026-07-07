@@ -12,9 +12,16 @@
   --surface: #1E1E1E;
 }
 
+html {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 /* Fix za input polja sa belom pozadinom - tekst treba da bude taman */
