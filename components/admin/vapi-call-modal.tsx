@@ -11,7 +11,6 @@ export interface VapiStartConfig {
   assistantId: string
   publicKey: string
   opisServisa: string | null
-  variableValues?: Record<string, string> | null
   webhookSynced?: boolean
   webhookWarning?: string | null
 }
@@ -394,12 +393,6 @@ export function VapiCallModal({
           assistantDbId: String(config.assistantDbId),
           ucenikid: selectedUcenikId,
         },
-      }
-
-      // Prenos system prompta po pozivu preko variableValues (Vapi šablon
-      // `{{system_prompt}}`). Bezbedno sa Public key-em, ne prepisuje asistenta.
-      if (config.variableValues && Object.keys(config.variableValues).length > 0) {
-        assistantOverrides.variableValues = config.variableValues
       }
 
       await vapi.start(

@@ -9,11 +9,9 @@ import {
   getVapiPrivateKey,
   getVapiPublicKeyForCall,
   syncVapiAssistantConfig,
-  patchVapiWebhookOnly,
   validateVapiAssistant,
   createVapiWebCall,
   pushAssistantToVapi,
-  SYSTEM_PROMPT_VARIABLE,
 } from '@/lib/vapi/server'
 
 const PENDING_VAPI_ID = 'pending-sync'
@@ -150,17 +148,18 @@ export async function getVapiStartConfig(assistantDbId: number) {
     }
   }
 
-  // Pri pokretanju poziva menjamo SAMO webhook — ne diramo model/glas/prompt
-  // asistenta (to bi moglo da prekine govor i nije bezbedno kod više korisnika).
-  // Prompt se postavlja pri čuvanju asistenta, a prava vrednost se šalje po
-  // pozivu preko variableValues.
-  const sync = await patchVapiWebhookOnly(
-    assistant.assistant_id,
-    privateKey,
-    assistant.id
-  )
+  // Pri pokretanju poziva sinhronizujemo webhook i literalni System_Prompt
+  // iz baze na Vapi asistenta. Za jednog asistenta je isti prompt svaki put
+  // (idempotentno), pa nema problema sa istovremenim pozivima.
+  const sync = await syncVapiAssistantConfig({
+    vapiAssistantId: assistant.assistant_id,
+    privateApiKey: privateKey,
+    assistantDbId: assistant.id,
+    name: assistant.opis_servisa,
+    systemPrompt: assistant.System_Prompt,
+  })
   if (!sync.ok) {
-    console.warn('Vapi webhook sync warning:', sync.error)
+    console.warn('Vapi sync warning:', sync.error)
   }
 
   return {
@@ -169,9 +168,6 @@ export async function getVapiStartConfig(assistantDbId: number) {
       assistantId: assistant.assistant_id,
       publicKey,
       opisServisa: assistant.opis_servisa,
-      // Prava vrednost system prompta se šalje po pozivu preko variableValues
-      // (Vapi šablon `{{system_prompt}}`), bez prepisivanja deljenog asistenta.
-      variableValues: { [SYSTEM_PROMPT_VARIABLE]: assistant.System_Prompt || '' },
       webhookSynced: sync.ok,
       webhookWarning: sync.ok
         ? null
