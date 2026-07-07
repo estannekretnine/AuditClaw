@@ -28,11 +28,16 @@ async function requireAdminAccess() {
 }
 
 function parseAssistantFormData(formData: FormData) {
+  const trim = (value: FormDataEntryValue | null) => {
+    const text = (value as string) || ''
+    return text.trim() || null
+  }
+
   return {
-    assistant_id: formData.get('assistant_id') as string,
-    vapi_api_key: (formData.get('vapi_api_key') as string) || null,
-    opis_servisa: (formData.get('opis_servisa') as string) || null,
-    System_Prompt: (formData.get('System_Prompt') as string) || null,
+    assistant_id: ((formData.get('assistant_id') as string) || '').trim(),
+    vapi_api_key: trim(formData.get('vapi_api_key')),
+    opis_servisa: trim(formData.get('opis_servisa')),
+    System_Prompt: trim(formData.get('System_Prompt')),
   }
 }
 

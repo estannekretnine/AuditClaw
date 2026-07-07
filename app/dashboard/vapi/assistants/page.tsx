@@ -324,14 +324,17 @@ export default function VapiAssistantsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Vapi API Key</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Vapi Private API Key</label>
                 <input
                   type="text"
                   value={formData.vapi_api_key}
                   onChange={(e) => setFormData({ ...formData, vapi_api_key: e.target.value })}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                  placeholder="Vapi API ključ"
+                  placeholder="Private key iz Vapi dashboarda (ne Public)"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Vapi Dashboard → API Keys → kopiraj <strong>Private</strong> key (ne Public).
+                </p>
               </div>
 
               <div>

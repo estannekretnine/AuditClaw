@@ -3,7 +3,10 @@ import { getSiteUrl } from '@/lib/utils/site-url'
 const VAPI_API_BASE = 'https://api.vapi.ai'
 
 export function getVapiPrivateKey(rowKey: string | null | undefined): string | null {
-  return rowKey || process.env.VAPI_API_KEY || null
+  const trimmed = rowKey?.trim()
+  if (trimmed) return trimmed
+  const envKey = process.env.VAPI_API_KEY?.trim()
+  return envKey || null
 }
 
 export function getVapiPublicKey(): string | null {
@@ -47,7 +50,8 @@ export async function validateVapiAssistant(
       if (response.status === 401) {
         return {
           ok: false,
-          error: 'Vapi private API key nije ispravan (401). Proverite vapi_api_key u bazi.',
+          error:
+            'Vapi Private API key nije ispravan (401). U polju vapi_api_key mora biti PRIVATE key iz Vapi dashboarda (API Keys → Private), ne Public key. Private i Public key su različiti — proverite i Assistant ID da su sa istog Vapi naloga.',
         }
       }
       return { ok: false, error: `Vapi API greška (${response.status}): ${body.slice(0, 200)}` }
