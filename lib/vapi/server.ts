@@ -400,3 +400,31 @@ export async function syncVapiAssistantWebhook(
     systemPrompt: null,
   })
 }
+
+// Postavlja SAMO webhook (server) na asistentu, bez diranja model/voice
+// konfiguracije. Koristi se pri pokretanju poziva da ne bi menjali LLM/glas
+// asistenta (što bi moglo da prekine govor).
+export async function patchVapiWebhookOnly(
+  vapiAssistantId: string,
+  privateApiKey: string,
+  assistantDbId: number
+): Promise<VapiApiResult> {
+  const webhookSecret = getVapiWebhookSecret()
+  if (!webhookSecret) {
+    return { ok: false, error: 'VAPI_WEBHOOK_SECRET nije konfigurisan u env varijablama.' }
+  }
+
+  const payload = buildServerPayload(assistantDbId, webhookSecret)
+
+  const primary = await patchVapiAssistant(vapiAssistantId, privateApiKey, {
+    server: payload.server,
+  })
+  if (primary.ok) {
+    return primary
+  }
+
+  return patchVapiAssistant(vapiAssistantId, privateApiKey, {
+    serverUrl: payload.serverUrl,
+    serverUrlSecret: webhookSecret,
+  })
+}

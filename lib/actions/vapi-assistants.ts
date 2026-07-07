@@ -9,7 +9,7 @@ import {
   getVapiPrivateKey,
   getVapiPublicKeyForCall,
   syncVapiAssistantConfig,
-  syncVapiAssistantWebhook,
+  patchVapiWebhookOnly,
   validateVapiAssistant,
   createVapiWebCall,
   pushAssistantToVapi,
@@ -150,10 +150,11 @@ export async function getVapiStartConfig(assistantDbId: number) {
     }
   }
 
-  // Pri pokretanju poziva NE prepisujemo system prompt na Vapi platformi
-  // (to bi bilo nebezbedno kod više paralelnih korisnika). Prompt se
-  // postavlja jednom, pri čuvanju asistenta. Ovde samo osiguravamo webhook.
-  const sync = await syncVapiAssistantWebhook(
+  // Pri pokretanju poziva menjamo SAMO webhook — ne diramo model/glas/prompt
+  // asistenta (to bi moglo da prekine govor i nije bezbedno kod više korisnika).
+  // Prompt se postavlja pri čuvanju asistenta, a prava vrednost se šalje po
+  // pozivu preko variableValues.
+  const sync = await patchVapiWebhookOnly(
     assistant.assistant_id,
     privateKey,
     assistant.id

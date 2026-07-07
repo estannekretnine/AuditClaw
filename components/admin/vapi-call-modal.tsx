@@ -260,6 +260,7 @@ export function VapiCallModal({
     })
 
     vapi.on('call-start-failed', async (event) => {
+      console.error('[Vapi] call-start-failed', event)
       const message =
         event && typeof event === 'object' && 'error' in event
           ? String((event as { error: unknown }).error)
@@ -278,6 +279,7 @@ export function VapiCallModal({
     })
 
     vapi.on('error', async (event: unknown) => {
+      console.error('[Vapi] error', event)
       const message = extractVapiError(event)
 
       if (isBenignCallEndMessage(message)) {
@@ -309,8 +311,31 @@ export function VapiCallModal({
       setIsConnected(false)
     })
 
-    vapi.on('message', (message: { type?: string; role?: string; transcript?: string }) => {
-      if (message.type === 'transcript' && message.transcript) {
+    vapi.on('call-start-progress', (event) => {
+      console.log('[Vapi] call-start-progress', event)
+    })
+
+    vapi.on('speech-start', () => {
+      console.log('[Vapi] speech-start (asistent počinje da govori)')
+    })
+
+    vapi.on('speech-end', () => {
+      console.log('[Vapi] speech-end (asistent završio govor)')
+    })
+
+    vapi.on('message', (message: {
+      type?: string
+      role?: string
+      transcript?: string
+      transcriptType?: string
+    }) => {
+      console.log('[Vapi] message', message)
+
+      if (
+        message.type === 'transcript' &&
+        message.transcript &&
+        message.transcriptType === 'final'
+      ) {
         setTranscript((prev) => [
           ...prev,
           { role: message.role || 'unknown', text: message.transcript as string },
