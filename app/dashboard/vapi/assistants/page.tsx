@@ -92,7 +92,7 @@ export default function VapiAssistantsPage() {
   const handleEdit = (assistant: VapiAssistant) => {
     setEditingAssistant(assistant)
     setFormData({
-      assistant_id: assistant.assistant_id || '',
+      assistant_id: assistant.assistant_id && assistant.assistant_id !== 'pending-sync' ? assistant.assistant_id : '',
       vapi_api_key: assistant.vapi_api_key || '',
       vapi_public_key: assistant.vapi_public_key || '',
       opis_servisa: assistant.opis_servisa || '',
@@ -411,7 +411,6 @@ export default function VapiAssistantsPage() {
                         onChange={(e) => setFormData({ ...formData, assistant_id: e.target.value })}
                         className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
                         placeholder="Ostavite prazno — kreira se automatski"
-                        readOnly={!!editingAssistant}
                       />
                     </div>
                     <div>
