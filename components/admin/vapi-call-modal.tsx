@@ -450,31 +450,31 @@ export function VapiCallModal({
   const startDisabled = isStarting || isReleasing || !selectedUcenikId
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="px-6 py-5 bg-gradient-to-r from-gray-900 to-black rounded-t-3xl flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-100 w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-gray-900 to-black rounded-t-2xl sm:rounded-t-3xl flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
               <Mic className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <h3 className="text-xl font-bold text-white">Vapi poziv</h3>
+            <div className="min-w-0">
+              <h3 className="text-lg sm:text-xl font-bold text-white">Vapi poziv</h3>
               {config && (
-                <p className="text-sm text-gray-300">{config.opisServisa || config.assistantId}</p>
+                <p className="text-sm text-gray-300 truncate">{config.opisServisa || config.assistantId}</p>
               )}
             </div>
           </div>
           <button
             type="button"
             onClick={handleClose}
-            className="p-2 rounded-xl text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+            className="p-2 rounded-xl text-gray-300 hover:bg-white/10 hover:text-white transition-colors shrink-0"
             aria-label="Zatvori"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6 space-y-5 overflow-y-auto flex-1">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
           {loading && (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-500" />
@@ -495,12 +495,12 @@ export function VapiCallModal({
                 </div>
               )}
 
-              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isConnected ? 'bg-green-100' : callEnded ? 'bg-blue-100' : 'bg-gray-200'}`}>
-                  <Bot className={`w-7 h-7 ${isConnected ? 'text-green-600' : callEnded ? 'text-blue-600' : 'text-gray-500'}`} />
+              <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                <div className={`w-11 h-11 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 ${isConnected ? 'bg-green-100' : callEnded ? 'bg-blue-100' : 'bg-gray-200'}`}>
+                  <Bot className={`w-5 h-5 sm:w-7 sm:h-7 ${isConnected ? 'text-green-600' : callEnded ? 'text-blue-600' : 'text-gray-500'}`} />
                 </div>
-                <div>
-                  <p className="font-semibold text-gray-900">
+                <div className="min-w-0">
+                  <p className="text-sm sm:text-base font-semibold text-gray-900">
                     {isReleasing
                       ? 'Oslobađanje mikrofona...'
                       : isConnected
@@ -511,7 +511,7 @@ export function VapiCallModal({
                             ? 'Poziv je završen'
                             : 'Spreman za poziv'}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-xs sm:text-sm text-gray-500">
                     {isConnected
                       ? 'Slušajte i govorite u mikrofon'
                       : callEnded
@@ -595,7 +595,7 @@ export function VapiCallModal({
                     type="button"
                     onClick={handleStart}
                     disabled={startDisabled}
-                    className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all font-medium disabled:opacity-50"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 sm:px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all font-medium disabled:opacity-50 text-sm sm:text-base"
                   >
                     <Mic className="w-5 h-5" />
                     {isReleasing
@@ -610,7 +610,7 @@ export function VapiCallModal({
                   <button
                     type="button"
                     onClick={handleStop}
-                    className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all font-medium"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 sm:px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all font-medium text-sm sm:text-base"
                   >
                     <PhoneOff className="w-5 h-5" />
                     Završi poziv

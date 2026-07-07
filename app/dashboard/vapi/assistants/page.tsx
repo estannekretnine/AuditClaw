@@ -198,20 +198,20 @@ export default function VapiAssistantsPage() {
       {canStart && (
         <button
           onClick={() => handleStart(assistant)}
-          className={`${compact ? 'flex-1 min-w-[110px]' : ''} flex items-center justify-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md shadow-green-500/20`}
+          className={`${compact ? 'flex-1 min-w-[100px] py-2.5' : 'py-2'} flex items-center justify-center gap-1.5 px-3 sm:px-4 text-sm bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md shadow-green-500/20`}
         >
           <Play className="w-4 h-4" /><span className={compact ? '' : 'hidden lg:inline'}>Započni</span>
         </button>
       )}
       <button
         onClick={() => handleEdit(assistant)}
-        className={`${compact ? 'flex-1' : ''} flex items-center justify-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-md shadow-amber-500/20`}
+        className={`${compact ? 'flex-1 py-2.5' : 'py-2'} flex items-center justify-center gap-1.5 px-3 sm:px-4 text-sm bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-md shadow-amber-500/20`}
       >
         <Edit className="w-4 h-4" /><span className={compact ? '' : 'hidden lg:inline'}>Izmeni</span>
       </button>
       <button
         onClick={() => handleDelete(assistant)}
-        className={`${compact ? 'flex-1' : ''} flex items-center justify-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md shadow-red-500/20`}
+        className={`${compact ? 'flex-1 py-2.5' : 'py-2'} flex items-center justify-center gap-1.5 px-3 sm:px-4 text-sm bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md shadow-red-500/20`}
       >
         <Trash2 className="w-4 h-4" /><span className={compact ? '' : 'hidden lg:inline'}>Obriši</span>
       </button>
@@ -230,8 +230,8 @@ export default function VapiAssistantsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Vapi Assistants</h2>
-          <p className="text-gray-500 mt-1">Servisi i podređeni asistenti ({totalCount})</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Vapi Assistants</h2>
+          <p className="text-sm sm:text-base text-gray-500 mt-1">Servisi i podređeni asistenti ({totalCount})</p>
           <p className="text-xs text-gray-400 mt-1 max-w-2xl">
             Prikazani su glavni servisi (vrh). Kliknite na strelicu da vidite podređene asistente.
             Pri unosu izaberite kom servisu asistent pripada — ako ne izaberete, on je novi vrh.
@@ -247,15 +247,15 @@ export default function VapiAssistantsPage() {
       </div>
 
       {topLevel.length === 0 ? (
-        <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-16 text-center">
-          <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl flex items-center justify-center mx-auto mb-6">
-            <Bot className="w-12 h-12 text-gray-400" />
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-lg border border-gray-100 p-8 sm:p-16 text-center">
+          <div className="w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
+            <Bot className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400" />
           </div>
-          <p className="text-gray-900 text-xl font-semibold mb-2">Nema servisa</p>
+          <p className="text-gray-900 text-lg sm:text-xl font-semibold mb-2">Nema servisa</p>
           <p className="text-gray-500 mb-6">Dodajte prvi servis (vrh)</p>
           <button
             onClick={handleAdd}
-            className="px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-2xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-lg shadow-amber-500/25 font-medium"
+            className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-2xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-lg shadow-amber-500/25 font-medium"
           >
             Dodaj asistenta
           </button>
@@ -267,10 +267,10 @@ export default function VapiAssistantsPage() {
             const isExpanded = expanded[parent.id]
             return (
               <div key={parent.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                <div className="flex items-center gap-4 p-4 hover:bg-amber-50 transition-all duration-200">
+                <div className="flex items-center gap-2 sm:gap-4 p-3 sm:p-4 hover:bg-amber-50 transition-all duration-200">
                   <button
                     onClick={() => kids.length > 0 && toggleExpand(parent.id)}
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+                    className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${
                       kids.length > 0 ? 'bg-gray-100 hover:bg-amber-100 text-gray-700' : 'bg-transparent text-transparent cursor-default'
                     }`}
                     aria-label="Prikaži podređene"
@@ -278,28 +278,30 @@ export default function VapiAssistantsPage() {
                   >
                     {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   </button>
-                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-gray-900 to-black flex items-center justify-center shrink-0">
-                    <Bot className="w-5 h-5 text-white" />
+                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-900 to-black flex items-center justify-center shrink-0">
+                    <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                       <p className="text-sm font-semibold text-gray-900 truncate">{assistantName(parent)}</p>
-                      <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold text-amber-700 bg-amber-100 rounded-md uppercase tracking-wide">Vrh</span>
-                      {kids.length > 0 && (
-                        <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded-md">{kids.length} podređenih</span>
-                      )}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold text-amber-700 bg-amber-100 rounded-md uppercase tracking-wide">Vrh</span>
+                        {kids.length > 0 && (
+                          <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded-md">{kids.length} podređenih</span>
+                        )}
+                      </div>
                     </div>
                     <p className="text-xs text-gray-500 truncate mt-0.5">{truncateText(parent.System_Prompt, 90)}</p>
                   </div>
                   <div className="hidden sm:block">{renderActions(parent, false, false)}</div>
                 </div>
-                <div className="sm:hidden px-4 pb-4">{renderActions(parent, true, false)}</div>
+                <div className="sm:hidden px-3 pb-3">{renderActions(parent, true, false)}</div>
 
                 {isExpanded && kids.length > 0 && (
                   <div className="border-t border-gray-100 bg-gray-50/50 divide-y divide-gray-100">
                     {kids.map((child) => (
-                      <div key={child.id} className="flex items-center gap-4 p-4 pl-14 hover:bg-amber-50 transition-all duration-200">
-                        <div className="w-9 h-9 rounded-xl bg-white border border-gray-200 flex items-center justify-center shrink-0">
+                      <div key={child.id} className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-4 p-3 sm:p-4 pl-6 sm:pl-14 hover:bg-amber-50 transition-all duration-200">
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white border border-gray-200 flex items-center justify-center shrink-0">
                           <Bot className="w-4 h-4 text-gray-500" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -328,17 +330,17 @@ export default function VapiAssistantsPage() {
       />
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 w-full max-w-2xl max-h-[90vh] overflow-y-auto my-auto">
-            <div className="px-6 py-5 bg-gradient-to-r from-gray-900 to-black rounded-t-3xl">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-100 w-full max-w-2xl max-h-[90vh] overflow-y-auto my-auto">
+            <div className="px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-gray-900 to-black rounded-t-2xl sm:rounded-t-3xl">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
                   <Bot className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-white">{editingAssistant ? 'Izmeni asistenta' : 'Novi asistent'}</h3>
+                <h3 className="text-lg sm:text-xl font-bold text-white">{editingAssistant ? 'Izmeni asistenta' : 'Novi asistent'}</h3>
               </div>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-5">
               <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-sm text-green-900">
                 <p className="text-xs text-green-800 leading-relaxed">
                   Dovoljno je da unesete <strong>opis servisa</strong>. AuditClaw automatski kreira/ažurira asistenta na Vapi
