@@ -195,28 +195,28 @@ export default function VapiAssistantsPage() {
 
   const renderActions = (assistant: VapiAssistant, compact = false, canStart = false) => {
     if (compact) {
-      // Grid raspored garantuje da dugmad nikad ne pređu širinu ekrana (bez obzira na dužinu teksta)
+      // Dugmad su sirine svog sadrzaja (ne razvucena) - flex-wrap sprecava izlazak van ekrana
       return (
-        <div className="grid grid-cols-2 gap-1.5 w-full">
+        <div className="flex flex-wrap gap-1.5">
           {canStart && (
             <button
               onClick={() => handleStart(assistant)}
-              className="col-span-2 flex items-center justify-center gap-1 px-2 py-1.5 text-xs bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm shadow-green-500/20"
+              className="flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm shadow-green-500/20"
             >
-              <Play className="w-3.5 h-3.5 shrink-0" /><span className="truncate">Započni</span>
+              <Play className="w-3.5 h-3.5 shrink-0" />Započni
             </button>
           )}
           <button
             onClick={() => handleEdit(assistant)}
-            className="min-w-0 flex items-center justify-center gap-1 px-2 py-1.5 text-xs bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-sm shadow-amber-500/20"
+            className="flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-sm shadow-amber-500/20"
           >
-            <Edit className="w-3.5 h-3.5 shrink-0" /><span className="truncate">Izmeni</span>
+            <Edit className="w-3.5 h-3.5 shrink-0" />Izmeni
           </button>
           <button
             onClick={() => handleDelete(assistant)}
-            className="min-w-0 flex items-center justify-center gap-1 px-2 py-1.5 text-xs bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-sm shadow-red-500/20"
+            className="flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-sm shadow-red-500/20"
           >
-            <Trash2 className="w-3.5 h-3.5 shrink-0" /><span className="truncate">Obriši</span>
+            <Trash2 className="w-3.5 h-3.5 shrink-0" />Obriši
           </button>
         </div>
       )
