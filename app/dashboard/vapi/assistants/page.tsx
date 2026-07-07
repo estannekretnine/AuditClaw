@@ -197,26 +197,26 @@ export default function VapiAssistantsPage() {
     if (compact) {
       // Grid raspored garantuje da dugmad nikad ne pređu širinu ekrana (bez obzira na dužinu teksta)
       return (
-        <div className="grid grid-cols-2 gap-2 w-full">
+        <div className="grid grid-cols-2 gap-1.5 w-full">
           {canStart && (
             <button
               onClick={() => handleStart(assistant)}
-              className="col-span-2 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md shadow-green-500/20"
+              className="col-span-2 flex items-center justify-center gap-1 px-2 py-1.5 text-xs bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm shadow-green-500/20"
             >
-              <Play className="w-4 h-4 shrink-0" /><span className="truncate">Započni</span>
+              <Play className="w-3.5 h-3.5 shrink-0" /><span className="truncate">Započni</span>
             </button>
           )}
           <button
             onClick={() => handleEdit(assistant)}
-            className="min-w-0 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-md shadow-amber-500/20"
+            className="min-w-0 flex items-center justify-center gap-1 px-2 py-1.5 text-xs bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-sm shadow-amber-500/20"
           >
-            <Edit className="w-4 h-4 shrink-0" /><span className="truncate">Izmeni</span>
+            <Edit className="w-3.5 h-3.5 shrink-0" /><span className="truncate">Izmeni</span>
           </button>
           <button
             onClick={() => handleDelete(assistant)}
-            className="min-w-0 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md shadow-red-500/20"
+            className="min-w-0 flex items-center justify-center gap-1 px-2 py-1.5 text-xs bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-sm shadow-red-500/20"
           >
-            <Trash2 className="w-4 h-4 shrink-0" /><span className="truncate">Obriši</span>
+            <Trash2 className="w-3.5 h-3.5 shrink-0" /><span className="truncate">Obriši</span>
           </button>
         </div>
       )
@@ -325,7 +325,7 @@ export default function VapiAssistantsPage() {
                   </div>
                   <div className="hidden sm:block">{renderActions(parent, false, false)}</div>
                 </div>
-                <div className="sm:hidden px-3 pb-3">{renderActions(parent, true, false)}</div>
+                <div className="sm:hidden px-3 pb-2.5">{renderActions(parent, true, false)}</div>
 
                 {isExpanded && kids.length > 0 && (
                   <div className="border-t border-gray-100 bg-gray-50/50 divide-y divide-gray-100">
