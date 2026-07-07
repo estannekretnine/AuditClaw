@@ -170,6 +170,9 @@ export default function VapiAssistantsPage() {
         <div>
           <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Vapi Assistants</h2>
           <p className="text-gray-500 mt-1">Upravljanje Vapi asistentima ({totalCount})</p>
+          <p className="text-xs text-gray-400 mt-1 max-w-xl">
+            Vapi API ključevi se kopiraju iz dashboard.vapi.ai → API Keys (Private za server, Public za web poziv).
+          </p>
         </div>
         <button
           onClick={handleAdd}
@@ -204,7 +207,14 @@ export default function VapiAssistantsPage() {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Assistant ID</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Opis servisa</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">System Prompt</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">API Key</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                    <span className="block">Private Key</span>
+                    <span className="block text-[10px] font-normal normal-case text-gray-400 mt-0.5">Server / webhook</span>
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                    <span className="block">Public Key</span>
+                    <span className="block text-[10px] font-normal normal-case text-gray-400 mt-0.5">Web poziv</span>
+                  </th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-white uppercase tracking-wider">Akcije</th>
                 </tr>
               </thead>
@@ -224,9 +234,15 @@ export default function VapiAssistantsPage() {
                       <p className="text-sm text-gray-500 truncate max-w-[200px]">{truncateText(assistant.System_Prompt)}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                        <Key className="w-4 h-4" />
+                      <div className="flex items-center gap-1.5 text-sm text-gray-500" title="Private API Key — za server (webhook, validacija)">
+                        <Key className="w-4 h-4 shrink-0" />
                         {maskApiKey(assistant.vapi_api_key)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1.5 text-sm text-gray-500" title="Public API Key — za pokretanje web poziva">
+                        <Key className="w-4 h-4 shrink-0" />
+                        {maskApiKey(assistant.vapi_public_key)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -264,9 +280,9 @@ export default function VapiAssistantsPage() {
                   <span className="inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold text-white bg-gradient-to-r from-gray-900 to-black rounded-lg mb-1">ID: {assistant.id}</span>
                   <p className="text-sm font-medium text-gray-900">{assistant.assistant_id}</p>
                   <p className="text-xs text-gray-500 mt-1">{truncateText(assistant.opis_servisa, 80)}</p>
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
-                    <Key className="w-3.5 h-3.5" />
-                    {maskApiKey(assistant.vapi_api_key)}
+                  <div className="flex flex-wrap gap-3 text-xs text-gray-500 mt-1">
+                    <span title="Private API Key">Private: {maskApiKey(assistant.vapi_api_key)}</span>
+                    <span title="Public API Key">Public: {maskApiKey(assistant.vapi_public_key)}</span>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -315,6 +331,17 @@ export default function VapiAssistantsPage() {
               </div>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-900 space-y-2">
+                <p className="font-semibold">Šta su Vapi API ključevi?</p>
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  U Vapi dashboardu (API Keys) postoje <strong>dva različita</strong> ključa. Oba su obavezna:
+                </p>
+                <ul className="text-xs text-amber-800 space-y-1 list-disc pl-4">
+                  <li><strong>Private Key</strong> — tajni server ključ za webhook i proveru asistenta (nikad u browseru).</li>
+                  <li><strong>Public Key</strong> — javni ključ za pokretanje web glasovnog poziva (dugme Započni).</li>
+                </ul>
+              </div>
+
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Assistant ID *</label>
                 <input
@@ -323,35 +350,44 @@ export default function VapiAssistantsPage() {
                   onChange={(e) => setFormData({ ...formData, assistant_id: e.target.value })}
                   required
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                  placeholder="Vapi assistant ID"
+                  placeholder="UUID asistenta iz Vapi dashboarda"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Vapi Dashboard → Assistants → izaberi asistenta → kopiraj ID.
+                </p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Vapi Private API Key</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Vapi Private API Key
+                  <span className="ml-2 text-xs font-normal text-gray-500">(server — webhook)</span>
+                </label>
                 <input
                   type="text"
                   value={formData.vapi_api_key}
                   onChange={(e) => setFormData({ ...formData, vapi_api_key: e.target.value })}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                  placeholder="Private key iz Vapi dashboarda (ne Public)"
+                  placeholder="Private key — API Keys → Private"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Vapi Dashboard → API Keys → kopiraj <strong>Private</strong> key (ne Public).
+                  Koristi se na serveru za sinhronizaciju webhook-a. <strong>Ne</strong> unosi se Public key ovde.
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Vapi Public API Key</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Vapi Public API Key
+                  <span className="ml-2 text-xs font-normal text-gray-500">(browser — web poziv)</span>
+                </label>
                 <input
                   type="text"
                   value={formData.vapi_public_key}
                   onChange={(e) => setFormData({ ...formData, vapi_public_key: e.target.value })}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                  placeholder="Public key iz Vapi dashboarda"
+                  placeholder="Public key — API Keys → Public"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Vapi Dashboard → API Keys → kopiraj <strong>Public</strong> key (za web poziv).
+                  Koristi se za pokretanje glasovnog poziva (Započni). <strong>Ne</strong> unosi se Private key ovde.
                 </p>
               </div>
 
