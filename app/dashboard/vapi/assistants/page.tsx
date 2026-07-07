@@ -183,14 +183,16 @@ export default function VapiAssistantsPage() {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
-  const renderActions = (assistant: VapiAssistant, compact = false) => (
+  const renderActions = (assistant: VapiAssistant, compact = false, canStart = false) => (
     <div className={`flex ${compact ? 'flex-wrap' : 'justify-end'} gap-2`}>
-      <button
-        onClick={() => handleStart(assistant)}
-        className={`${compact ? 'flex-1 min-w-[110px]' : ''} flex items-center justify-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md shadow-green-500/20`}
-      >
-        <Play className="w-4 h-4" /><span className={compact ? '' : 'hidden lg:inline'}>Započni</span>
-      </button>
+      {canStart && (
+        <button
+          onClick={() => handleStart(assistant)}
+          className={`${compact ? 'flex-1 min-w-[110px]' : ''} flex items-center justify-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md shadow-green-500/20`}
+        >
+          <Play className="w-4 h-4" /><span className={compact ? '' : 'hidden lg:inline'}>Započni</span>
+        </button>
+      )}
       <button
         onClick={() => handleEdit(assistant)}
         className={`${compact ? 'flex-1' : ''} flex items-center justify-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-md shadow-amber-500/20`}
@@ -279,9 +281,9 @@ export default function VapiAssistantsPage() {
                     </div>
                     <p className="text-xs text-gray-500 truncate mt-0.5">{truncateText(parent.System_Prompt, 90)}</p>
                   </div>
-                  <div className="hidden sm:block">{renderActions(parent)}</div>
+                  <div className="hidden sm:block">{renderActions(parent, false, false)}</div>
                 </div>
-                <div className="sm:hidden px-4 pb-4">{renderActions(parent, true)}</div>
+                <div className="sm:hidden px-4 pb-4">{renderActions(parent, true, false)}</div>
 
                 {isExpanded && kids.length > 0 && (
                   <div className="border-t border-gray-100 bg-gray-50/50 divide-y divide-gray-100">
@@ -294,8 +296,8 @@ export default function VapiAssistantsPage() {
                           <p className="text-sm font-medium text-gray-900 truncate">{assistantName(child)}</p>
                           <p className="text-xs text-gray-500 truncate mt-0.5">{truncateText(child.System_Prompt, 90)}</p>
                         </div>
-                        <div className="hidden sm:block">{renderActions(child)}</div>
-                        <div className="sm:hidden w-full">{renderActions(child, true)}</div>
+                        <div className="hidden sm:block">{renderActions(child, false, true)}</div>
+                        <div className="sm:hidden w-full">{renderActions(child, true, true)}</div>
                       </div>
                     ))}
                   </div>
