@@ -5,6 +5,7 @@ export interface VapiAssistant {
   vapi_public_key: string | null
   opis_servisa: string | null
   System_Prompt: string | null
+  servisid: number | null
 }
 
 export interface VapiAssistantInsert {
@@ -13,6 +14,7 @@ export interface VapiAssistantInsert {
   vapi_public_key?: string | null
   opis_servisa?: string | null
   System_Prompt?: string | null
+  servisid?: number | null
 }
 
 export interface VapiAssistantUpdate extends Partial<VapiAssistantInsert> {}

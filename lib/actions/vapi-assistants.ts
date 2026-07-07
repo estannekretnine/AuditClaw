@@ -22,6 +22,7 @@ const vapiAssistantSchema = z.object({
   vapi_public_key: z.string().optional().nullable(),
   opis_servisa: z.string().optional().nullable(),
   System_Prompt: z.string().optional().nullable(),
+  servisid: z.number().optional().nullable(),
 })
 
 async function requireAdminAccess() {
@@ -38,12 +39,16 @@ function parseAssistantFormData(formData: FormData) {
     return text.trim() || null
   }
 
+  const servisidRaw = (formData.get('servisid') as string) || ''
+  const servisid = servisidRaw.trim() ? Number(servisidRaw) : null
+
   return {
     assistant_id: ((formData.get('assistant_id') as string) || '').trim() || null,
     vapi_api_key: trim(formData.get('vapi_api_key')),
     vapi_public_key: trim(formData.get('vapi_public_key')),
     opis_servisa: trim(formData.get('opis_servisa')),
     System_Prompt: trim(formData.get('System_Prompt')),
+    servisid: servisid !== null && !Number.isNaN(servisid) ? servisid : null,
   }
 }
 
