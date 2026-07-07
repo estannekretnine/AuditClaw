@@ -193,30 +193,60 @@ export default function VapiAssistantsPage() {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
-  const renderActions = (assistant: VapiAssistant, compact = false, canStart = false) => (
-    <div className={`flex ${compact ? 'flex-wrap' : 'justify-end'} gap-2`}>
-      {canStart && (
+  const renderActions = (assistant: VapiAssistant, compact = false, canStart = false) => {
+    if (compact) {
+      // Grid raspored garantuje da dugmad nikad ne pređu širinu ekrana (bez obzira na dužinu teksta)
+      return (
+        <div className="grid grid-cols-2 gap-2 w-full">
+          {canStart && (
+            <button
+              onClick={() => handleStart(assistant)}
+              className="col-span-2 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md shadow-green-500/20"
+            >
+              <Play className="w-4 h-4 shrink-0" /><span className="truncate">Započni</span>
+            </button>
+          )}
+          <button
+            onClick={() => handleEdit(assistant)}
+            className="min-w-0 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-md shadow-amber-500/20"
+          >
+            <Edit className="w-4 h-4 shrink-0" /><span className="truncate">Izmeni</span>
+          </button>
+          <button
+            onClick={() => handleDelete(assistant)}
+            className="min-w-0 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md shadow-red-500/20"
+          >
+            <Trash2 className="w-4 h-4 shrink-0" /><span className="truncate">Obriši</span>
+          </button>
+        </div>
+      )
+    }
+
+    return (
+      <div className="flex justify-end gap-2">
+        {canStart && (
+          <button
+            onClick={() => handleStart(assistant)}
+            className="flex items-center justify-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md shadow-green-500/20"
+          >
+            <Play className="w-4 h-4" /><span className="hidden lg:inline">Započni</span>
+          </button>
+        )}
         <button
-          onClick={() => handleStart(assistant)}
-          className={`${compact ? 'flex-1 min-w-[100px] py-2.5' : 'py-2'} flex items-center justify-center gap-1.5 px-3 sm:px-4 text-sm bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md shadow-green-500/20`}
+          onClick={() => handleEdit(assistant)}
+          className="flex items-center justify-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-md shadow-amber-500/20"
         >
-          <Play className="w-4 h-4" /><span className={compact ? '' : 'hidden lg:inline'}>Započni</span>
+          <Edit className="w-4 h-4" /><span className="hidden lg:inline">Izmeni</span>
         </button>
-      )}
-      <button
-        onClick={() => handleEdit(assistant)}
-        className={`${compact ? 'flex-1 py-2.5' : 'py-2'} flex items-center justify-center gap-1.5 px-3 sm:px-4 text-sm bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-md shadow-amber-500/20`}
-      >
-        <Edit className="w-4 h-4" /><span className={compact ? '' : 'hidden lg:inline'}>Izmeni</span>
-      </button>
-      <button
-        onClick={() => handleDelete(assistant)}
-        className={`${compact ? 'flex-1 py-2.5' : 'py-2'} flex items-center justify-center gap-1.5 px-3 sm:px-4 text-sm bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md shadow-red-500/20`}
-      >
-        <Trash2 className="w-4 h-4" /><span className={compact ? '' : 'hidden lg:inline'}>Obriši</span>
-      </button>
-    </div>
-  )
+        <button
+          onClick={() => handleDelete(assistant)}
+          className="flex items-center justify-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md shadow-red-500/20"
+        >
+          <Trash2 className="w-4 h-4" /><span className="hidden lg:inline">Obriši</span>
+        </button>
+      </div>
+    )
+  }
 
   if (loading) {
     return (
