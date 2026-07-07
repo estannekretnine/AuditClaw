@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, Users, Shield, ChevronDown, ChevronRight, LogOut, Menu, X, Home, BarChart3, Upload, TrendingUp, Target, FileText, MessageSquare, UserCheck, Newspaper, Bot, Mic, MessageCircle } from 'lucide-react'
+import { Building2, Users, Shield, ChevronDown, ChevronRight, LogOut, Menu, X, Home, BarChart3, Upload, TrendingUp, Target, FileText, MessageSquare, UserCheck, Newspaper, Bot, Mic, MessageCircle, GraduationCap } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -39,6 +39,7 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
   const vapiSubItems: AnalyzaSubItem[] = [
     { id: 'vapi-assistants', label: 'Vapi Assistants', href: '/dashboard/vapi/assistants', icon: Bot },
     { id: 'vapi-odgovor', label: 'Vapi Odgovor', href: '/dashboard/vapi/odgovor', icon: MessageCircle },
+    { id: 'vapi-profesori', label: 'Profesori', href: '/dashboard/vapi/profesori', icon: GraduationCap },
   ]
 
   const adminSubItems: Array<{

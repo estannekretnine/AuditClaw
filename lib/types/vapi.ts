@@ -39,3 +39,28 @@ export interface VapiOdgovorInsert {
 }
 
 export interface VapiOdgovorUpdate extends Partial<VapiOdgovorInsert> {}
+
+export interface VapiProfesor {
+  id: number
+  ime: string
+  prezime: string | null
+  email: string | null
+  pasword: string | null
+  stsaktivan: boolean | null
+}
+
+export interface VapiProfesorInsert {
+  ime: string
+  prezime?: string | null
+  email?: string | null
+  pasword?: string | null
+  stsaktivan?: boolean | null
+}
+
+export interface VapiProfesorUpdate extends Partial<VapiProfesorInsert> {}
+
+export interface VapiProfesorAssistant {
+  id: number
+  profesorid: number
+  assistantid: number | null
+}
