@@ -165,6 +165,7 @@ export async function getVapiStartConfig(assistantDbId: number) {
       assistantId: assistant.assistant_id,
       publicKey,
       opisServisa: assistant.opis_servisa,
+      systemPrompt: assistant.System_Prompt,
       webhookSynced: sync.ok,
       webhookWarning: sync.ok
         ? null

@@ -11,6 +11,7 @@ export interface VapiStartConfig {
   assistantId: string
   publicKey: string
   opisServisa: string | null
+  systemPrompt?: string | null
   webhookSynced?: boolean
   webhookWarning?: string | null
 }
@@ -335,12 +336,23 @@ export function VapiCallModal({
       const vapi = initVapi(config.publicKey)
       attachVapiListeners(vapi)
 
-      await vapi.start(config.assistantId, {
+      const assistantOverrides: Record<string, unknown> = {
         metadata: {
           assistantDbId: String(config.assistantDbId),
           ucenikid: selectedUcenikId,
         },
-      })
+      }
+
+      if (config.systemPrompt?.trim()) {
+        assistantOverrides.model = {
+          messages: [{ role: 'system', content: config.systemPrompt.trim() }],
+        }
+      }
+
+      await vapi.start(
+        config.assistantId,
+        assistantOverrides as Parameters<typeof vapi.start>[1]
+      )
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Neuspelo pokretanje poziva'
       if (isDeviceInUseMessage(message)) {
@@ -461,6 +473,12 @@ export function VapiCallModal({
                         : 'Kliknite Započni, zatim „Allow“ za mikrofon (kamera nije obavezna)'}
                   </p>
                 </div>
+              </div>
+
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-center">
+                <p className="text-sm text-amber-800">
+                  Za završetak razgovora recite: <span className="font-bold">„Kraj“</span>
+                </p>
               </div>
 
               {!isConnected && !callEnded && (
