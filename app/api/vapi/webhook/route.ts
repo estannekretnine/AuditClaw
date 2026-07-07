@@ -11,16 +11,62 @@ function getSupabase() {
   return createClient(url, key)
 }
 
-function getCallMetadata(payload: Record<string, unknown>): Record<string, unknown> | null {
-  const call = payload.call
-  if (call && typeof call === 'object') {
-    const callRecord = call as Record<string, unknown>
-    const metadata = callRecord.metadata
-    if (metadata && typeof metadata === 'object') {
-      return metadata as Record<string, unknown>
-    }
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : null
+}
+
+// Vapi metadata koju šaljemo preko assistantOverrides.metadata može u izveštaju
+// da se nađe na više mesta, pa proveravamo sve verovatne lokacije.
+function getMetadataSources(payload: Record<string, unknown>): Record<string, unknown>[] {
+  const sources: Record<string, unknown>[] = []
+  const push = (value: unknown) => {
+    const record = asRecord(value)
+    if (record) sources.push(record)
+  }
+
+  const call = asRecord(payload.call)
+  push(call?.metadata)
+  push(asRecord(call?.assistantOverrides)?.metadata)
+  push(asRecord(payload.assistantOverrides)?.metadata)
+  push(asRecord(payload.assistant)?.metadata)
+  push(payload.metadata)
+
+  return sources
+}
+
+function toNumber(value: unknown): number | null {
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = Number(value)
+    if (!Number.isNaN(parsed)) return parsed
   }
   return null
+}
+
+// Rekurzivno traži ključ bilo gde u izveštaju (poslednji fallback), sa
+// ograničenjem dubine da izbegnemo skupu/beskonačnu pretragu.
+function deepFindNumber(value: unknown, key: string, depth = 0): number | null {
+  if (depth > 6 || !value || typeof value !== 'object') return null
+
+  if (!Array.isArray(value)) {
+    const record = value as Record<string, unknown>
+    const direct = toNumber(record[key])
+    if (direct !== null) return direct
+  }
+
+  const entries = Array.isArray(value) ? value : Object.values(value as Record<string, unknown>)
+  for (const entry of entries) {
+    const found = deepFindNumber(entry, key, depth + 1)
+    if (found !== null) return found
+  }
+  return null
+}
+
+function readMetadataNumber(payload: Record<string, unknown>, key: string): number | null {
+  for (const source of getMetadataSources(payload)) {
+    const value = toNumber(source[key])
+    if (value !== null) return value
+  }
+  return deepFindNumber(payload, key)
 }
 
 function resolveAssistantDbId(
@@ -33,24 +79,11 @@ function resolveAssistantDbId(
     if (!Number.isNaN(parsed)) return parsed
   }
 
-  const metadata = getCallMetadata(payload)
-  const dbId = metadata?.assistantDbId
-  if (typeof dbId === 'string' || typeof dbId === 'number') {
-    const parsed = Number(dbId)
-    if (!Number.isNaN(parsed)) return parsed
-  }
-
-  return null
+  return readMetadataNumber(payload, 'assistantDbId')
 }
 
 function resolveUcenikId(payload: Record<string, unknown>): number | null {
-  const metadata = getCallMetadata(payload)
-  const ucenikId = metadata?.ucenikid
-  if (typeof ucenikId === 'string' || typeof ucenikId === 'number') {
-    const parsed = Number(ucenikId)
-    if (!Number.isNaN(parsed)) return parsed
-  }
-  return null
+  return readMetadataNumber(payload, 'ucenikid')
 }
 
 export async function POST(request: NextRequest) {
@@ -110,6 +143,15 @@ export async function POST(request: NextRequest) {
     })
 
     const ucenikId = resolveUcenikId(report)
+    if (ucenikId === null) {
+      const call = asRecord(report.call)
+      console.warn('Vapi webhook: ucenikid nije pronađen u metadata.', {
+        reportKeys: Object.keys(report),
+        callKeys: call ? Object.keys(call) : null,
+        callMetadata: call?.metadata ?? null,
+        callAssistantOverrides: asRecord(call?.assistantOverrides)?.metadata ?? null,
+      })
+    }
 
     const { error } = await supabase.from('vapi_odgovor').insert([
       {

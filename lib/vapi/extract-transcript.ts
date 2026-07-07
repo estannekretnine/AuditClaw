@@ -14,12 +14,21 @@ function getMessageText(record: Record<string, unknown>): string {
   return ''
 }
 
+// U dijalog idu samo poruke korisnika i asistenta. System prompt (role "system")
+// i tehničke poruke (tool/function) se preskaču da ne bi završile u dijalogu.
+function isConversationalRole(role: string): boolean {
+  const normalized = role.toLowerCase()
+  return normalized === 'user' || normalized === 'assistant' || normalized === 'bot'
+}
+
 function formatMessagesToDialog(messages: unknown[]): string {
   return messages
     .map((msg) => {
       if (!msg || typeof msg !== 'object') return ''
       const record = msg as Record<string, unknown>
-      const role = formatMessageRole(typeof record.role === 'string' ? record.role : 'unknown')
+      const rawRole = typeof record.role === 'string' ? record.role : 'unknown'
+      if (!isConversationalRole(rawRole)) return ''
+      const role = formatMessageRole(rawRole)
       const text = getMessageText(record)
       return text ? `${role}: ${text}` : ''
     })
