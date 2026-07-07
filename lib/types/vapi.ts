@@ -2,6 +2,7 @@ export interface VapiAssistant {
   id: number
   assistant_id: string
   vapi_api_key: string | null
+  vapi_public_key: string | null
   opis_servisa: string | null
   System_Prompt: string | null
 }
@@ -9,6 +10,7 @@ export interface VapiAssistant {
 export interface VapiAssistantInsert {
   assistant_id: string
   vapi_api_key?: string | null
+  vapi_public_key?: string | null
   opis_servisa?: string | null
   System_Prompt?: string | null
 }

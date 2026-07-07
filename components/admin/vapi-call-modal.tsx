@@ -204,7 +204,7 @@ export function VapiCallModal({
                 <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm space-y-2">
                   <p>{error}</p>
                   <p className="text-xs text-red-600">
-                    Proverite da je u bazi podešen ispravan Vapi Private API key i Assistant ID.
+                    Potrebna su oba ključa: Private (vapi_api_key) za webhook, Public (vapi_public_key) za web poziv.
                   </p>
                 </div>
               )}

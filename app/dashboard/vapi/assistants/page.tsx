@@ -39,6 +39,7 @@ export default function VapiAssistantsPage() {
   const [formData, setFormData] = useState({
     assistant_id: '',
     vapi_api_key: '',
+    vapi_public_key: '',
     opis_servisa: '',
     System_Prompt: '',
   })
@@ -64,6 +65,7 @@ export default function VapiAssistantsPage() {
     setFormData({
       assistant_id: '',
       vapi_api_key: '',
+      vapi_public_key: '',
       opis_servisa: '',
       System_Prompt: '',
     })
@@ -80,6 +82,7 @@ export default function VapiAssistantsPage() {
     setFormData({
       assistant_id: assistant.assistant_id || '',
       vapi_api_key: assistant.vapi_api_key || '',
+      vapi_public_key: assistant.vapi_public_key || '',
       opis_servisa: assistant.opis_servisa || '',
       System_Prompt: assistant.System_Prompt || '',
     })
@@ -94,6 +97,7 @@ export default function VapiAssistantsPage() {
       const fd = new FormData()
       fd.append('assistant_id', formData.assistant_id)
       fd.append('vapi_api_key', formData.vapi_api_key)
+      fd.append('vapi_public_key', formData.vapi_public_key)
       fd.append('opis_servisa', formData.opis_servisa)
       fd.append('System_Prompt', formData.System_Prompt)
 
@@ -334,6 +338,20 @@ export default function VapiAssistantsPage() {
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Vapi Dashboard → API Keys → kopiraj <strong>Private</strong> key (ne Public).
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Vapi Public API Key</label>
+                <input
+                  type="text"
+                  value={formData.vapi_public_key}
+                  onChange={(e) => setFormData({ ...formData, vapi_public_key: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  placeholder="Public key iz Vapi dashboarda"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Vapi Dashboard → API Keys → kopiraj <strong>Public</strong> key (za web poziv).
                 </p>
               </div>
 

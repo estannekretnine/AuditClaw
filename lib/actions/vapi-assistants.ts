@@ -7,6 +7,7 @@ import { z } from 'zod'
 import type { VapiAssistant, VapiAssistantInsert } from '@/lib/types/vapi'
 import {
   getVapiPrivateKey,
+  getVapiPublicKeyForCall,
   syncVapiAssistantWebhook,
   validateVapiAssistant,
   createVapiWebCall,
@@ -15,6 +16,7 @@ import {
 const vapiAssistantSchema = z.object({
   assistant_id: z.string().min(1, 'Assistant ID je obavezan'),
   vapi_api_key: z.string().optional().nullable(),
+  vapi_public_key: z.string().optional().nullable(),
   opis_servisa: z.string().optional().nullable(),
   System_Prompt: z.string().optional().nullable(),
 })
@@ -36,6 +38,7 @@ function parseAssistantFormData(formData: FormData) {
   return {
     assistant_id: ((formData.get('assistant_id') as string) || '').trim(),
     vapi_api_key: trim(formData.get('vapi_api_key')),
+    vapi_public_key: trim(formData.get('vapi_public_key')),
     opis_servisa: trim(formData.get('opis_servisa')),
     System_Prompt: trim(formData.get('System_Prompt')),
   }
@@ -105,6 +108,15 @@ export async function getVapiStartConfig(assistantDbId: number) {
     return { data: null, error: validation.error }
   }
 
+  const publicKey = getVapiPublicKeyForCall(assistant.vapi_public_key)
+  if (!publicKey) {
+    return {
+      data: null,
+      error:
+        'Vapi Public key nije podešen. Dodajte vapi_public_key u formi asistenta ili NEXT_PUBLIC_VAPI_PUBLIC_KEY u env.',
+    }
+  }
+
   const sync = await syncVapiAssistantWebhook(
     assistant.assistant_id,
     privateKey,
@@ -146,9 +158,18 @@ export async function startVapiWebCall(assistantDbId: number) {
     }
   }
 
+  const publicKey = getVapiPublicKeyForCall(assistant.vapi_public_key)
+  if (!publicKey) {
+    return {
+      data: null,
+      error:
+        'Vapi Public key nije podešen. Dodajte Public key u formi asistenta (Vapi Dashboard → API Keys → Public).',
+    }
+  }
+
   const webCall = await createVapiWebCall(
     assistant.assistant_id,
-    privateKey,
+    publicKey,
     assistant.id
   )
 

@@ -9,8 +9,10 @@ export function getVapiPrivateKey(rowKey: string | null | undefined): string | n
   return envKey || null
 }
 
-export function getVapiPublicKey(): string | null {
-  return process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY || null
+export function getVapiPublicKeyForCall(rowPublicKey: string | null | undefined): string | null {
+  const trimmed = rowPublicKey?.trim()
+  if (trimmed) return trimmed
+  return process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY?.trim() || null
 }
 
 export function getVapiWebhookSecret(): string | null {
@@ -68,7 +70,7 @@ export async function validateVapiAssistant(
 
 export async function createVapiWebCall(
   vapiAssistantId: string,
-  privateApiKey: string,
+  publicApiKey: string,
   assistantDbId: number
 ): Promise<{
   ok: boolean
@@ -79,7 +81,7 @@ export async function createVapiWebCall(
     const response = await fetch(`${VAPI_API_BASE}/call/web`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${privateApiKey}`,
+        Authorization: `Bearer ${publicApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
