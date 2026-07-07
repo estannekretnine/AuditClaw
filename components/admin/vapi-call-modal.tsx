@@ -25,6 +25,34 @@ interface VapiCallModalProps {
   loadError?: string | null
 }
 
+function formatVapiError(error: unknown): string {
+  if (!error) return 'Greška pri Vapi pozivu'
+
+  if (error instanceof Error && error.message) {
+    return error.message
+  }
+
+  if (typeof error === 'string') return error
+
+  if (typeof error === 'object') {
+    const record = error as Record<string, unknown>
+
+    if (typeof record.error === 'object' && record.error !== null) {
+      const nested = record.error as Record<string, unknown>
+      if (typeof nested.message === 'string') return nested.message
+    }
+
+    if (typeof record.message === 'string') return record.message
+    if (typeof record.error === 'string') return record.error
+
+    if (record.type === 'start-method-error') {
+      return 'Vapi nije mogao da pokrene web poziv (400). Proverite da je NEXT_PUBLIC_VAPI_PUBLIC_KEY javni ključ iz istog Vapi naloga kao asistent.'
+    }
+  }
+
+  return 'Greška pri Vapi pozivu'
+}
+
 export function VapiCallModal({
   open,
   onClose,
@@ -99,27 +127,24 @@ export function VapiCallModal({
         }
       })
 
-      vapi.on('error', (e: Error | { message?: string }) => {
-        const message = e instanceof Error ? e.message : e?.message || 'Greška pri Vapi pozivu'
-        setError(message)
+      vapi.on('call-start-failed', (event: { error?: string }) => {
+        setError(event.error || 'Vapi nije uspeo da pokrene poziv.')
         setIsStarting(false)
       })
 
-      const assistantOverrides: Record<string, unknown> = {
+      vapi.on('error', (e: unknown) => {
+        setError(formatVapiError(e))
+        setIsStarting(false)
+      })
+
+      // Samo metadata — delimičan model override bez provider/model uzrokuje 400 na /call/web
+      await vapi.start(config.assistantId, {
         metadata: {
           assistantDbId: String(config.assistantDbId),
         },
-      }
-
-      if (config.systemPrompt?.trim()) {
-        assistantOverrides.model = {
-          messages: [{ role: 'system', content: config.systemPrompt }],
-        }
-      }
-
-      await vapi.start(config.assistantId, assistantOverrides)
+      })
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Neuspelo pokretanje poziva')
+      setError(formatVapiError(e))
       setIsStarting(false)
     }
   }
@@ -194,8 +219,11 @@ export function VapiCallModal({
               </div>
 
               {error && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-                  {error}
+                <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm space-y-2">
+                  <p>{error}</p>
+                  <p className="text-xs text-red-600">
+                    Proverite: Public Key i Assistant ID moraju biti iz istog Vapi naloga. U bazi `vapi_api_key` mora biti Private key.
+                  </p>
                 </div>
               )}
 

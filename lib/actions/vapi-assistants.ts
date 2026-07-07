@@ -9,6 +9,7 @@ import {
   getVapiPrivateKey,
   getVapiPublicKey,
   syncVapiAssistantWebhook,
+  validateVapiAssistant,
 } from '@/lib/vapi/server'
 
 const vapiAssistantSchema = z.object({
@@ -96,6 +97,11 @@ export async function getVapiStartConfig(assistantDbId: number) {
 
   const privateKey = getVapiPrivateKey(assistant.vapi_api_key)
   if (privateKey) {
+    const validation = await validateVapiAssistant(assistant.assistant_id, privateKey)
+    if (!validation.ok) {
+      return { data: null, error: validation.error }
+    }
+
     const sync = await syncVapiAssistantWebhook(
       assistant.assistant_id,
       privateKey,
@@ -103,6 +109,11 @@ export async function getVapiStartConfig(assistantDbId: number) {
     )
     if (!sync.ok) {
       console.warn('Vapi webhook sync warning:', sync.error)
+    }
+  } else {
+    return {
+      data: null,
+      error: 'vapi_api_key (private key) nije podešen za ovog asistenta. Dodajte ga u formi za izmenu.',
     }
   }
 

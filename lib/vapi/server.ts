@@ -23,6 +23,45 @@ interface VapiApiResult {
   error: string | null
 }
 
+export async function validateVapiAssistant(
+  vapiAssistantId: string,
+  privateApiKey: string
+): Promise<VapiApiResult> {
+  try {
+    const response = await fetch(`${VAPI_API_BASE}/assistant/${vapiAssistantId}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${privateApiKey}`,
+      },
+    })
+
+    if (response.status === 404) {
+      return {
+        ok: false,
+        error: `Assistant ID "${vapiAssistantId}" nije pronađen u Vapi nalogu. Proverite ID u Vapi dashboardu.`,
+      }
+    }
+
+    if (!response.ok) {
+      const body = await response.text()
+      if (response.status === 401) {
+        return {
+          ok: false,
+          error: 'Vapi private API key nije ispravan (401). Proverite vapi_api_key u bazi.',
+        }
+      }
+      return { ok: false, error: `Vapi API greška (${response.status}): ${body.slice(0, 200)}` }
+    }
+
+    return { ok: true, error: null }
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'Greška pri proveri Vapi asistenta',
+    }
+  }
+}
+
 export async function syncVapiAssistantWebhook(
   vapiAssistantId: string,
   privateApiKey: string,
