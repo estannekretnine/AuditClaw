@@ -60,6 +60,35 @@ function getDefaultVoiceConfig(): { ok: true; voice: Record<string, unknown> } |
   return { ok: true, voice: { provider, voiceId } }
 }
 
+// Gradi ČIST voice objekat bez fallbackPlan-a. Vapi dashboard ume automatski da
+// doda neispravan fallback glas (npr. Cartesia sa praznim voiceId), što blokira
+// objavljivanje i ostavlja asistenta bez glasa (poziv ćuti). Slanjem čistog
+// voice objekta preko API-ja zamenjujemo ceo voice i uklanjamo pokvareni fallback.
+function buildCleanVoice(
+  remoteVoice: Record<string, unknown> | undefined
+): Record<string, unknown> | null {
+  const envVoiceId = process.env.VAPI_DEFAULT_VOICE_ID?.trim()
+  if (envVoiceId) {
+    const envProvider = process.env.VAPI_DEFAULT_VOICE_PROVIDER?.trim() || '11labs'
+    return { provider: envProvider, voiceId: envVoiceId }
+  }
+
+  if (remoteVoice) {
+    const provider = typeof remoteVoice.provider === 'string' ? remoteVoice.provider.trim() : ''
+    const voiceId =
+      typeof remoteVoice.voiceId === 'string'
+        ? remoteVoice.voiceId.trim()
+        : typeof remoteVoice.voiceId === 'number'
+          ? String(remoteVoice.voiceId)
+          : ''
+    if (provider && voiceId) {
+      return { provider, voiceId }
+    }
+  }
+
+  return null
+}
+
 function buildServerPayload(assistantDbId: number, webhookSecret: string) {
   const serverUrl = getVapiWebhookUrl(assistantDbId)
   return {
@@ -215,6 +244,12 @@ export async function syncVapiAssistantConfig(options: {
     server: buildServerPayload(options.assistantDbId, webhookSecret).server,
   }
 
+  // Postavi čist glas (bez pokvarenog fallback plana) da poziv sigurno ima zvuk.
+  const cleanVoice = buildCleanVoice(remote.data.voice)
+  if (cleanVoice) {
+    patchBody.voice = cleanVoice
+  }
+
   if (options.name?.trim()) {
     patchBody.name = options.name.trim()
   }
@@ -224,11 +259,16 @@ export async function syncVapiAssistantConfig(options: {
     return primary
   }
 
-  const legacy = await patchVapiAssistant(options.vapiAssistantId, options.privateApiKey, {
+  const legacyBody: Record<string, unknown> = {
     model: existingModel,
     serverUrl: buildServerPayload(options.assistantDbId, webhookSecret).serverUrl,
     serverUrlSecret: webhookSecret,
-  })
+  }
+  if (cleanVoice) {
+    legacyBody.voice = cleanVoice
+  }
+
+  const legacy = await patchVapiAssistant(options.vapiAssistantId, options.privateApiKey, legacyBody)
 
   return legacy
 }
