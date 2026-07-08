@@ -22,6 +22,14 @@ async function requireAdminAccess() {
   return { error: null }
 }
 
+async function requireReadAccess() {
+  const user = await getCurrentUser()
+  if (!user || (user.stsstatus !== 'admin' && user.stsstatus !== 'manager' && user.stsstatus !== 'vapi')) {
+    return { error: 'Nemate dozvolu za ovu akciju.' }
+  }
+  return { error: null }
+}
+
 function parseFormData(formData: FormData) {
   const trim = (value: FormDataEntryValue | null) => {
     const text = (value as string) || ''
@@ -35,7 +43,7 @@ function parseFormData(formData: FormData) {
 }
 
 export async function getVapiMedicinskaOprema(limit: number = 200, offset: number = 0) {
-  const access = await requireAdminAccess()
+  const access = await requireReadAccess()
   if (access.error) return { data: null, error: access.error, count: 0 }
 
   const supabase = createAdminClient()

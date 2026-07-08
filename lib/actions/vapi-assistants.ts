@@ -56,6 +56,14 @@ async function requireAdminAccess() {
   return { error: null }
 }
 
+async function requireReadAccess() {
+  const user = await getCurrentUser()
+  if (!user || (user.stsstatus !== 'admin' && user.stsstatus !== 'manager' && user.stsstatus !== 'vapi')) {
+    return { error: 'Nemate dozvolu za ovu akciju.' }
+  }
+  return { error: null }
+}
+
 function parseAssistantFormData(formData: FormData) {
   const trim = (value: FormDataEntryValue | null) => {
     const text = (value as string) || ''
@@ -281,7 +289,7 @@ export async function getVapiAssistants(
 }
 
 export async function getSimliEnvStatus() {
-  const access = await requireAdminAccess()
+  const access = await requireReadAccess()
   if (access.error) return { data: null, error: access.error }
 
   const hasSimliApiKeyInEnv = Boolean(process.env.SIMLI_API_KEY?.trim())
@@ -306,7 +314,7 @@ export async function getVapiAssistantById(id: number) {
 }
 
 export async function getAssistantMedOpremaIds(assistantId: number) {
-  const access = await requireAdminAccess()
+  const access = await requireReadAccess()
   if (access.error) return { data: null, error: access.error }
 
   const supabase = createAdminClient()
@@ -334,7 +342,7 @@ export async function setAssistantMedOpremaIds(assistantId: number, medOpremaIds
 }
 
 export async function getAssistantSystemPrompts(assistantId: number) {
-  const access = await requireAdminAccess()
+  const access = await requireReadAccess()
   if (access.error) return { data: null, error: access.error }
   const prompts = await listSystemPromptsByAssistant(assistantId)
   return { data: prompts, error: null }
