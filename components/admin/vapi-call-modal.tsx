@@ -540,9 +540,15 @@ export function VapiCallModal({
   )
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
-      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-100 w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-gray-900 to-black rounded-t-2xl sm:rounded-t-3xl flex items-center justify-between gap-3">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-3 md:p-4">
+      <div
+        className={`bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-100 w-full overflow-hidden flex flex-col ${
+          showVideoPatient
+            ? 'max-w-7xl h-[96vh] max-h-[96vh]'
+            : 'max-w-2xl max-h-[90vh]'
+        }`}
+      >
+        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-gray-900 to-black rounded-t-2xl sm:rounded-t-3xl flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
               <Mic className="w-5 h-5 text-white" />
@@ -564,7 +570,13 @@ export function VapiCallModal({
           </button>
         </div>
 
-        <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
+        <div
+          className={`overflow-y-auto flex-1 ${
+            showVideoPatient
+              ? 'p-3 sm:p-5 space-y-3 sm:space-y-4'
+              : 'p-4 sm:p-6 space-y-4 sm:space-y-5'
+          }`}
+        >
           {loading && (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-500" />
@@ -612,8 +624,8 @@ export function VapiCallModal({
               </div>
 
               {showVideoPatient && (
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 sm:gap-4">
-                  <div className="lg:col-span-3">
+                <div className="flex flex-col gap-3 min-h-0">
+                  <div className="min-h-[42vh] sm:min-h-[48vh] lg:min-h-[54vh]">
                     <VapiSimliAvatar
                       vapi={vapiRef.current}
                       active={isConnected || isStarting}
@@ -621,11 +633,12 @@ export function VapiCallModal({
                       sessionToken={config?.simliSessionToken || ''}
                       iceServers={config?.simliIceServers || []}
                       onError={(message) => setError(message)}
+                      large
                     />
                   </div>
-                  <div className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white p-3 sm:p-4">
-                    <h4 className="text-sm font-semibold text-gray-800 mb-3">Vitalni znaci</h4>
-                    <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
+                  <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-4">
+                    <h4 className="text-sm font-semibold text-gray-800 mb-2 sm:mb-3">Vitalni znaci</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 text-xs sm:text-sm">
                       {[
                         { key: 'pritisak', label: 'Pritisak', value: vitalSigns.pritisak ?? '-' },
                         { key: 'puls', label: 'Puls', value: vitalSigns.puls ?? '-' },
@@ -635,14 +648,14 @@ export function VapiCallModal({
                       ].map((item) => (
                         <div
                           key={item.key}
-                          className={`rounded-xl border p-2.5 transition-colors ${
+                          className={`rounded-xl border p-2.5 sm:p-3 transition-colors ${
                             updatedVitalKey === item.key
                               ? 'border-emerald-300 bg-emerald-50'
                               : 'border-gray-200 bg-gray-50'
                           }`}
                         >
                           <p className="text-[11px] text-gray-500">{item.label}</p>
-                          <p className="font-semibold text-gray-900">{String(item.value)}</p>
+                          <p className="font-semibold text-gray-900 text-base sm:text-lg">{String(item.value)}</p>
                         </div>
                       ))}
                     </div>
@@ -749,7 +762,11 @@ export function VapiCallModal({
 
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 mb-2">Transkript (uživo)</h4>
-                <div className="min-h-[160px] max-h-[240px] overflow-y-auto p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-2">
+                <div
+                  className={`overflow-y-auto p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-2 ${
+                    showVideoPatient ? 'min-h-[100px] max-h-[140px]' : 'min-h-[160px] max-h-[240px]'
+                  }`}
+                >
                   {transcript.length === 0 ? (
                     <p className="text-sm text-gray-400">Transkript će se pojaviti tokom razgovora...</p>
                   ) : (

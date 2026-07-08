@@ -17,6 +17,8 @@ interface VapiSimliAvatarProps {
   sessionToken: string
   iceServers?: RTCIceServer[]
   onError: (message: string) => void
+  /** Veći prikaz za fullscreen modal (video pacijent). */
+  large?: boolean
 }
 
 function stopTracks(stream: MediaStream | null): void {
@@ -33,6 +35,7 @@ export function VapiSimliAvatar({
   sessionToken,
   iceServers = [],
   onError,
+  large = false,
 }: VapiSimliAvatarProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -274,8 +277,16 @@ export function VapiSimliAvatar({
   }, [active, faceId, iceServers, onError, sessionToken, vapi])
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-gray-950/95 p-3 sm:p-4">
-      <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
+    <div
+      className={`rounded-2xl border border-gray-200 bg-gray-950/95 h-full ${
+        large ? 'p-2 sm:p-3' : 'p-3 sm:p-4'
+      }`}
+    >
+      <div
+        className={`relative w-full overflow-hidden rounded-xl bg-black ${
+          large ? 'h-full min-h-[42vh] sm:min-h-[48vh] lg:min-h-[54vh]' : 'aspect-video'
+        }`}
+      >
         <video ref={videoRef} autoPlay playsInline muted={false} className="h-full w-full object-cover" />
         {!avatarStarted && (
           <div className="absolute inset-0 flex items-center justify-center text-xs sm:text-sm text-gray-300">
