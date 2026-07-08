@@ -603,33 +603,33 @@ export default function VapiAssistantsPage() {
 
   const renderActions = (assistant: VapiAssistant, compact = false, canStart = false) => {
     if (compact) {
-      // Dugmad su sirine svog sadrzaja (ne razvucena) - flex-wrap sprecava izlazak van ekrana
+      // Na mobilnom prikazu akcije su u 2 reda (3 kolone) da se sve jasno vide.
       return (
-        <div className="flex flex-wrap gap-1">
+        <div className="grid grid-cols-3 gap-1 w-full">
           {canStart && (
             <button
               onClick={() => handleStart(assistant)}
-              className="flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm shadow-green-500/20"
+              className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm shadow-green-500/20"
             >
               <Play className="w-3.5 h-3.5 shrink-0" />Započni
             </button>
           )}
           <button
             onClick={() => handleEdit(assistant)}
-            className="flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-sm shadow-amber-500/20"
+            className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-sm shadow-amber-500/20"
           >
             <Edit className="w-3.5 h-3.5 shrink-0" />Izmeni
           </button>
           <button
             onClick={() => handleCopy(assistant)}
-            className="flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-slate-500 to-slate-600 text-white rounded-lg hover:from-slate-600 hover:to-slate-700 transition-all duration-200 shadow-sm shadow-slate-500/20"
+            className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-slate-500 to-slate-600 text-white rounded-lg hover:from-slate-600 hover:to-slate-700 transition-all duration-200 shadow-sm shadow-slate-500/20"
           >
             <Copy className="w-3.5 h-3.5 shrink-0" />Kopiraj
           </button>
           {canStart && (
             <button
               onClick={() => handleManageOprema(assistant)}
-              className="flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 shadow-sm shadow-indigo-500/20"
+              className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 shadow-sm shadow-indigo-500/20"
             >
               <Stethoscope className="w-3.5 h-3.5 shrink-0" />Oprema
             </button>
@@ -637,14 +637,14 @@ export default function VapiAssistantsPage() {
           {canStart && (
             <button
               onClick={() => handleManageSysPrompt(assistant)}
-              className="flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-lg hover:from-violet-600 hover:to-violet-700 transition-all duration-200 shadow-sm shadow-violet-500/20"
+              className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-lg hover:from-violet-600 hover:to-violet-700 transition-all duration-200 shadow-sm shadow-violet-500/20"
             >
               <MessageSquare className="w-3.5 h-3.5 shrink-0" />SysPrompt
             </button>
           )}
           <button
             onClick={() => handleDelete(assistant)}
-            className="flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-sm shadow-red-500/20"
+            className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-sm shadow-red-500/20"
           >
             <Trash2 className="w-3.5 h-3.5 shrink-0" />Obriši
           </button>
