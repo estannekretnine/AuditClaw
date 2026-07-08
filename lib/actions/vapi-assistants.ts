@@ -551,19 +551,24 @@ export async function createVapiAssistant(formData: FormData) {
   }
 
   const privateKey = getVapiPrivateKey(result.data.vapi_api_key)
+  const {
+    medoprema_ids: _medopremaIds,
+    selected_system_prompt_id: _selectedSystemPromptId,
+    ...assistantInput
+  } = result.data
 
   const supabase = createAdminClient()
-  const vapiIdFromForm = result.data.assistant_id?.trim() || null
+  const vapiIdFromForm = assistantInput.assistant_id?.trim() || null
   const assistantData: VapiAssistantInsert = {
-    ...result.data,
+    ...assistantInput,
     assistant_id: vapiIdFromForm || PENDING_VAPI_ID,
-    simli_face_id: result.data.ima_video_pacijenta ? result.data.simli_face_id : null,
-    simli_api_key: result.data.ima_video_pacijenta ? result.data.simli_api_key : null,
-    simli_model: result.data.ima_video_pacijenta ? result.data.simli_model || 'fasttalk' : 'fasttalk',
-    simli_max_session_length: result.data.ima_video_pacijenta ? result.data.simli_max_session_length || 600 : 600,
-    simli_max_idle_time: result.data.ima_video_pacijenta ? result.data.simli_max_idle_time || 600 : 600,
-    vitalni_znaci_default: result.data.ima_video_pacijenta
-      ? (result.data.vitalni_znaci_default ?? defaultVitalniZnaci)
+    simli_face_id: assistantInput.ima_video_pacijenta ? assistantInput.simli_face_id : null,
+    simli_api_key: assistantInput.ima_video_pacijenta ? assistantInput.simli_api_key : null,
+    simli_model: assistantInput.ima_video_pacijenta ? assistantInput.simli_model || 'fasttalk' : 'fasttalk',
+    simli_max_session_length: assistantInput.ima_video_pacijenta ? assistantInput.simli_max_session_length || 600 : 600,
+    simli_max_idle_time: assistantInput.ima_video_pacijenta ? assistantInput.simli_max_idle_time || 600 : 600,
+    vitalni_znaci_default: assistantInput.ima_video_pacijenta
+      ? (assistantInput.vitalni_znaci_default ?? defaultVitalniZnaci)
       : null,
   }
 
@@ -647,18 +652,23 @@ export async function updateVapiAssistant(id: number, formData: FormData) {
   }
 
   const privateKey = getVapiPrivateKey(result.data.vapi_api_key)
+  const {
+    medoprema_ids: _medopremaIds,
+    selected_system_prompt_id: _selectedSystemPromptId,
+    ...assistantInput
+  } = result.data
 
   const supabase = createAdminClient()
   const updatePayload: VapiAssistantInsert = {
-    ...result.data,
-    assistant_id: result.data.assistant_id?.trim() || PENDING_VAPI_ID,
-    simli_face_id: result.data.ima_video_pacijenta ? result.data.simli_face_id : null,
-    simli_api_key: result.data.ima_video_pacijenta ? result.data.simli_api_key : null,
-    simli_model: result.data.ima_video_pacijenta ? result.data.simli_model || 'fasttalk' : 'fasttalk',
-    simli_max_session_length: result.data.ima_video_pacijenta ? result.data.simli_max_session_length || 600 : 600,
-    simli_max_idle_time: result.data.ima_video_pacijenta ? result.data.simli_max_idle_time || 600 : 600,
-    vitalni_znaci_default: result.data.ima_video_pacijenta
-      ? (result.data.vitalni_znaci_default ?? defaultVitalniZnaci)
+    ...assistantInput,
+    assistant_id: assistantInput.assistant_id?.trim() || PENDING_VAPI_ID,
+    simli_face_id: assistantInput.ima_video_pacijenta ? assistantInput.simli_face_id : null,
+    simli_api_key: assistantInput.ima_video_pacijenta ? assistantInput.simli_api_key : null,
+    simli_model: assistantInput.ima_video_pacijenta ? assistantInput.simli_model || 'fasttalk' : 'fasttalk',
+    simli_max_session_length: assistantInput.ima_video_pacijenta ? assistantInput.simli_max_session_length || 600 : 600,
+    simli_max_idle_time: assistantInput.ima_video_pacijenta ? assistantInput.simli_max_idle_time || 600 : 600,
+    vitalni_znaci_default: assistantInput.ima_video_pacijenta
+      ? (assistantInput.vitalni_znaci_default ?? defaultVitalniZnaci)
       : null,
   }
 

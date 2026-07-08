@@ -5,6 +5,7 @@ import {
   Bot,
   Plus,
   Edit,
+  Copy,
   Trash2,
   Play,
   ChevronRight,
@@ -249,6 +250,63 @@ export default function VapiAssistantsPage() {
       ...prev,
       selected_system_prompt_id: selectedPrompt ? String(selectedPrompt.id) : '',
     }))
+    setShowAdvanced(false)
+    setShowForm(true)
+  }
+
+  const handleCopy = async (assistant: VapiAssistant) => {
+    const copyName = assistant.opis_servisa?.trim()
+      ? `${assistant.opis_servisa} (kopija)`
+      : `${assistantName(assistant)} (kopija)`
+
+    setEditingAssistant(null)
+    setFormData({
+      assistant_id: '',
+      vapi_api_key: assistant.vapi_api_key || '',
+      vapi_public_key: assistant.vapi_public_key || '',
+      opis_servisa: copyName,
+      System_Prompt: assistant.System_Prompt || '',
+      servisid: assistant.servisid !== null ? String(assistant.servisid) : '',
+      ima_video_pacijenta: assistant.ima_video_pacijenta || false,
+      simli_face_id: assistant.simli_face_id || '',
+      simli_api_key: assistant.simli_api_key || '',
+      simli_model: assistant.simli_model || 'fasttalk',
+      simli_max_session_length: String(assistant.simli_max_session_length || 600),
+      simli_max_idle_time: String(assistant.simli_max_idle_time || 600),
+      pritisak:
+        typeof assistant.vitalni_znaci_default?.pritisak === 'string'
+          ? assistant.vitalni_znaci_default.pritisak
+          : '120/80',
+      puls:
+        typeof assistant.vitalni_znaci_default?.puls === 'number'
+          ? String(assistant.vitalni_znaci_default.puls)
+          : '78',
+      temperatura:
+        typeof assistant.vitalni_znaci_default?.temperatura === 'number'
+          ? String(assistant.vitalni_znaci_default.temperatura)
+          : '36.6',
+      saturacija:
+        typeof assistant.vitalni_znaci_default?.saturacija === 'number'
+          ? String(assistant.vitalni_znaci_default.saturacija)
+          : '98',
+      secer:
+        typeof assistant.vitalni_znaci_default?.secer === 'number'
+          ? String(assistant.vitalni_znaci_default.secer)
+          : '5.4',
+      selected_system_prompt_id: '',
+    })
+
+    const promptsResult = await getAssistantSystemPrompts(assistant.id)
+    const prompts = promptsResult.data || []
+    setSystemPromptOptions(prompts)
+    const selectedPrompt = prompts.find(
+      (prompt) => prompt['SystemPrompt Vapi'] === (assistant.System_Prompt || '')
+    )
+    setFormData((prev) => ({
+      ...prev,
+      selected_system_prompt_id: selectedPrompt ? String(selectedPrompt.id) : '',
+    }))
+
     setShowAdvanced(false)
     setShowForm(true)
   }
@@ -547,25 +605,31 @@ export default function VapiAssistantsPage() {
     if (compact) {
       // Dugmad su sirine svog sadrzaja (ne razvucena) - flex-wrap sprecava izlazak van ekrana
       return (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1">
           {canStart && (
             <button
               onClick={() => handleStart(assistant)}
-              className="flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm shadow-green-500/20"
+              className="flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm shadow-green-500/20"
             >
               <Play className="w-3.5 h-3.5 shrink-0" />Započni
             </button>
           )}
           <button
             onClick={() => handleEdit(assistant)}
-            className="flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-sm shadow-amber-500/20"
+            className="flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-sm shadow-amber-500/20"
           >
             <Edit className="w-3.5 h-3.5 shrink-0" />Izmeni
+          </button>
+          <button
+            onClick={() => handleCopy(assistant)}
+            className="flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-slate-500 to-slate-600 text-white rounded-lg hover:from-slate-600 hover:to-slate-700 transition-all duration-200 shadow-sm shadow-slate-500/20"
+          >
+            <Copy className="w-3.5 h-3.5 shrink-0" />Kopiraj
           </button>
           {canStart && (
             <button
               onClick={() => handleManageOprema(assistant)}
-              className="flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 shadow-sm shadow-indigo-500/20"
+              className="flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 shadow-sm shadow-indigo-500/20"
             >
               <Stethoscope className="w-3.5 h-3.5 shrink-0" />Oprema
             </button>
@@ -573,14 +637,14 @@ export default function VapiAssistantsPage() {
           {canStart && (
             <button
               onClick={() => handleManageSysPrompt(assistant)}
-              className="flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-lg hover:from-violet-600 hover:to-violet-700 transition-all duration-200 shadow-sm shadow-violet-500/20"
+              className="flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-lg hover:from-violet-600 hover:to-violet-700 transition-all duration-200 shadow-sm shadow-violet-500/20"
             >
               <MessageSquare className="w-3.5 h-3.5 shrink-0" />SysPrompt
             </button>
           )}
           <button
             onClick={() => handleDelete(assistant)}
-            className="flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-sm shadow-red-500/20"
+            className="flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-sm shadow-red-500/20"
           >
             <Trash2 className="w-3.5 h-3.5 shrink-0" />Obriši
           </button>
@@ -589,42 +653,48 @@ export default function VapiAssistantsPage() {
     }
 
     return (
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end gap-1.5">
         {canStart && (
           <button
             onClick={() => handleStart(assistant)}
-            className="flex items-center justify-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md shadow-green-500/20"
+            className="flex items-center justify-center gap-1 px-3 py-1.5 text-xs bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm shadow-green-500/20"
           >
-            <Play className="w-4 h-4" /><span className="hidden lg:inline">Započni</span>
+            <Play className="w-3.5 h-3.5" /><span className="hidden lg:inline">Započni</span>
           </button>
         )}
         <button
           onClick={() => handleEdit(assistant)}
-          className="flex items-center justify-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-md shadow-amber-500/20"
+          className="flex items-center justify-center gap-1 px-3 py-1.5 text-xs bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-sm shadow-amber-500/20"
         >
-          <Edit className="w-4 h-4" /><span className="hidden lg:inline">Izmeni</span>
+          <Edit className="w-3.5 h-3.5" /><span className="hidden lg:inline">Izmeni</span>
+        </button>
+        <button
+          onClick={() => handleCopy(assistant)}
+          className="flex items-center justify-center gap-1 px-3 py-1.5 text-xs bg-gradient-to-r from-slate-500 to-slate-600 text-white rounded-lg hover:from-slate-600 hover:to-slate-700 transition-all duration-200 shadow-sm shadow-slate-500/20"
+        >
+          <Copy className="w-3.5 h-3.5" /><span className="hidden lg:inline">Kopiraj</span>
         </button>
         {canStart && (
           <button
             onClick={() => handleManageOprema(assistant)}
-            className="flex items-center justify-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 shadow-md shadow-indigo-500/20"
+            className="flex items-center justify-center gap-1 px-3 py-1.5 text-xs bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 shadow-sm shadow-indigo-500/20"
           >
-            <Stethoscope className="w-4 h-4" /><span className="hidden lg:inline">Oprema</span>
+            <Stethoscope className="w-3.5 h-3.5" /><span className="hidden lg:inline">Oprema</span>
           </button>
         )}
         {canStart && (
           <button
             onClick={() => handleManageSysPrompt(assistant)}
-            className="flex items-center justify-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl hover:from-violet-600 hover:to-violet-700 transition-all duration-200 shadow-md shadow-violet-500/20"
+            className="flex items-center justify-center gap-1 px-3 py-1.5 text-xs bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-lg hover:from-violet-600 hover:to-violet-700 transition-all duration-200 shadow-sm shadow-violet-500/20"
           >
-            <MessageSquare className="w-4 h-4" /><span className="hidden lg:inline">SysPrompt</span>
+            <MessageSquare className="w-3.5 h-3.5" /><span className="hidden lg:inline">SysPrompt</span>
           </button>
         )}
         <button
           onClick={() => handleDelete(assistant)}
-          className="flex items-center justify-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md shadow-red-500/20"
+          className="flex items-center justify-center gap-1 px-3 py-1.5 text-xs bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-sm shadow-red-500/20"
         >
-          <Trash2 className="w-4 h-4" /><span className="hidden lg:inline">Obriši</span>
+          <Trash2 className="w-3.5 h-3.5" /><span className="hidden lg:inline">Obriši</span>
         </button>
       </div>
     )
