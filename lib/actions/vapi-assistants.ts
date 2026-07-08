@@ -26,6 +26,7 @@ const vapiAssistantSchema = z.object({
   servisid: z.number().optional().nullable(),
   ima_video_pacijenta: z.boolean().optional(),
   simli_face_id: z.string().optional().nullable(),
+  simli_api_key: z.string().optional().nullable(),
   simli_model: z.enum(['fasttalk', 'artalk']).optional(),
   simli_max_session_length: z.number().int().min(60).max(3600).optional(),
   simli_max_idle_time: z.number().int().min(30).max(3600).optional(),
@@ -82,6 +83,7 @@ function parseAssistantFormData(formData: FormData) {
     servisid: servisid !== null && !Number.isNaN(servisid) ? servisid : null,
     ima_video_pacijenta: imaVideoPacijenta,
     simli_face_id: trim(formData.get('simli_face_id')),
+    simli_api_key: trim(formData.get('simli_api_key')),
     simli_model: simliModelRaw === 'artalk' ? 'artalk' : 'fasttalk',
     simli_max_session_length: simliSessionRaw ? Number(simliSessionRaw) : 600,
     simli_max_idle_time: simliIdleRaw ? Number(simliIdleRaw) : 600,
@@ -131,6 +133,14 @@ export async function getVapiAssistants(
   }
 
   return { data: data as VapiAssistant[], error: null, count: count || 0 }
+}
+
+export async function getSimliEnvStatus() {
+  const access = await requireAdminAccess()
+  if (access.error) return { data: null, error: access.error }
+
+  const hasSimliApiKeyInEnv = Boolean(process.env.SIMLI_API_KEY?.trim())
+  return { data: { hasSimliApiKeyInEnv }, error: null }
 }
 
 export async function getVapiAssistantById(id: number) {
@@ -209,6 +219,7 @@ export async function getVapiStartConfig(assistantDbId: number) {
     }
     try {
       simliSessionToken = await getSimliSessionToken(assistant.simli_face_id, {
+        apiKey: assistant.simli_api_key,
         model: assistant.simli_model === 'artalk' ? 'artalk' : 'fasttalk',
         maxSessionLength: assistant.simli_max_session_length || 600,
         maxIdleTime: assistant.simli_max_idle_time || 600,
@@ -312,6 +323,7 @@ export async function createVapiAssistant(formData: FormData) {
     ...result.data,
     assistant_id: vapiIdFromForm || PENDING_VAPI_ID,
     simli_face_id: result.data.ima_video_pacijenta ? result.data.simli_face_id : null,
+    simli_api_key: result.data.ima_video_pacijenta ? result.data.simli_api_key : null,
     simli_model: result.data.ima_video_pacijenta ? result.data.simli_model || 'fasttalk' : 'fasttalk',
     simli_max_session_length: result.data.ima_video_pacijenta ? result.data.simli_max_session_length || 600 : 600,
     simli_max_idle_time: result.data.ima_video_pacijenta ? result.data.simli_max_idle_time || 600 : 600,
@@ -387,6 +399,7 @@ export async function updateVapiAssistant(id: number, formData: FormData) {
     ...result.data,
     assistant_id: result.data.assistant_id?.trim() || PENDING_VAPI_ID,
     simli_face_id: result.data.ima_video_pacijenta ? result.data.simli_face_id : null,
+    simli_api_key: result.data.ima_video_pacijenta ? result.data.simli_api_key : null,
     simli_model: result.data.ima_video_pacijenta ? result.data.simli_model || 'fasttalk' : 'fasttalk',
     simli_max_session_length: result.data.ima_video_pacijenta ? result.data.simli_max_session_length || 600 : 600,
     simli_max_idle_time: result.data.ima_video_pacijenta ? result.data.simli_max_idle_time || 600 : 600,

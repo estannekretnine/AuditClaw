@@ -1,6 +1,8 @@
 import 'server-only'
 
-function requireSimliApiKey(): string {
+function requireSimliApiKey(rowKey?: string | null): string {
+  const row = rowKey?.trim()
+  if (row) return row
   const key = process.env.SIMLI_API_KEY?.trim()
   if (!key) {
     throw new Error('SIMLI_API_KEY nije podešen u env varijablama.')
@@ -9,6 +11,7 @@ function requireSimliApiKey(): string {
 }
 
 interface SimliSessionOptions {
+  apiKey?: string | null
   model?: 'fasttalk' | 'artalk'
   maxSessionLength?: number
   maxIdleTime?: number
@@ -18,7 +21,7 @@ export async function getSimliSessionToken(
   faceId: string,
   options: SimliSessionOptions = {}
 ): Promise<string> {
-  const apiKey = requireSimliApiKey()
+  const apiKey = requireSimliApiKey(options.apiKey)
   const cleanFaceId = faceId.trim()
   if (!cleanFaceId) {
     throw new Error('Simli face ID je obavezan za video pacijenta.')

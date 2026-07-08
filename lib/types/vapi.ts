@@ -8,6 +8,7 @@ export interface VapiAssistant {
   servisid: number | null
   ima_video_pacijenta: boolean
   simli_face_id: string | null
+  simli_api_key: string | null
   simli_model: string
   simli_max_session_length: number
   simli_max_idle_time: number
@@ -23,6 +24,7 @@ export interface VapiAssistantInsert {
   servisid?: number | null
   ima_video_pacijenta?: boolean
   simli_face_id?: string | null
+  simli_api_key?: string | null
   simli_model?: string
   simli_max_session_length?: number
   simli_max_idle_time?: number

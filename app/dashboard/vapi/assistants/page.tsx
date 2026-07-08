@@ -8,6 +8,7 @@ import {
   updateVapiAssistant,
   deleteVapiAssistant,
   getVapiStartConfig,
+  getSimliEnvStatus,
 } from '@/lib/actions/vapi-assistants'
 import { getVapiUcenici } from '@/lib/actions/vapi-ucenik'
 import type { VapiAssistant, VapiUcenik } from '@/lib/types/vapi'
@@ -41,6 +42,7 @@ export default function VapiAssistantsPage() {
   const [callLoading, setCallLoading] = useState(false)
   const [callError, setCallError] = useState<string | null>(null)
   const [ucenici, setUcenici] = useState<VapiUcenik[]>([])
+  const [hasSimliApiKeyInEnv, setHasSimliApiKeyInEnv] = useState<boolean>(true)
 
   const [formData, setFormData] = useState({
     assistant_id: '',
@@ -51,6 +53,7 @@ export default function VapiAssistantsPage() {
     servisid: '',
     ima_video_pacijenta: false,
     simli_face_id: '',
+    simli_api_key: '',
     simli_model: 'fasttalk',
     simli_max_session_length: '600',
     simli_max_idle_time: '600',
@@ -86,6 +89,16 @@ export default function VapiAssistantsPage() {
     loadUcenici()
   }, [loadAssistants, loadUcenici])
 
+  useEffect(() => {
+    const loadSimliEnvStatus = async () => {
+      const result = await getSimliEnvStatus()
+      if (!result.error && result.data) {
+        setHasSimliApiKeyInEnv(result.data.hasSimliApiKeyInEnv)
+      }
+    }
+    loadSimliEnvStatus()
+  }, [])
+
   const topLevel = assistants.filter((a) => a.servisid === null)
   const knownSimliFaceIds = Array.from(
     new Set(
@@ -112,6 +125,7 @@ export default function VapiAssistantsPage() {
       servisid: '',
       ima_video_pacijenta: false,
       simli_face_id: '',
+      simli_api_key: '',
       simli_model: 'fasttalk',
       simli_max_session_length: '600',
       simli_max_idle_time: '600',
@@ -141,6 +155,7 @@ export default function VapiAssistantsPage() {
       servisid: assistant.servisid !== null ? String(assistant.servisid) : '',
       ima_video_pacijenta: assistant.ima_video_pacijenta || false,
       simli_face_id: assistant.simli_face_id || '',
+      simli_api_key: assistant.simli_api_key || '',
       simli_model: assistant.simli_model || 'fasttalk',
       simli_max_session_length: String(assistant.simli_max_session_length || 600),
       simli_max_idle_time: String(assistant.simli_max_idle_time || 600),
@@ -183,6 +198,7 @@ export default function VapiAssistantsPage() {
       fd.append('servisid', formData.servisid)
       fd.append('ima_video_pacijenta', String(formData.ima_video_pacijenta))
       fd.append('simli_face_id', formData.ima_video_pacijenta ? formData.simli_face_id : '')
+      fd.append('simli_api_key', formData.ima_video_pacijenta ? formData.simli_api_key : '')
       fd.append('simli_model', formData.ima_video_pacijenta ? formData.simli_model : 'fasttalk')
       fd.append(
         'simli_max_session_length',
@@ -533,6 +549,24 @@ export default function VapiAssistantsPage() {
 
                 {formData.ima_video_pacijenta && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {!hasSimliApiKeyInEnv && !formData.simli_api_key.trim() && (
+                      <div className="sm:col-span-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                        SIMLI_API_KEY nije podešen u env varijablama, niti je unet u formu asistenta.
+                      </div>
+                    )}
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Simli API Key
+                        <span className="ml-2 text-xs font-normal text-gray-500">(opciono ako je u env)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.simli_api_key}
+                        onChange={(e) => setFormData({ ...formData, simli_api_key: e.target.value })}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                        placeholder="Unesite Simli API key (ako nije u env)"
+                      />
+                    </div>
                     <div className="sm:col-span-2">
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Simli lice</label>
                       <input
