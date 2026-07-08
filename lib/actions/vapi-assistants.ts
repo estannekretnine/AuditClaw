@@ -164,7 +164,7 @@ async function listSystemPromptsByAssistant(assistantId: number): Promise<VapiSy
   const { data, error } = await supabase
     .from('vapi_SystemPrompt')
     .select('*')
-    .eq('assistantid', assistantId)
+    .or(`assistantid.eq.${assistantId},assistantid.is.null`)
     .order('id', { ascending: false })
 
   if (error || !data) return []
@@ -200,7 +200,7 @@ async function syncSystemPromptSelection(
       .from('vapi_SystemPrompt')
       .select('*')
       .eq('id', selectedSystemPromptId)
-      .eq('assistantid', assistantId)
+      .or(`assistantid.eq.${assistantId},assistantid.is.null`)
       .single()
 
     const selected = data as VapiSystemPrompt | null
@@ -360,9 +360,9 @@ export async function setAssistantActiveSystemPrompt(
       .from('vapi_SystemPrompt')
       .select('*')
       .eq('id', systemPromptId)
-      .eq('assistantid', assistantId)
+      .or(`assistantid.eq.${assistantId},assistantid.is.null`)
       .single()
-    if (error || !data) return { error: 'Izabrani SystemPrompt nije pronađen za ovog asistenta.' }
+    if (error || !data) return { error: 'Izabrani SystemPrompt nije pronađen.' }
     selectedText = (data as VapiSystemPrompt)['SystemPrompt Vapi']
   }
 

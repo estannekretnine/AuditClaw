@@ -30,6 +30,21 @@ function parseFormData(formData: FormData) {
   }
 }
 
+export async function getVapiSystemPrompts(limit: number = 200, offset: number = 0) {
+  const access = await requireAdminAccess()
+  if (access.error) return { data: null, error: access.error, count: 0 }
+
+  const supabase = createAdminClient()
+  const { data, error, count } = await supabase
+    .from('vapi_SystemPrompt')
+    .select('*', { count: 'exact' })
+    .order('id', { ascending: false })
+    .range(offset, offset + limit - 1)
+
+  if (error) return { data: null, error: error.message, count: 0 }
+  return { data: data as VapiSystemPrompt[], error: null, count: count || 0 }
+}
+
 export async function getVapiSystemPromptByAssistant(assistantid: number) {
   const access = await requireAdminAccess()
   if (access.error) return { data: null, error: access.error }
@@ -67,6 +82,7 @@ export async function createVapiSystemPrompt(formData: FormData) {
   if (error) return { data: null, error: error.message }
 
   revalidatePath('/dashboard/vapi/assistants')
+  revalidatePath('/dashboard/vapi/sys-prompt')
   return { data: data as VapiSystemPrompt, error: null }
 }
 
@@ -91,6 +107,7 @@ export async function updateVapiSystemPrompt(id: number, formData: FormData) {
   if (error) return { data: null, error: error.message }
 
   revalidatePath('/dashboard/vapi/assistants')
+  revalidatePath('/dashboard/vapi/sys-prompt')
   return { data: data as VapiSystemPrompt, error: null }
 }
 
@@ -103,5 +120,6 @@ export async function deleteVapiSystemPrompt(id: number) {
   if (error) return { error: error.message }
 
   revalidatePath('/dashboard/vapi/assistants')
+  revalidatePath('/dashboard/vapi/sys-prompt')
   return { error: null, success: true }
 }
