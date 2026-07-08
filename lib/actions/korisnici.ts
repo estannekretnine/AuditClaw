@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { normalizeKorisnikForApp, normalizeStoredRoleInput } from '@/lib/role-utils'
 
 const korisnikSchema = z.object({
   naziv: z.string().min(1, 'Naziv je obavezan'),
@@ -27,7 +28,8 @@ export async function getKorisnici() {
     return { data: null, error: error.message }
   }
 
-  return { data, error: null }
+  const normalized = (data || []).map((user) => normalizeKorisnikForApp(user))
+  return { data: normalized, error: null }
 }
 
 export async function createKorisnik(formData: FormData) {
@@ -38,6 +40,7 @@ export async function createKorisnik(formData: FormData) {
   const adresa = formData.get('adresa') as string
   const stsstatus = formData.get('stsstatus') as string
   const stsaktivan = formData.get('stsaktivan') as string
+  const normalizedRole = normalizeStoredRoleInput(stsstatus, adresa || null)
 
   // Validacija
   const result = korisnikSchema.safeParse({
@@ -45,8 +48,8 @@ export async function createKorisnik(formData: FormData) {
     email,
     password,
     brojmob: brojmob || null,
-    adresa: adresa || null,
-    stsstatus,
+    adresa: normalizedRole.adresa,
+    stsstatus: normalizedRole.stsstatus,
     stsaktivan,
   })
 
@@ -67,8 +70,8 @@ export async function createKorisnik(formData: FormData) {
       email,
       password,
       brojmob: brojmob || null,
-      adresa: adresa || null,
-      stsstatus,
+      adresa: normalizedRole.adresa,
+      stsstatus: normalizedRole.stsstatus,
       stsaktivan,
     }])
 
@@ -89,14 +92,15 @@ export async function updateKorisnik(id: number, formData: FormData) {
   const adresa = formData.get('adresa') as string
   const stsstatus = formData.get('stsstatus') as string
   const stsaktivan = formData.get('stsaktivan') as string
+  const normalizedRole = normalizeStoredRoleInput(stsstatus, adresa || null)
 
   // Validacija
   const result = korisnikSchema.safeParse({
     naziv,
     email,
     brojmob: brojmob || null,
-    adresa: adresa || null,
-    stsstatus,
+    adresa: normalizedRole.adresa,
+    stsstatus: normalizedRole.stsstatus,
     stsaktivan,
   })
 
@@ -110,8 +114,8 @@ export async function updateKorisnik(id: number, formData: FormData) {
     naziv,
     email,
     brojmob: brojmob || null,
-    adresa: adresa || null,
-    stsstatus,
+    adresa: normalizedRole.adresa,
+    stsstatus: normalizedRole.stsstatus,
     stsaktivan,
     datumpt: new Date().toISOString(),
   }

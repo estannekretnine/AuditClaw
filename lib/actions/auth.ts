@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
+import { normalizeKorisnikForApp } from '@/lib/role-utils'
 
 const loginSchema = z.object({
   email: z.string().email('Nevažeća email adresa'),
@@ -48,7 +49,7 @@ export async function login(formData: FormData) {
     return { error: 'Korisnik sa ovim email-om ne postoji' }
   }
 
-  const korisnik = korisnici[0]
+  const korisnik = normalizeKorisnikForApp(korisnici[0])
 
   // Provera da li je korisnik aktivan
   if (korisnik.stsaktivan !== 'da') {

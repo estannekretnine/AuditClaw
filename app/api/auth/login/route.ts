@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { normalizeKorisnikForApp } from '@/lib/role-utils'
 
 export async function POST(request: Request) {
   try {
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Korisnik sa ovim email-om ne postoji' }, { status: 401 })
     }
 
-    const korisnik = korisnici[0]
+    const korisnik = normalizeKorisnikForApp(korisnici[0])
 
     // Provera da li je korisnik aktivan
     if (korisnik.stsaktivan !== 'da') {
