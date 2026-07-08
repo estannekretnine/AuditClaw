@@ -5,12 +5,18 @@ import Vapi from '@vapi-ai/web'
 import DailyIframe, { type DailyCall } from '@daily-co/daily-js'
 import { Bot, Mic, PhoneOff, X } from 'lucide-react'
 import type { VapiUcenik } from '@/lib/types/vapi'
+import { VapiSimliAvatar } from '@/components/admin/vapi-simli-avatar'
 
 export interface VapiStartConfig {
   assistantDbId: number
   assistantId: string
   publicKey: string
   opisServisa: string | null
+  imaVideoPacijenta?: boolean
+  simliFaceId?: string | null
+  vitalniZnaciDefault?: Record<string, string | number> | null
+  simliSessionToken?: string | null
+  simliIceServers?: RTCIceServer[]
   webhookSynced?: boolean
   webhookWarning?: string | null
 }
@@ -18,6 +24,14 @@ export interface VapiStartConfig {
 interface TranscriptLine {
   role: string
   text: string
+}
+
+interface VitalSigns {
+  pritisak?: string
+  puls?: number
+  temperatura?: number
+  saturacija?: number
+  secer?: number
 }
 
 interface VapiCallModalProps {
@@ -197,6 +211,8 @@ export function VapiCallModal({
   const [selectedUcenikId, setSelectedUcenikId] = useState('')
   const [ucenikQuery, setUcenikQuery] = useState('')
   const [showUcenikList, setShowUcenikList] = useState(false)
+  const [vitalSigns, setVitalSigns] = useState<VitalSigns>({})
+  const [updatedVitalKey, setUpdatedVitalKey] = useState<string | null>(null)
 
   const cleanupCall = useCallback(async () => {
     if (cleanupInProgressRef.current) return
@@ -327,6 +343,11 @@ export function VapiCallModal({
       role?: string
       transcript?: string
       transcriptType?: string
+      toolCallList?: Array<{
+        name?: string
+        arguments?: Record<string, unknown>
+        parameters?: Record<string, unknown>
+      }>
     }) => {
       console.log('[Vapi] message', message)
 
@@ -340,6 +361,37 @@ export function VapiCallModal({
           { role: message.role || 'unknown', text: message.transcript as string },
         ])
       }
+
+      if (message.type === 'tool-calls' && Array.isArray(message.toolCallList)) {
+        const firstCall = message.toolCallList[0]
+        if (firstCall?.name !== 'azurirajVitalneZnake') return
+
+        const payload = firstCall.parameters || firstCall.arguments || {}
+        setVitalSigns((prev) => {
+          const next: VitalSigns = { ...prev }
+          if (typeof payload.pritisak === 'string') {
+            next.pritisak = payload.pritisak
+            setUpdatedVitalKey('pritisak')
+          }
+          if (typeof payload.puls === 'number') {
+            next.puls = payload.puls
+            setUpdatedVitalKey('puls')
+          }
+          if (typeof payload.temperatura === 'number') {
+            next.temperatura = payload.temperatura
+            setUpdatedVitalKey('temperatura')
+          }
+          if (typeof payload.saturacija === 'number') {
+            next.saturacija = payload.saturacija
+            setUpdatedVitalKey('saturacija')
+          }
+          if (typeof payload.secer === 'number') {
+            next.secer = payload.secer
+            setUpdatedVitalKey('secer')
+          }
+          return next
+        })
+      }
     })
   }, [cleanupCall, disableLocalVideo])
 
@@ -352,8 +404,42 @@ export function VapiCallModal({
       setSelectedUcenikId('')
       setUcenikQuery('')
       setShowUcenikList(false)
+      setVitalSigns({})
+      setUpdatedVitalKey(null)
     }
   }, [open, cleanupCall])
+
+  useEffect(() => {
+    if (!config?.vitalniZnaciDefault) return
+    setVitalSigns({
+      pritisak:
+        typeof config.vitalniZnaciDefault.pritisak === 'string'
+          ? config.vitalniZnaciDefault.pritisak
+          : undefined,
+      puls:
+        typeof config.vitalniZnaciDefault.puls === 'number'
+          ? config.vitalniZnaciDefault.puls
+          : undefined,
+      temperatura:
+        typeof config.vitalniZnaciDefault.temperatura === 'number'
+          ? config.vitalniZnaciDefault.temperatura
+          : undefined,
+      saturacija:
+        typeof config.vitalniZnaciDefault.saturacija === 'number'
+          ? config.vitalniZnaciDefault.saturacija
+          : undefined,
+      secer:
+        typeof config.vitalniZnaciDefault.secer === 'number'
+          ? config.vitalniZnaciDefault.secer
+          : undefined,
+    })
+  }, [config])
+
+  useEffect(() => {
+    if (!updatedVitalKey) return
+    const timer = window.setTimeout(() => setUpdatedVitalKey(null), 800)
+    return () => window.clearTimeout(timer)
+  }, [updatedVitalKey])
 
   useEffect(() => {
     return () => {
@@ -393,6 +479,7 @@ export function VapiCallModal({
           assistantDbId: String(config.assistantDbId),
           ucenikid: selectedUcenikId,
         },
+        clientMessages: ['transcript', 'tool-calls'],
       }
 
       await vapi.start(
@@ -448,6 +535,9 @@ export function VapiCallModal({
   if (!open) return null
 
   const startDisabled = isStarting || isReleasing || !selectedUcenikId
+  const showVideoPatient = Boolean(
+    config?.imaVideoPacijenta && config?.simliFaceId && config?.simliSessionToken
+  )
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
@@ -520,6 +610,45 @@ export function VapiCallModal({
                   </p>
                 </div>
               </div>
+
+              {showVideoPatient && (
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 sm:gap-4">
+                  <div className="lg:col-span-3">
+                    <VapiSimliAvatar
+                      vapi={vapiRef.current}
+                      active={isConnected || isStarting}
+                      faceId={config?.simliFaceId || ''}
+                      sessionToken={config?.simliSessionToken || ''}
+                      iceServers={config?.simliIceServers || []}
+                      onError={(message) => setError(message)}
+                    />
+                  </div>
+                  <div className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white p-3 sm:p-4">
+                    <h4 className="text-sm font-semibold text-gray-800 mb-3">Vitalni znaci</h4>
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
+                      {[
+                        { key: 'pritisak', label: 'Pritisak', value: vitalSigns.pritisak ?? '-' },
+                        { key: 'puls', label: 'Puls', value: vitalSigns.puls ?? '-' },
+                        { key: 'temperatura', label: 'Temperatura', value: vitalSigns.temperatura ?? '-' },
+                        { key: 'saturacija', label: 'Saturacija', value: vitalSigns.saturacija ?? '-' },
+                        { key: 'secer', label: 'Šećer', value: vitalSigns.secer ?? '-' },
+                      ].map((item) => (
+                        <div
+                          key={item.key}
+                          className={`rounded-xl border p-2.5 transition-colors ${
+                            updatedVitalKey === item.key
+                              ? 'border-emerald-300 bg-emerald-50'
+                              : 'border-gray-200 bg-gray-50'
+                          }`}
+                        >
+                          <p className="text-[11px] text-gray-500">{item.label}</p>
+                          <p className="font-semibold text-gray-900">{String(item.value)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-center">
                 <p className="text-sm text-amber-800">

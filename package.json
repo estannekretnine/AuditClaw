@@ -28,6 +28,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "resend": "^6.9.2",
+    "simli-client": "^2.0.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

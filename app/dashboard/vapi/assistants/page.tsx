@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Bot, Plus, Edit, Trash2, Play, ChevronRight, ChevronDown, Settings } from 'lucide-react'
+import { Bot, Plus, Edit, Trash2, Play, ChevronRight, ChevronDown, Settings, Video } from 'lucide-react'
 import {
   getVapiAssistants,
   createVapiAssistant,
@@ -13,6 +13,13 @@ import { getVapiUcenici } from '@/lib/actions/vapi-ucenik'
 import type { VapiAssistant, VapiUcenik } from '@/lib/types/vapi'
 import { VapiCallModal, type VapiStartConfig } from '@/components/admin/vapi-call-modal'
 
+const SIMLI_FACE_OPTIONS = [
+  { id: '5514e24d-6086-46a3-ace4-6a7264e5cb7c', label: 'Pacijent M' },
+  { id: 'f8bf3b2d-8162-4436-8452-e4f96f3c8e2f', label: 'Pacijentkinja A' },
+  { id: '76a4f8d6-7b1f-4ce8-9098-026f5ba64a9f', label: 'Pacijentkinja B' },
+  { id: '35f9cc21-c5fe-4c69-8f5d-9f01a2c9f728', label: 'Pacijent S' },
+]
+
 function truncateText(text: string | null, maxLength: number = 60): string {
   if (!text) return '-'
   if (text.length <= maxLength) return text
@@ -21,6 +28,10 @@ function truncateText(text: string | null, maxLength: number = 60): string {
 
 function assistantName(assistant: VapiAssistant): string {
   return assistant.opis_servisa?.trim() || assistant.assistant_id || `Asistent #${assistant.id}`
+}
+
+function simliProfileLabel(assistant: VapiAssistant): string {
+  return `${assistant.simli_model} • ${assistant.simli_max_session_length}s / ${assistant.simli_max_idle_time}s`
 }
 
 export default function VapiAssistantsPage() {
@@ -45,6 +56,16 @@ export default function VapiAssistantsPage() {
     opis_servisa: '',
     System_Prompt: '',
     servisid: '',
+    ima_video_pacijenta: false,
+    simli_face_id: '',
+    simli_model: 'fasttalk',
+    simli_max_session_length: '600',
+    simli_max_idle_time: '600',
+    pritisak: '120/80',
+    puls: '78',
+    temperatura: '36.6',
+    saturacija: '98',
+    secer: '5.4',
   })
 
   const loadAssistants = useCallback(async () => {
@@ -89,6 +110,16 @@ export default function VapiAssistantsPage() {
       opis_servisa: '',
       System_Prompt: '',
       servisid: '',
+      ima_video_pacijenta: false,
+      simli_face_id: '',
+      simli_model: 'fasttalk',
+      simli_max_session_length: '600',
+      simli_max_idle_time: '600',
+      pritisak: '120/80',
+      puls: '78',
+      temperatura: '36.6',
+      saturacija: '98',
+      secer: '5.4',
     })
     setEditingAssistant(null)
     setShowAdvanced(false)
@@ -108,6 +139,31 @@ export default function VapiAssistantsPage() {
       opis_servisa: assistant.opis_servisa || '',
       System_Prompt: assistant.System_Prompt || '',
       servisid: assistant.servisid !== null ? String(assistant.servisid) : '',
+      ima_video_pacijenta: assistant.ima_video_pacijenta || false,
+      simli_face_id: assistant.simli_face_id || '',
+      simli_model: assistant.simli_model || 'fasttalk',
+      simli_max_session_length: String(assistant.simli_max_session_length || 600),
+      simli_max_idle_time: String(assistant.simli_max_idle_time || 600),
+      pritisak:
+        typeof assistant.vitalni_znaci_default?.pritisak === 'string'
+          ? assistant.vitalni_znaci_default.pritisak
+          : '120/80',
+      puls:
+        typeof assistant.vitalni_znaci_default?.puls === 'number'
+          ? String(assistant.vitalni_znaci_default.puls)
+          : '78',
+      temperatura:
+        typeof assistant.vitalni_znaci_default?.temperatura === 'number'
+          ? String(assistant.vitalni_znaci_default.temperatura)
+          : '36.6',
+      saturacija:
+        typeof assistant.vitalni_znaci_default?.saturacija === 'number'
+          ? String(assistant.vitalni_znaci_default.saturacija)
+          : '98',
+      secer:
+        typeof assistant.vitalni_znaci_default?.secer === 'number'
+          ? String(assistant.vitalni_znaci_default.secer)
+          : '5.4',
     })
     setShowAdvanced(false)
     setShowForm(true)
@@ -125,6 +181,29 @@ export default function VapiAssistantsPage() {
       fd.append('opis_servisa', formData.opis_servisa)
       fd.append('System_Prompt', formData.System_Prompt)
       fd.append('servisid', formData.servisid)
+      fd.append('ima_video_pacijenta', String(formData.ima_video_pacijenta))
+      fd.append('simli_face_id', formData.ima_video_pacijenta ? formData.simli_face_id : '')
+      fd.append('simli_model', formData.ima_video_pacijenta ? formData.simli_model : 'fasttalk')
+      fd.append(
+        'simli_max_session_length',
+        formData.ima_video_pacijenta ? formData.simli_max_session_length : '600'
+      )
+      fd.append(
+        'simli_max_idle_time',
+        formData.ima_video_pacijenta ? formData.simli_max_idle_time : '600'
+      )
+      fd.append(
+        'vitalni_znaci_default',
+        formData.ima_video_pacijenta
+          ? JSON.stringify({
+              pritisak: formData.pritisak,
+              puls: Number(formData.puls),
+              temperatura: Number(formData.temperatura),
+              saturacija: Number(formData.saturacija),
+              secer: Number(formData.secer),
+            })
+          : ''
+      )
 
       let result
       if (editingAssistant) {
@@ -313,9 +392,17 @@ export default function VapiAssistantsPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{assistantName(parent)}</p>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {parent.ima_video_pacijenta && <Video className="w-3.5 h-3.5 text-indigo-600 shrink-0" />}
+                        <p className="text-sm font-semibold text-gray-900 truncate">{assistantName(parent)}</p>
+                      </div>
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold text-amber-700 bg-amber-100 rounded-md uppercase tracking-wide">Vrh</span>
+                        {parent.ima_video_pacijenta && (
+                          <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium text-indigo-700 bg-indigo-100 rounded-md">
+                            Simli: {simliProfileLabel(parent)}
+                          </span>
+                        )}
                         {kids.length > 0 && (
                           <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded-md">{kids.length} podređenih</span>
                         )}
@@ -335,7 +422,15 @@ export default function VapiAssistantsPage() {
                           <Bot className="w-4 h-4 text-gray-500" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{assistantName(child)}</p>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            {child.ima_video_pacijenta && <Video className="w-3.5 h-3.5 text-indigo-600 shrink-0" />}
+                            <p className="text-sm font-medium text-gray-900 truncate">{assistantName(child)}</p>
+                          </div>
+                          {child.ima_video_pacijenta && (
+                            <p className="text-[11px] text-indigo-700 mt-0.5 truncate">
+                              Simli: {simliProfileLabel(child)}
+                            </p>
+                          )}
                           <p className="text-xs text-gray-500 truncate mt-0.5">{truncateText(child.System_Prompt, 90)}</p>
                         </div>
                         <div className="hidden sm:block">{renderActions(child, false, true)}</div>
@@ -423,6 +518,121 @@ export default function VapiAssistantsPage() {
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all resize-y font-mono text-sm"
                   placeholder="Uputstvo za asistenta (opciono)"
                 />
+              </div>
+
+              <div className="rounded-xl border border-gray-200 p-4 space-y-4">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={formData.ima_video_pacijenta}
+                    onChange={(e) => setFormData({ ...formData, ima_video_pacijenta: e.target.checked })}
+                    className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                  />
+                  Video pacijent (Simli avatar)
+                </label>
+
+                {formData.ima_video_pacijenta && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Simli lice</label>
+                      <select
+                        value={formData.simli_face_id}
+                        onChange={(e) => setFormData({ ...formData, simli_face_id: e.target.value })}
+                        required={formData.ima_video_pacijenta}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                      >
+                        <option value="">Izaberi lice...</option>
+                        {SIMLI_FACE_OPTIONS.map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Simli model</label>
+                      <select
+                        value={formData.simli_model}
+                        onChange={(e) => setFormData({ ...formData, simli_model: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg"
+                      >
+                        <option value="fasttalk">fasttalk</option>
+                        <option value="artalk">artalk</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Max session (s)</label>
+                      <input
+                        type="number"
+                        min={60}
+                        max={3600}
+                        value={formData.simli_max_session_length}
+                        onChange={(e) =>
+                          setFormData({ ...formData, simli_max_session_length: e.target.value })
+                        }
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Max idle (s)</label>
+                      <input
+                        type="number"
+                        min={30}
+                        max={3600}
+                        value={formData.simli_max_idle_time}
+                        onChange={(e) => setFormData({ ...formData, simli_max_idle_time: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Pritisak</label>
+                      <input
+                        type="text"
+                        value={formData.pritisak}
+                        onChange={(e) => setFormData({ ...formData, pritisak: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Puls</label>
+                      <input
+                        type="number"
+                        value={formData.puls}
+                        onChange={(e) => setFormData({ ...formData, puls: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Temperatura</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={formData.temperatura}
+                        onChange={(e) => setFormData({ ...formData, temperatura: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Saturacija</label>
+                      <input
+                        type="number"
+                        value={formData.saturacija}
+                        onChange={(e) => setFormData({ ...formData, saturacija: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Šećer</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={formData.secer}
+                        onChange={(e) => setFormData({ ...formData, secer: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="border border-gray-200 rounded-xl overflow-hidden">

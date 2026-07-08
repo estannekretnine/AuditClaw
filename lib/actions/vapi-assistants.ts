@@ -13,6 +13,7 @@ import {
   createVapiWebCall,
   pushAssistantToVapi,
 } from '@/lib/vapi/server'
+import { getSimliIceServers, getSimliSessionToken } from '@/lib/simli/server'
 
 const PENDING_VAPI_ID = 'pending-sync'
 
@@ -23,7 +24,21 @@ const vapiAssistantSchema = z.object({
   opis_servisa: z.string().optional().nullable(),
   System_Prompt: z.string().optional().nullable(),
   servisid: z.number().optional().nullable(),
+  ima_video_pacijenta: z.boolean().optional(),
+  simli_face_id: z.string().optional().nullable(),
+  simli_model: z.enum(['fasttalk', 'artalk']).optional(),
+  simli_max_session_length: z.number().int().min(60).max(3600).optional(),
+  simli_max_idle_time: z.number().int().min(30).max(3600).optional(),
+  vitalni_znaci_default: z.record(z.string(), z.union([z.string(), z.number()])).optional().nullable(),
 })
+
+const defaultVitalniZnaci = {
+  pritisak: '120/80',
+  puls: 78,
+  temperatura: 36.6,
+  saturacija: 98,
+  secer: 5.4,
+}
 
 async function requireAdminAccess() {
   const user = await getCurrentUser()
@@ -41,6 +56,22 @@ function parseAssistantFormData(formData: FormData) {
 
   const servisidRaw = (formData.get('servisid') as string) || ''
   const servisid = servisidRaw.trim() ? Number(servisidRaw) : null
+  const imaVideoPacijenta = formData.get('ima_video_pacijenta') === 'true'
+  const simliModelRaw = ((formData.get('simli_model') as string) || '').trim().toLowerCase()
+  const simliSessionRaw = ((formData.get('simli_max_session_length') as string) || '').trim()
+  const simliIdleRaw = ((formData.get('simli_max_idle_time') as string) || '').trim()
+  const vitalniRaw = ((formData.get('vitalni_znaci_default') as string) || '').trim()
+  let parsedVitalni: Record<string, string | number> | null = null
+  if (vitalniRaw) {
+    try {
+      const parsed = JSON.parse(vitalniRaw) as Record<string, unknown>
+      parsedVitalni = Object.fromEntries(
+        Object.entries(parsed).filter(([, value]) => typeof value === 'string' || typeof value === 'number')
+      ) as Record<string, string | number>
+    } catch {
+      parsedVitalni = null
+    }
+  }
 
   return {
     assistant_id: ((formData.get('assistant_id') as string) || '').trim() || null,
@@ -49,6 +80,12 @@ function parseAssistantFormData(formData: FormData) {
     opis_servisa: trim(formData.get('opis_servisa')),
     System_Prompt: trim(formData.get('System_Prompt')),
     servisid: servisid !== null && !Number.isNaN(servisid) ? servisid : null,
+    ima_video_pacijenta: imaVideoPacijenta,
+    simli_face_id: trim(formData.get('simli_face_id')),
+    simli_model: simliModelRaw === 'artalk' ? 'artalk' : 'fasttalk',
+    simli_max_session_length: simliSessionRaw ? Number(simliSessionRaw) : 600,
+    simli_max_idle_time: simliIdleRaw ? Number(simliIdleRaw) : 600,
+    vitalni_znaci_default: parsedVitalni,
   }
 }
 
@@ -66,6 +103,7 @@ async function syncAssistantWithVapi(
     assistantDbId: assistant.id,
     name: assistant.opis_servisa,
     systemPrompt: assistant.System_Prompt,
+    enableVitalniZnaciTool: assistant.ima_video_pacijenta,
   })
 
   if (!sync.ok) {
@@ -157,9 +195,34 @@ export async function getVapiStartConfig(assistantDbId: number) {
     assistantDbId: assistant.id,
     name: assistant.opis_servisa,
     systemPrompt: assistant.System_Prompt,
+    enableVitalniZnaciTool: assistant.ima_video_pacijenta,
   })
   if (!sync.ok) {
     console.warn('Vapi sync warning:', sync.error)
+  }
+
+  let simliSessionToken: string | null = null
+  let simliIceServers: RTCIceServer[] = []
+  if (assistant.ima_video_pacijenta) {
+    if (!assistant.simli_face_id?.trim()) {
+      return { data: null, error: 'Video pacijent je uključen, ali Simli face ID nije podešen.' }
+    }
+    try {
+      simliSessionToken = await getSimliSessionToken(assistant.simli_face_id, {
+        model: assistant.simli_model === 'artalk' ? 'artalk' : 'fasttalk',
+        maxSessionLength: assistant.simli_max_session_length || 600,
+        maxIdleTime: assistant.simli_max_idle_time || 600,
+      })
+      simliIceServers = await getSimliIceServers()
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Neuspelo generisanje Simli tokena za video pacijenta.',
+      }
+    }
   }
 
   return {
@@ -168,6 +231,15 @@ export async function getVapiStartConfig(assistantDbId: number) {
       assistantId: assistant.assistant_id,
       publicKey,
       opisServisa: assistant.opis_servisa,
+      imaVideoPacijenta: assistant.ima_video_pacijenta,
+      simliFaceId: assistant.simli_face_id,
+      simliModel: assistant.simli_model || 'fasttalk',
+      simliMaxSessionLength: assistant.simli_max_session_length || 600,
+      simliMaxIdleTime: assistant.simli_max_idle_time || 600,
+      vitalniZnaciDefault:
+        (assistant.vitalni_znaci_default as Record<string, string | number> | null) || defaultVitalniZnaci,
+      simliSessionToken,
+      simliIceServers,
       webhookSynced: sync.ok,
       webhookWarning: sync.ok
         ? null
@@ -239,6 +311,13 @@ export async function createVapiAssistant(formData: FormData) {
   const assistantData: VapiAssistantInsert = {
     ...result.data,
     assistant_id: vapiIdFromForm || PENDING_VAPI_ID,
+    simli_face_id: result.data.ima_video_pacijenta ? result.data.simli_face_id : null,
+    simli_model: result.data.ima_video_pacijenta ? result.data.simli_model || 'fasttalk' : 'fasttalk',
+    simli_max_session_length: result.data.ima_video_pacijenta ? result.data.simli_max_session_length || 600 : 600,
+    simli_max_idle_time: result.data.ima_video_pacijenta ? result.data.simli_max_idle_time || 600 : 600,
+    vitalni_znaci_default: result.data.ima_video_pacijenta
+      ? (result.data.vitalni_znaci_default ?? defaultVitalniZnaci)
+      : null,
   }
 
   const { data, error } = await supabase
@@ -266,6 +345,7 @@ export async function createVapiAssistant(formData: FormData) {
       assistantDbId: created.id,
       name: created.opis_servisa,
       systemPrompt: created.System_Prompt,
+      enableVitalniZnaciTool: created.ima_video_pacijenta,
     })
 
     if (!push.ok) {
@@ -306,6 +386,13 @@ export async function updateVapiAssistant(id: number, formData: FormData) {
   const updatePayload: VapiAssistantInsert = {
     ...result.data,
     assistant_id: result.data.assistant_id?.trim() || PENDING_VAPI_ID,
+    simli_face_id: result.data.ima_video_pacijenta ? result.data.simli_face_id : null,
+    simli_model: result.data.ima_video_pacijenta ? result.data.simli_model || 'fasttalk' : 'fasttalk',
+    simli_max_session_length: result.data.ima_video_pacijenta ? result.data.simli_max_session_length || 600 : 600,
+    simli_max_idle_time: result.data.ima_video_pacijenta ? result.data.simli_max_idle_time || 600 : 600,
+    vitalni_znaci_default: result.data.ima_video_pacijenta
+      ? (result.data.vitalni_znaci_default ?? defaultVitalniZnaci)
+      : null,
   }
 
   const { data, error } = await supabase
@@ -335,6 +422,7 @@ export async function updateVapiAssistant(id: number, formData: FormData) {
       assistantDbId: updated.id,
       name: updated.opis_servisa,
       systemPrompt: updated.System_Prompt,
+      enableVitalniZnaciTool: updated.ima_video_pacijenta,
     })
 
     if (!push.ok) {

@@ -6,6 +6,12 @@ export interface VapiAssistant {
   opis_servisa: string | null
   System_Prompt: string | null
   servisid: number | null
+  ima_video_pacijenta: boolean
+  simli_face_id: string | null
+  simli_model: string
+  simli_max_session_length: number
+  simli_max_idle_time: number
+  vitalni_znaci_default: Record<string, unknown> | null
 }
 
 export interface VapiAssistantInsert {
@@ -15,6 +21,12 @@ export interface VapiAssistantInsert {
   opis_servisa?: string | null
   System_Prompt?: string | null
   servisid?: number | null
+  ima_video_pacijenta?: boolean
+  simli_face_id?: string | null
+  simli_model?: string
+  simli_max_session_length?: number
+  simli_max_idle_time?: number
+  vitalni_znaci_default?: Record<string, unknown> | null
 }
 
 export interface VapiAssistantUpdate extends Partial<VapiAssistantInsert> {}

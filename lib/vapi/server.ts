@@ -35,6 +35,59 @@ interface VapiAssistantRemote {
   voice?: Record<string, unknown>
 }
 
+interface VitalniZnaciToolOptions {
+  enableVitalniZnaciTool?: boolean
+}
+
+function buildVitalniZnaciTool(): Record<string, unknown> {
+  return {
+    type: 'function',
+    function: {
+      name: 'azurirajVitalneZnake',
+      description:
+        'Poziva se kada se vitalni znaci pacijenta promene tokom razgovora. Koristi realne numericke vrednosti.',
+      parameters: {
+        type: 'object',
+        properties: {
+          pritisak: { type: 'string', description: 'Primer: 130/85' },
+          puls: { type: 'number' },
+          temperatura: { type: 'number' },
+          saturacija: { type: 'number' },
+          secer: { type: 'number' },
+        },
+      },
+    },
+  }
+}
+
+function buildModelConfig(
+  baseModel: Record<string, unknown>,
+  options: VitalniZnaciToolOptions
+): Record<string, unknown> {
+  const nextModel = { ...baseModel }
+  if (!options.enableVitalniZnaciTool) {
+    return nextModel
+  }
+
+  const existingTools = Array.isArray(nextModel.tools) ? nextModel.tools : []
+  const hasTool = existingTools.some((entry) => {
+    if (!entry || typeof entry !== 'object') return false
+    const fn = (entry as Record<string, unknown>).function
+    if (!fn || typeof fn !== 'object') return false
+    return (fn as Record<string, unknown>).name === 'azurirajVitalneZnake'
+  })
+  if (!hasTool) {
+    nextModel.tools = [...existingTools, buildVitalniZnaciTool()]
+  }
+
+  const existingClientMessages = Array.isArray(nextModel.clientMessages) ? nextModel.clientMessages : []
+  if (!existingClientMessages.includes('tool-calls')) {
+    nextModel.clientMessages = [...existingClientMessages, 'tool-calls']
+  }
+
+  return nextModel
+}
+
 function getDefaultModelConfig(systemPrompt: string | null): Record<string, unknown> {
   const provider = process.env.VAPI_DEFAULT_MODEL_PROVIDER?.trim() || 'openai'
   const model = process.env.VAPI_DEFAULT_MODEL?.trim() || 'gpt-4o'
@@ -159,6 +212,7 @@ export async function createVapiAssistantOnPlatform(options: {
   assistantDbId: number
   name: string
   systemPrompt: string | null
+  enableVitalniZnaciTool?: boolean
 }): Promise<{ ok: boolean; error: string | null; assistantId: string | null }> {
   const webhookSecret = getVapiWebhookSecret()
   if (!webhookSecret) {
@@ -181,7 +235,9 @@ export async function createVapiAssistantOnPlatform(options: {
       },
       body: JSON.stringify({
         name: options.name.trim() || `AuditClaw #${options.assistantDbId}`,
-        model: getDefaultModelConfig(options.systemPrompt),
+        model: buildModelConfig(getDefaultModelConfig(options.systemPrompt), {
+          enableVitalniZnaciTool: options.enableVitalniZnaciTool,
+        }),
         voice: voiceResult.voice,
         server: server.server,
         firstMessage: 'Zdravo! Kako vam mogu pomoći?',
@@ -221,6 +277,7 @@ export async function syncVapiAssistantConfig(options: {
   assistantDbId: number
   name: string | null
   systemPrompt: string | null
+  enableVitalniZnaciTool?: boolean
 }): Promise<VapiApiResult> {
   const webhookSecret = getVapiWebhookSecret()
   if (!webhookSecret) {
@@ -240,7 +297,9 @@ export async function syncVapiAssistantConfig(options: {
   }
 
   const patchBody: Record<string, unknown> = {
-    model: existingModel,
+    model: buildModelConfig(existingModel, {
+      enableVitalniZnaciTool: options.enableVitalniZnaciTool,
+    }),
     server: buildServerPayload(options.assistantDbId, webhookSecret).server,
   }
 
@@ -260,7 +319,9 @@ export async function syncVapiAssistantConfig(options: {
   }
 
   const legacyBody: Record<string, unknown> = {
-    model: existingModel,
+    model: buildModelConfig(existingModel, {
+      enableVitalniZnaciTool: options.enableVitalniZnaciTool,
+    }),
     serverUrl: buildServerPayload(options.assistantDbId, webhookSecret).serverUrl,
     serverUrlSecret: webhookSecret,
   }
@@ -279,6 +340,7 @@ export async function pushAssistantToVapi(options: {
   assistantDbId: number
   name: string | null
   systemPrompt: string | null
+  enableVitalniZnaciTool?: boolean
 }): Promise<{ ok: boolean; error: string | null; assistantId: string | null }> {
   if (!options.vapiAssistantId?.trim()) {
     return createVapiAssistantOnPlatform({
@@ -286,6 +348,7 @@ export async function pushAssistantToVapi(options: {
       assistantDbId: options.assistantDbId,
       name: options.name?.trim() || `AuditClaw #${options.assistantDbId}`,
       systemPrompt: options.systemPrompt,
+      enableVitalniZnaciTool: options.enableVitalniZnaciTool,
     })
   }
 
@@ -295,6 +358,7 @@ export async function pushAssistantToVapi(options: {
     assistantDbId: options.assistantDbId,
     name: options.name,
     systemPrompt: options.systemPrompt,
+    enableVitalniZnaciTool: options.enableVitalniZnaciTool,
   })
 
   return {
@@ -425,6 +489,7 @@ export async function syncVapiAssistantWebhook(
     assistantDbId,
     name: null,
     systemPrompt: null,
+    enableVitalniZnaciTool: false,
   })
 }
 
