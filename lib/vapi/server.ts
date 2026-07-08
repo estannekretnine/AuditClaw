@@ -214,19 +214,12 @@ function getDefaultVoiceConfig(): { ok: true; voice: Record<string, unknown> } |
   return { ok: true, voice: { provider, voiceId } }
 }
 
-// Gradi ČIST voice objekat bez fallbackPlan-a. Vapi dashboard ume automatski da
-// doda neispravan fallback glas (npr. Cartesia sa praznim voiceId), što blokira
-// objavljivanje i ostavlja asistenta bez glasa (poziv ćuti). Slanjem čistog
-// voice objekta preko API-ja zamenjujemo ceo voice i uklanjamo pokvareni fallback.
+// Gradi ČIST voice objekat bez fallbackPlan-a. Prioritet: glas sa Vapi asistenta
+// (dashboard), pa tek onda env VAPI_DEFAULT_VOICE_* kao rezervi.
+// Vapi dashboard ume da doda neispravan fallbackPlan — ovde ga namerno izbacujemo.
 function buildCleanVoice(
   remoteVoice: Record<string, unknown> | undefined
 ): Record<string, unknown> | null {
-  const envVoiceId = process.env.VAPI_DEFAULT_VOICE_ID?.trim()
-  if (envVoiceId) {
-    const envProvider = process.env.VAPI_DEFAULT_VOICE_PROVIDER?.trim() || '11labs'
-    return { provider: envProvider, voiceId: envVoiceId }
-  }
-
   if (remoteVoice) {
     const provider = typeof remoteVoice.provider === 'string' ? remoteVoice.provider.trim() : ''
     const voiceId =
@@ -236,8 +229,23 @@ function buildCleanVoice(
           ? String(remoteVoice.voiceId)
           : ''
     if (provider && voiceId) {
-      return { provider, voiceId }
+      // Sačuvaj dodatne Vapi voice opcije (model, stability…) ali bez fallbackPlan-a.
+      const {
+        fallbackPlan: _fallbackPlan,
+        ...rest
+      } = remoteVoice
+      return {
+        ...rest,
+        provider,
+        voiceId,
+      }
     }
+  }
+
+  const envVoiceId = process.env.VAPI_DEFAULT_VOICE_ID?.trim()
+  if (envVoiceId) {
+    const envProvider = process.env.VAPI_DEFAULT_VOICE_PROVIDER?.trim() || '11labs'
+    return { provider: envProvider, voiceId: envVoiceId }
   }
 
   return null
@@ -404,8 +412,13 @@ export async function syncVapiAssistantConfig(options: {
     server: buildServerPayload(options.assistantDbId, webhookSecret).server,
   }
 
-  // Postavi čist glas (bez pokvarenog fallback plana) da poziv sigurno ima zvuk.
-  const cleanVoice = buildCleanVoice(remote.data.voice)
+  // Zadrži glas sa Vapi asistenta (dashboard). Env glas se koristi samo ako
+  // remote nema validan voiceId. Uvek čistimo fallbackPlan koji zna da ugasi zvuk.
+  const cleanVoice = buildCleanVoice(
+    remote.data.voice && typeof remote.data.voice === 'object'
+      ? (remote.data.voice as Record<string, unknown>)
+      : undefined
+  )
   if (cleanVoice) {
     patchBody.voice = cleanVoice
   }

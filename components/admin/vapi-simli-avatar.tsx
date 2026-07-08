@@ -73,11 +73,12 @@ export function VapiSimliAvatar({
     iceServersRef.current = iceServers
   }, [iceServers, iceKey])
 
-  /** Simli koristi samo usnu sinhronizaciju — glas ide isključivo preko Vapi/Daily. */
+  /** Simli = samo usne. Glas uvek iz Vapi/Daily. */
   const muteSimliPlayback = () => {
     if (audioRef.current) {
       audioRef.current.muted = true
       audioRef.current.volume = 0
+      audioRef.current.pause()
     }
     if (videoRef.current) {
       videoRef.current.muted = true
@@ -85,11 +86,32 @@ export function VapiSimliAvatar({
     }
   }
 
+  /** Eksplicitno ostavi Vapi zvuk upaljen (sve audio elemente osim Simli). */
+  const ensureVapiAudioAudible = () => {
+    const allAudioElements = document.getElementsByTagName('audio')
+    for (const audio of allAudioElements) {
+      if (audio.id === 'simli_audio') {
+        audio.muted = true
+        audio.volume = 0
+        continue
+      }
+      audio.muted = false
+      if (audio.volume === 0) audio.volume = 1
+    }
+    try {
+      vapi?.setMuted(false)
+    } catch {
+      // ignore
+    }
+  }
+
   const startMuteWatch = () => {
     if (muteWatchRef.current) window.clearInterval(muteWatchRef.current)
     muteSimliPlayback()
+    ensureVapiAudioAudible()
     muteWatchRef.current = window.setInterval(() => {
       muteSimliPlayback()
+      ensureVapiAudioAudible()
     }, 400)
   }
 
@@ -285,6 +307,7 @@ export function VapiSimliAvatar({
           if (disposed) return
           setAvatarStarted(true)
           startMuteWatch()
+          ensureVapiAudioAudible()
           const warmup = new Uint8Array(6000).fill(0)
           client.sendAudioData(warmup)
           startPollingForTrack()
