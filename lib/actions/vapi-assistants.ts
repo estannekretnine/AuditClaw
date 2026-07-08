@@ -395,7 +395,7 @@ export async function setAssistantActiveSystemPrompt(
 }
 
 export async function getVapiStartConfig(assistantDbId: number) {
-  const access = await requireAdminAccess()
+  const access = await requireReadAccess()
   if (access.error) return { data: null, error: access.error }
 
   const result = await getVapiAssistantById(assistantDbId)
@@ -505,7 +505,7 @@ export async function getVapiStartConfig(assistantDbId: number) {
 }
 
 export async function startVapiWebCall(assistantDbId: number) {
-  const access = await requireAdminAccess()
+  const access = await requireReadAccess()
   if (access.error) return { data: null, error: access.error }
 
   const result = await getVapiAssistantById(assistantDbId)
