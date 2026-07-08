@@ -45,15 +45,30 @@ function buildVitalniZnaciTool(): Record<string, unknown> {
     function: {
       name: 'azurirajVitalneZnake',
       description:
-        'Poziva se kada se vitalni znaci pacijenta promene tokom razgovora. Koristi realne numericke vrednosti.',
+        'Pozovi ODMAH kada se meri ili izmeri vitalni znak (npr. "izmeri pritisak", "izmeri temperaturu", "proveri saturaciju"). Salji SAMO polja koja se trenutno mere, sa realisticnim vrednostima. Ne salji sva polja odjednom osim ako se sva mere.',
       parameters: {
         type: 'object',
         properties: {
-          pritisak: { type: 'string', description: 'Primer: 130/85' },
-          puls: { type: 'number' },
-          temperatura: { type: 'number' },
-          saturacija: { type: 'number' },
-          secer: { type: 'number' },
+          pritisak: {
+            type: 'string',
+            description: 'Krvni pritisak, npr. 130/85. Samo kad se meri pritisak.',
+          },
+          puls: {
+            type: 'number',
+            description: 'Puls u bpm. Samo kad se meri puls.',
+          },
+          temperatura: {
+            type: 'number',
+            description: 'Temperatura u °C. Samo kad se meri temperatura.',
+          },
+          saturacija: {
+            type: 'number',
+            description: 'SpO2 u %. Samo kad se meri saturacija.',
+          },
+          secer: {
+            type: 'number',
+            description: 'Šećer u mmol/L. Samo kad se meri šećer.',
+          },
         },
       },
     },

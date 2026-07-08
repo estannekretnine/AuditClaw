@@ -6,6 +6,14 @@ import DailyIframe, { type DailyCall } from '@daily-co/daily-js'
 import { Bot, Mic, PhoneOff, X } from 'lucide-react'
 import type { VapiUcenik } from '@/lib/types/vapi'
 import { VapiSimliAvatar } from '@/components/admin/vapi-simli-avatar'
+import {
+  applyVitalPayload,
+  extractVitalKeysFromPayload,
+  normalizeVitalToolPayload,
+  VapiVitalniUredjaji,
+  type VitalKey,
+  type VitalSignsState,
+} from '@/components/admin/vapi-vitalni-uredjaji'
 
 export interface VapiStartConfig {
   assistantDbId: number
@@ -24,14 +32,6 @@ export interface VapiStartConfig {
 interface TranscriptLine {
   role: string
   text: string
-}
-
-interface VitalSigns {
-  pritisak?: string
-  puls?: number
-  temperatura?: number
-  saturacija?: number
-  secer?: number
 }
 
 interface VapiCallModalProps {
@@ -211,8 +211,11 @@ export function VapiCallModal({
   const [selectedUcenikId, setSelectedUcenikId] = useState('')
   const [ucenikQuery, setUcenikQuery] = useState('')
   const [showUcenikList, setShowUcenikList] = useState(false)
-  const [vitalSigns, setVitalSigns] = useState<VitalSigns>({})
-  const [updatedVitalKey, setUpdatedVitalKey] = useState<string | null>(null)
+  const [vitalSigns, setVitalSigns] = useState<VitalSignsState>({})
+  const [revealedVitals, setRevealedVitals] = useState<Partial<Record<VitalKey, boolean>>>({})
+  const [updatedVitalKey, setUpdatedVitalKey] = useState<VitalKey | null>(null)
+  const [measuringVitalKey, setMeasuringVitalKey] = useState<VitalKey | null>(null)
+  const defaultsRef = useRef<VitalSignsState>({})
 
   const handleSimliError = useCallback((message: string) => {
     setError(message)
@@ -370,31 +373,49 @@ export function VapiCallModal({
         const firstCall = message.toolCallList[0]
         if (firstCall?.name !== 'azurirajVitalneZnake') return
 
-        const payload = firstCall.parameters || firstCall.arguments || {}
-        setVitalSigns((prev) => {
-          const next: VitalSigns = { ...prev }
-          if (typeof payload.pritisak === 'string') {
-            next.pritisak = payload.pritisak
-            setUpdatedVitalKey('pritisak')
+        const payload = normalizeVitalToolPayload(
+          firstCall.parameters || firstCall.arguments || {}
+        )
+        const defaults = defaultsRef.current
+        const keysToShow = extractVitalKeysFromPayload(payload)
+        if (keysToShow.length === 0) return
+
+        // Za prikaz uzmi AI vrednost, ili fallback sa forme ako polje nema broj.
+        const measurementPayload: Record<string, unknown> = {}
+        for (const key of keysToShow) {
+          if (key === 'pritisak') {
+            measurementPayload.pritisak =
+              typeof payload.pritisak === 'string' && payload.pritisak.trim()
+                ? payload.pritisak.trim()
+                : defaults.pritisak
+          } else if (key === 'puls') {
+            measurementPayload.puls =
+              typeof payload.puls === 'number' ? payload.puls : defaults.puls
+          } else if (key === 'temperatura') {
+            measurementPayload.temperatura =
+              typeof payload.temperatura === 'number' ? payload.temperatura : defaults.temperatura
+          } else if (key === 'saturacija') {
+            measurementPayload.saturacija =
+              typeof payload.saturacija === 'number' ? payload.saturacija : defaults.saturacija
+          } else if (key === 'secer') {
+            measurementPayload.secer =
+              typeof payload.secer === 'number' ? payload.secer : defaults.secer
           }
-          if (typeof payload.puls === 'number') {
-            next.puls = payload.puls
-            setUpdatedVitalKey('puls')
-          }
-          if (typeof payload.temperatura === 'number') {
-            next.temperatura = payload.temperatura
-            setUpdatedVitalKey('temperatura')
-          }
-          if (typeof payload.saturacija === 'number') {
-            next.saturacija = payload.saturacija
-            setUpdatedVitalKey('saturacija')
-          }
-          if (typeof payload.secer === 'number') {
-            next.secer = payload.secer
-            setUpdatedVitalKey('secer')
-          }
-          return next
-        })
+        }
+
+        const primary = keysToShow[0]
+        setMeasuringVitalKey(primary)
+
+        window.setTimeout(() => {
+          setVitalSigns((prev) => applyVitalPayload(prev, measurementPayload))
+          setRevealedVitals((prev) => {
+            const next = { ...prev }
+            for (const key of keysToShow) next[key] = true
+            return next
+          })
+          setUpdatedVitalKey(primary)
+          setMeasuringVitalKey(null)
+        }, 900)
       }
     })
   }, [cleanupCall, disableLocalVideo])
@@ -409,13 +430,19 @@ export function VapiCallModal({
       setUcenikQuery('')
       setShowUcenikList(false)
       setVitalSigns({})
+      setRevealedVitals({})
       setUpdatedVitalKey(null)
+      setMeasuringVitalKey(null)
     }
   }, [open, cleanupCall])
 
   useEffect(() => {
-    if (!config?.vitalniZnaciDefault) return
-    setVitalSigns({
+    // Defaulti ostaju sakriveni do merenja — ne prikazujemo ih odmah.
+    if (!config?.vitalniZnaciDefault) {
+      defaultsRef.current = {}
+      return
+    }
+    defaultsRef.current = {
       pritisak:
         typeof config.vitalniZnaciDefault.pritisak === 'string'
           ? config.vitalniZnaciDefault.pritisak
@@ -436,12 +463,16 @@ export function VapiCallModal({
         typeof config.vitalniZnaciDefault.secer === 'number'
           ? config.vitalniZnaciDefault.secer
           : undefined,
-    })
+    }
+    setVitalSigns({})
+    setRevealedVitals({})
+    setUpdatedVitalKey(null)
+    setMeasuringVitalKey(null)
   }, [config])
 
   useEffect(() => {
     if (!updatedVitalKey) return
-    const timer = window.setTimeout(() => setUpdatedVitalKey(null), 800)
+    const timer = window.setTimeout(() => setUpdatedVitalKey(null), 1600)
     return () => window.clearTimeout(timer)
   }, [updatedVitalKey])
 
@@ -470,6 +501,10 @@ export function VapiCallModal({
     setCallEnded(false)
     setIsStarting(true)
     setTranscript([])
+    setVitalSigns({})
+    setRevealedVitals({})
+    setUpdatedVitalKey(null)
+    setMeasuringVitalKey(null)
     hasStartedRef.current = false
 
     try {
@@ -640,29 +675,13 @@ export function VapiCallModal({
                       large
                     />
                   </div>
-                  <div className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white p-3 sm:p-4 h-full flex flex-col">
-                    <h4 className="text-sm font-semibold text-gray-800 mb-3 shrink-0">Vitalni znaci</h4>
-                    <div className="grid grid-cols-2 lg:grid-cols-1 gap-2 sm:gap-3 text-xs sm:text-sm flex-1 content-start">
-                      {[
-                        { key: 'pritisak', label: 'Pritisak', value: vitalSigns.pritisak ?? '-' },
-                        { key: 'puls', label: 'Puls', value: vitalSigns.puls ?? '-' },
-                        { key: 'temperatura', label: 'Temperatura', value: vitalSigns.temperatura ?? '-' },
-                        { key: 'saturacija', label: 'Saturacija', value: vitalSigns.saturacija ?? '-' },
-                        { key: 'secer', label: 'Šećer', value: vitalSigns.secer ?? '-' },
-                      ].map((item) => (
-                        <div
-                          key={item.key}
-                          className={`rounded-xl border p-3 transition-colors ${
-                            updatedVitalKey === item.key
-                              ? 'border-emerald-300 bg-emerald-50'
-                              : 'border-gray-200 bg-gray-50'
-                          }`}
-                        >
-                          <p className="text-[11px] text-gray-500">{item.label}</p>
-                          <p className="font-semibold text-gray-900 text-lg sm:text-xl">{String(item.value)}</p>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="lg:col-span-2 min-h-[280px] h-full">
+                    <VapiVitalniUredjaji
+                      values={vitalSigns}
+                      revealed={revealedVitals}
+                      activeKey={updatedVitalKey}
+                      measuringKey={measuringVitalKey}
+                    />
                   </div>
                 </div>
               )}
