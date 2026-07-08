@@ -147,17 +147,22 @@ export function detectMeasurementKeysFromSpeech(text: string): VitalKey[] {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'dj')
+    .replace(/[^a-z0-9\s/]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
   const keys: VitalKey[] = []
   const asks =
-    /\b(izmeri|izmjeri|izmerite|izmjerite|izmerimo|izmjerimo|izmeriti|izmjeriti|meri|merimo|merite|proveri|provjeri|proverite|provjerite)\b/.test(
+    /\b(izmeri\w*|izmjeri\w*|meri\w*|meren\w*|proveri\w*|provjeri\w*|pokazi\w*|pokazati)\b/.test(
       normalized
-    ) || /\bmerenje\b/.test(normalized)
+    )
 
-  const hasPritisak = /\bpritis(ak|ka|ku|kom)?\b|\bblood pressure\b/.test(normalized)
-  const hasPuls = /\bpuls(a|u|om)?\b|\bheartbeat\b|\bheart rate\b/.test(normalized)
-  const hasTemp = /\btemperatur(a|u|e|om)?\b|\btoplot(a|u)?\b|\bfever\b/.test(normalized)
-  const hasSat = /\bsaturacij(a|u|e|om)?\b|\boksimetr|\bspo2\b|\bkiseonik\b/.test(normalized)
-  const hasSecer = /\bsecer(a|u|om)?\b|\bglukoz|\bglukoza\b/.test(normalized)
+  const hasPritisak = /\bpritis\w*\b|\bblood pressure\b|\bbb\b/.test(normalized)
+  const hasPuls = /\bpuls\w*\b|\bheartbeat\b|\bheart rate\b/.test(normalized)
+  const hasTemp = /\btemperatur\w*\b|\btoplot\w*\b|\bfever\b/.test(normalized)
+  const hasSat = /\bsaturacij\w*\b|\boksimetr\w*\b|\bspo2\b|\bkiseonik\w*\b/.test(normalized)
+  const hasSecer = /\bsecer\w*\b|\bglukoz\w*\b/.test(normalized)
 
   if (asks && hasPritisak) keys.push('pritisak')
   if (asks && hasPuls) keys.push('puls')
@@ -165,17 +170,23 @@ export function detectMeasurementKeysFromSpeech(text: string): VitalKey[] {
   if (asks && hasSat) keys.push('saturacija')
   if (asks && hasSecer) keys.push('secer')
 
-  // „izmerite mu pritisak“, „hajde pritisak“…
+  // „izmeriti mu puls“, „hajde pritisak“…
   if (keys.length === 0) {
-    if (/\b(izmeri\w*|meri\w*|proveri\w*|provjeri\w*).{0,24}pritis/.test(normalized)) {
+    if (/\b(izmeri\w*|meri\w*|proveri\w*|provjeri\w*|pokazi\w*).{0,40}pritis/.test(normalized)) {
       keys.push('pritisak')
     }
-    if (/\b(izmeri\w*|meri\w*).{0,24}puls/.test(normalized)) keys.push('puls')
-    if (/\b(izmeri\w*|meri\w*).{0,24}temperatur/.test(normalized)) keys.push('temperatura')
-    if (/\b(izmeri\w*|meri\w*|proveri\w*|provjeri\w*).{0,24}saturacij/.test(normalized)) {
+    if (/\b(izmeri\w*|meri\w*|proveri\w*|provjeri\w*|pokazi\w*).{0,40}puls/.test(normalized)) {
+      keys.push('puls')
+    }
+    if (/\b(izmeri\w*|meri\w*|proveri\w*|provjeri\w*|pokazi\w*).{0,40}temperatur/.test(normalized)) {
+      keys.push('temperatura')
+    }
+    if (/\b(izmeri\w*|meri\w*|proveri\w*|provjeri\w*|pokazi\w*).{0,40}saturacij/.test(normalized)) {
       keys.push('saturacija')
     }
-    if (/\b(izmeri\w*|meri\w*).{0,24}secer/.test(normalized)) keys.push('secer')
+    if (/\b(izmeri\w*|meri\w*|proveri\w*|provjeri\w*|pokazi\w*).{0,40}secer/.test(normalized)) {
+      keys.push('secer')
+    }
   }
 
   return keys
@@ -183,12 +194,14 @@ export function detectMeasurementKeysFromSpeech(text: string): VitalKey[] {
 
 /**
  * AI često pošalje sva polja odjednom — otkrij samo ono što je korisnik tražio.
- * Ako nema konteksta zahteva, a stiglo je više polja: ne otkrivaj ništa.
+ * Ako nema konteksta zahteva, a stiglo je više polja: ne otkrivaj ništa
+ * (osim ako je samo jedno još neotkriveno).
  */
 export function narrowVitalKeysToReveal(
   payloadKeys: VitalKey[],
   requestedKeys: VitalKey[],
-  measuringKey: VitalKey | null = null
+  measuringKey: VitalKey | null = null,
+  alreadyRevealed: Partial<Record<VitalKey, boolean>> = {}
 ): VitalKey[] {
   if (requestedKeys.length > 0) {
     const matched = payloadKeys.filter((key) => requestedKeys.includes(key))
@@ -200,7 +213,37 @@ export function narrowVitalKeysToReveal(
   }
 
   if (payloadKeys.length === 1) return payloadKeys
+
+  const notYetRevealed = payloadKeys.filter((key) => !alreadyRevealed[key])
+  if (notYetRevealed.length === 1) return notYetRevealed
+
   return []
+}
+
+export const VITAL_TOOL_NAMES = new Set([
+  'azurirajVitalneZnake',
+  'izmeriPritisak',
+  'izmeriPuls',
+  'izmeriTemperaturu',
+  'izmeriSaturaciju',
+  'izmeriSecer',
+])
+
+export function vitalKeysFromToolName(name: string): VitalKey[] {
+  switch (name) {
+    case 'izmeriPritisak':
+      return ['pritisak']
+    case 'izmeriPuls':
+      return ['puls']
+    case 'izmeriTemperaturu':
+      return ['temperatura']
+    case 'izmeriSaturaciju':
+      return ['saturacija']
+    case 'izmeriSecer':
+      return ['secer']
+    default:
+      return []
+  }
 }
 
 export function parseVitalToolCalls(message: {

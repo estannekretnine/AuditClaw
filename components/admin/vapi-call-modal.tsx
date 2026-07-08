@@ -12,6 +12,8 @@ import {
   extractVitalKeysFromPayload,
   narrowVitalKeysToReveal,
   parseVitalToolCalls,
+  vitalKeysFromToolName,
+  VITAL_TOOL_NAMES,
   VapiVitalniUredjaji,
   type VitalKey,
   type VitalSignsState,
@@ -221,85 +223,125 @@ export function VapiCallModal({
   const revealingRef = useRef(false)
   const lastRequestedKeysRef = useRef<VitalKey[]>([])
   const measuringKeyRef = useRef<VitalKey | null>(null)
+  const revealedVitalsRef = useRef<Partial<Record<VitalKey, boolean>>>({})
+  const pendingRevealRef = useRef<{ keys: VitalKey[]; payload: Record<string, unknown> } | null>(
+    null
+  )
+  const revealTimeoutRef = useRef<number | null>(null)
 
   const handleSimliError = useCallback((message: string) => {
     setError(message)
   }, [])
 
   const revealVitalMeasurement = useCallback((keysToShow: VitalKey[], payload: Record<string, unknown>) => {
-    const narrowed = narrowVitalKeysToReveal(
-      keysToShow,
-      lastRequestedKeysRef.current,
-      measuringKeyRef.current
-    )
-    if (narrowed.length === 0) return
+    const applyReveal = (keys: VitalKey[], sourcePayload: Record<string, unknown>) => {
+      const narrowed = narrowVitalKeysToReveal(
+        keys,
+        lastRequestedKeysRef.current,
+        measuringKeyRef.current,
+        revealedVitalsRef.current
+      )
+      if (narrowed.length === 0) return false
 
-    const defaults = defaultsRef.current
-    const measurementPayload: Record<string, unknown> = {}
-    for (const key of narrowed) {
-      if (key === 'pritisak') {
-        measurementPayload.pritisak =
-          typeof payload.pritisak === 'string' && payload.pritisak.trim()
-            ? payload.pritisak.trim()
-            : defaults.pritisak ?? '120/80'
-      } else if (key === 'puls') {
-        measurementPayload.puls =
-          typeof payload.puls === 'number' ? payload.puls : (defaults.puls ?? 72)
-      } else if (key === 'temperatura') {
-        measurementPayload.temperatura =
-          typeof payload.temperatura === 'number' ? payload.temperatura : (defaults.temperatura ?? 36.6)
-      } else if (key === 'saturacija') {
-        measurementPayload.saturacija =
-          typeof payload.saturacija === 'number' ? payload.saturacija : (defaults.saturacija ?? 98)
-      } else if (key === 'secer') {
-        measurementPayload.secer =
-          typeof payload.secer === 'number' ? payload.secer : (defaults.secer ?? 5.5)
+      const defaults = defaultsRef.current
+      const measurementPayload: Record<string, unknown> = {}
+      for (const key of narrowed) {
+        if (key === 'pritisak') {
+          measurementPayload.pritisak =
+            typeof sourcePayload.pritisak === 'string' && sourcePayload.pritisak.trim()
+              ? sourcePayload.pritisak.trim()
+              : defaults.pritisak ?? '120/80'
+        } else if (key === 'puls') {
+          measurementPayload.puls =
+            typeof sourcePayload.puls === 'number' ? sourcePayload.puls : (defaults.puls ?? 72)
+        } else if (key === 'temperatura') {
+          measurementPayload.temperatura =
+            typeof sourcePayload.temperatura === 'number'
+              ? sourcePayload.temperatura
+              : (defaults.temperatura ?? 36.6)
+        } else if (key === 'saturacija') {
+          measurementPayload.saturacija =
+            typeof sourcePayload.saturacija === 'number'
+              ? sourcePayload.saturacija
+              : (defaults.saturacija ?? 98)
+        } else if (key === 'secer') {
+          measurementPayload.secer =
+            typeof sourcePayload.secer === 'number' ? sourcePayload.secer : (defaults.secer ?? 5.5)
+        }
       }
+
+      const primary = narrowed[0]
+      const hasExplicitValues = Object.keys(sourcePayload).some((key) =>
+        narrowed.includes(key as VitalKey)
+      )
+
+      // Tool stigao dok merenje već traje — upiši samo traženo polje.
+      if (revealingRef.current && measuringKeyRef.current === primary && hasExplicitValues) {
+        setVitalSigns((prev) => applyVitalPayload(prev, measurementPayload))
+        setRevealedVitals((prev) => {
+          const next = { ...prev }
+          for (const key of narrowed) next[key] = true
+          revealedVitalsRef.current = next
+          return next
+        })
+        setUpdatedVitalKey(primary)
+        setMeasuringVitalKey(null)
+        measuringKeyRef.current = null
+        lastRequestedKeysRef.current = lastRequestedKeysRef.current.filter(
+          (key) => !narrowed.includes(key)
+        )
+        revealingRef.current = false
+        if (revealTimeoutRef.current) {
+          window.clearTimeout(revealTimeoutRef.current)
+          revealTimeoutRef.current = null
+        }
+        const pending = pendingRevealRef.current
+        pendingRevealRef.current = null
+        if (pending) {
+          window.setTimeout(() => revealVitalMeasurement(pending.keys, pending.payload), 0)
+        }
+        return true
+      }
+
+      if (revealingRef.current) {
+        // Ne gubi drugo merenje (npr. puls posle pritiska) — stavi u red.
+        pendingRevealRef.current = { keys: narrowed, payload: sourcePayload }
+        return true
+      }
+
+      revealingRef.current = true
+      measuringKeyRef.current = primary
+      setMeasuringVitalKey(primary)
+
+      if (revealTimeoutRef.current) window.clearTimeout(revealTimeoutRef.current)
+      revealTimeoutRef.current = window.setTimeout(() => {
+        setVitalSigns((prev) => applyVitalPayload(prev, measurementPayload))
+        setRevealedVitals((prev) => {
+          const next = { ...prev }
+          for (const key of narrowed) next[key] = true
+          revealedVitalsRef.current = next
+          return next
+        })
+        setUpdatedVitalKey(primary)
+        setMeasuringVitalKey(null)
+        measuringKeyRef.current = null
+        lastRequestedKeysRef.current = lastRequestedKeysRef.current.filter(
+          (key) => !narrowed.includes(key)
+        )
+        revealingRef.current = false
+        revealTimeoutRef.current = null
+
+        const pending = pendingRevealRef.current
+        pendingRevealRef.current = null
+        if (pending) {
+          revealVitalMeasurement(pending.keys, pending.payload)
+        }
+      }, hasExplicitValues ? 450 : 900)
+
+      return true
     }
 
-    const primary = narrowed[0]
-    const hasExplicitValues = Object.keys(payload).some((key) =>
-      narrowed.includes(key as VitalKey)
-    )
-
-    // Tool stigao dok merenje već traje — upiši samo traženo polje.
-    if (revealingRef.current && measuringKeyRef.current === primary && hasExplicitValues) {
-      setVitalSigns((prev) => applyVitalPayload(prev, measurementPayload))
-      setRevealedVitals((prev) => {
-        const next = { ...prev }
-        for (const key of narrowed) next[key] = true
-        return next
-      })
-      setUpdatedVitalKey(primary)
-      setMeasuringVitalKey(null)
-      measuringKeyRef.current = null
-      lastRequestedKeysRef.current = lastRequestedKeysRef.current.filter(
-        (key) => !narrowed.includes(key)
-      )
-      revealingRef.current = false
-      return
-    }
-
-    if (revealingRef.current) return
-    revealingRef.current = true
-    measuringKeyRef.current = primary
-    setMeasuringVitalKey(primary)
-
-    window.setTimeout(() => {
-      setVitalSigns((prev) => applyVitalPayload(prev, measurementPayload))
-      setRevealedVitals((prev) => {
-        const next = { ...prev }
-        for (const key of narrowed) next[key] = true
-        return next
-      })
-      setUpdatedVitalKey(primary)
-      setMeasuringVitalKey(null)
-      measuringKeyRef.current = null
-      lastRequestedKeysRef.current = lastRequestedKeysRef.current.filter(
-        (key) => !narrowed.includes(key)
-      )
-      revealingRef.current = false
-    }, hasExplicitValues ? 450 : 900)
+    applyReveal(keysToShow, payload)
   }, [])
 
   const cleanupCall = useCallback(async () => {
@@ -461,20 +503,39 @@ export function VapiCallModal({
           const speechKeys = detectMeasurementKeysFromSpeech(text)
           if (speechKeys.length > 0) {
             lastRequestedKeysRef.current = speechKeys
+            // Pokreni "Merenje u toku..." odmah; AI vrednost će dopuniti kasnije.
             revealVitalMeasurement(speechKeys, {})
           }
         }
       }
 
+      // I partial user transcript može ranije da uhvati "izmeriti puls".
+      if (
+        message.type === 'transcript' &&
+        message.transcript &&
+        message.transcriptType === 'partial' &&
+        message.role === 'user'
+      ) {
+        const speechKeys = detectMeasurementKeysFromSpeech(message.transcript)
+        if (speechKeys.length > 0) {
+          lastRequestedKeysRef.current = speechKeys
+        }
+      }
+
       const toolCalls = parseVitalToolCalls(message)
       for (const call of toolCalls) {
-        if (call.name !== 'azurirajVitalneZnake') continue
-        const keysToShow = extractVitalKeysFromPayload(call.payload)
+        if (!VITAL_TOOL_NAMES.has(call.name)) continue
+        const fromName = vitalKeysFromToolName(call.name)
+        const fromPayload = extractVitalKeysFromPayload(call.payload)
+        const keysToShow = fromName.length > 0 ? fromName : fromPayload
         if (keysToShow.length === 0) {
           if (lastRequestedKeysRef.current.length > 0) {
-            revealVitalMeasurement(lastRequestedKeysRef.current, {})
+            revealVitalMeasurement(lastRequestedKeysRef.current, call.payload)
           }
           continue
+        }
+        if (fromName.length > 0) {
+          lastRequestedKeysRef.current = fromName
         }
         revealVitalMeasurement(keysToShow, call.payload)
       }
@@ -492,8 +553,13 @@ export function VapiCallModal({
       setShowUcenikList(false)
       setVitalSigns({})
       setRevealedVitals({})
+      revealedVitalsRef.current = {}
       setUpdatedVitalKey(null)
       setMeasuringVitalKey(null)
+      lastRequestedKeysRef.current = []
+      measuringKeyRef.current = null
+      pendingRevealRef.current = null
+      revealingRef.current = false
     }
   }, [open, cleanupCall])
 
@@ -527,8 +593,13 @@ export function VapiCallModal({
     }
     setVitalSigns({})
     setRevealedVitals({})
+    revealedVitalsRef.current = {}
     setUpdatedVitalKey(null)
     setMeasuringVitalKey(null)
+    lastRequestedKeysRef.current = []
+    measuringKeyRef.current = null
+    pendingRevealRef.current = null
+    revealingRef.current = false
   }, [config])
 
   useEffect(() => {
@@ -568,6 +639,12 @@ export function VapiCallModal({
     setMeasuringVitalKey(null)
     lastRequestedKeysRef.current = []
     measuringKeyRef.current = null
+    revealedVitalsRef.current = {}
+    pendingRevealRef.current = null
+    if (revealTimeoutRef.current) {
+      window.clearTimeout(revealTimeoutRef.current)
+      revealTimeoutRef.current = null
+    }
     revealingRef.current = false
     hasStartedRef.current = false
 

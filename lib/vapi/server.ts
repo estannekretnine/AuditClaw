@@ -39,49 +39,124 @@ interface VitalniZnaciToolOptions {
   enableVitalniZnaciTool?: boolean
 }
 
-function buildVitalniZnaciTool(): Record<string, unknown> {
-  return {
-    type: 'function',
-    // async: true — AI NE čeka tool result (client-side side-effect), inače „zamrzne“ razgovor.
-    async: true,
-    function: {
-      name: 'azurirajVitalneZnake',
-      description:
-        'Pozovi ODMAH kada korisnik traži merenje (npr. "izmerite pritisak", "izmeri temperaturu"). KRITICNO: u jednom pozivu posalji TACNO JEDNO polje — ono koje je korisnik upravo trazio. Nikad ne salji pritisak+puls+temperaturu+saturaciju+secer zajedno.',
-      parameters: {
-        type: 'object',
-        properties: {
-          pritisak: {
-            type: 'string',
-            description: 'Krvni pritisak, npr. 130/85. Samo kad se meri pritisak.',
+function buildVitalniZnaciTools(): Record<string, unknown>[] {
+  const sharedMessages = [
+    {
+      type: 'request-start',
+      content: 'Merim...',
+      blocking: false,
+    },
+  ]
+
+  return [
+    {
+      type: 'function',
+      async: true,
+      function: {
+        name: 'izmeriPritisak',
+        description:
+          'Pozovi kada korisnik trazi merenje krvnog pritiska (npr. izmeri/izmerite/izmeriti pritisak).',
+        parameters: {
+          type: 'object',
+          properties: {
+            pritisak: {
+              type: 'string',
+              description: 'Krvni pritisak, npr. 130/85',
+            },
           },
-          puls: {
-            type: 'number',
-            description: 'Puls u bpm. Samo kad se meri puls.',
+          required: ['pritisak'],
+        },
+      },
+      messages: sharedMessages,
+    },
+    {
+      type: 'function',
+      async: true,
+      function: {
+        name: 'izmeriPuls',
+        description: 'Pozovi kada korisnik trazi merenje pulsa (npr. izmeri/izmeriti puls).',
+        parameters: {
+          type: 'object',
+          properties: {
+            puls: { type: 'number', description: 'Puls u bpm' },
           },
-          temperatura: {
-            type: 'number',
-            description: 'Temperatura u °C. Samo kad se meri temperatura.',
+          required: ['puls'],
+        },
+      },
+      messages: sharedMessages,
+    },
+    {
+      type: 'function',
+      async: true,
+      function: {
+        name: 'izmeriTemperaturu',
+        description:
+          'Pozovi kada korisnik trazi merenje temperature (npr. izmeri/izmeriti temperaturu).',
+        parameters: {
+          type: 'object',
+          properties: {
+            temperatura: { type: 'number', description: 'Temperatura u °C' },
           },
-          saturacija: {
-            type: 'number',
-            description: 'SpO2 u %. Samo kad se meri saturacija.',
+          required: ['temperatura'],
+        },
+      },
+      messages: sharedMessages,
+    },
+    {
+      type: 'function',
+      async: true,
+      function: {
+        name: 'izmeriSaturaciju',
+        description:
+          'Pozovi kada korisnik trazi merenje saturacije / SpO2 (npr. izmeri saturaciju).',
+        parameters: {
+          type: 'object',
+          properties: {
+            saturacija: { type: 'number', description: 'SpO2 u %' },
           },
-          secer: {
-            type: 'number',
-            description: 'Šećer u mmol/L. Samo kad se meri šećer.',
+          required: ['saturacija'],
+        },
+      },
+      messages: sharedMessages,
+    },
+    {
+      type: 'function',
+      async: true,
+      function: {
+        name: 'izmeriSecer',
+        description: 'Pozovi kada korisnik trazi merenje secera / glukoze.',
+        parameters: {
+          type: 'object',
+          properties: {
+            secer: { type: 'number', description: 'Secer u mmol/L' },
+          },
+          required: ['secer'],
+        },
+      },
+      messages: sharedMessages,
+    },
+    // Zadrzavamo stari tool radi kompatibilnosti, ali nije obavezan.
+    {
+      type: 'function',
+      async: true,
+      function: {
+        name: 'azurirajVitalneZnake',
+        description:
+          'Rezervni tool. Preferiraj dedicated tools (izmeriPritisak, izmeriPuls...). Ako se koristi, u jednom pozivu salji TACNO JEDNO polje.',
+        parameters: {
+          type: 'object',
+          properties: {
+            pritisak: { type: 'string' },
+            puls: { type: 'number' },
+            temperatura: { type: 'number' },
+            saturacija: { type: 'number' },
+            secer: { type: 'number' },
           },
         },
       },
+      messages: sharedMessages,
     },
-    messages: [
-      {
-        type: 'request-start',
-        content: 'Merim...',
-        blocking: false,
-      },
-    ],
-  }
+  ]
 }
 
 function buildModelConfig(
@@ -94,16 +169,23 @@ function buildModelConfig(
   }
 
   const existingTools = Array.isArray(nextModel.tools) ? nextModel.tools : []
-  const hasTool = existingTools.some((entry) => {
-    if (!entry || typeof entry !== 'object') return false
+  const vitalToolNames = new Set([
+    'azurirajVitalneZnake',
+    'izmeriPritisak',
+    'izmeriPuls',
+    'izmeriTemperaturu',
+    'izmeriSaturaciju',
+    'izmeriSecer',
+  ])
+  const withoutOldVitalTools = existingTools.filter((entry) => {
+    if (!entry || typeof entry !== 'object') return true
     const fn = (entry as Record<string, unknown>).function
-    if (!fn || typeof fn !== 'object') return false
-    return (fn as Record<string, unknown>).name === 'azurirajVitalneZnake'
+    if (!fn || typeof fn !== 'object') return true
+    const name = (fn as Record<string, unknown>).name
+    return typeof name !== 'string' || !vitalToolNames.has(name)
   })
-  if (!hasTool) {
-    nextModel.tools = [...existingTools, buildVitalniZnaciTool()]
-  }
 
+  nextModel.tools = [...withoutOldVitalTools, ...buildVitalniZnaciTools()]
   return nextModel
 }
 
