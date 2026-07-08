@@ -33,6 +33,38 @@ export interface VapiAssistantInsert {
 
 export interface VapiAssistantUpdate extends Partial<VapiAssistantInsert> {}
 
+export interface VapiMedicinskaOprema {
+  id: number
+  naziv: string
+  namena: string | null
+}
+
+export interface VapiMedicinskaOpremaInsert {
+  naziv: string
+  namena?: string | null
+}
+
+export interface VapiMedicinskaOpremaUpdate extends Partial<VapiMedicinskaOpremaInsert> {}
+
+export interface VapiAssistantMedOprema {
+  id: number
+  assistantid: number
+  medopremaid: number | null
+}
+
+export interface VapiSystemPrompt {
+  id: number
+  'SystemPrompt Vapi': string
+  assistantid: number | null
+}
+
+export interface VapiSystemPromptInsert {
+  'SystemPrompt Vapi': string
+  assistantid?: number | null
+}
+
+export interface VapiSystemPromptUpdate extends Partial<VapiSystemPromptInsert> {}
+
 export interface VapiOdgovor {
   id: number
   dijalog: string

@@ -4,7 +4,12 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getCurrentUser } from '@/lib/actions/auth'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import type { VapiAssistant, VapiAssistantInsert } from '@/lib/types/vapi'
+import type {
+  VapiAssistant,
+  VapiAssistantInsert,
+  VapiMedicinskaOprema,
+  VapiSystemPrompt,
+} from '@/lib/types/vapi'
 import {
   getVapiPrivateKey,
   getVapiPublicKeyForCall,
@@ -31,6 +36,8 @@ const vapiAssistantSchema = z.object({
   simli_max_session_length: z.number().int().min(60).max(3600).optional(),
   simli_max_idle_time: z.number().int().min(30).max(3600).optional(),
   vitalni_znaci_default: z.record(z.string(), z.union([z.string(), z.number()])).optional().nullable(),
+  medoprema_ids: z.array(z.number()).optional(),
+  selected_system_prompt_id: z.number().optional().nullable(),
 })
 
 const defaultVitalniZnaci = {
@@ -62,7 +69,10 @@ function parseAssistantFormData(formData: FormData) {
   const simliSessionRaw = ((formData.get('simli_max_session_length') as string) || '').trim()
   const simliIdleRaw = ((formData.get('simli_max_idle_time') as string) || '').trim()
   const vitalniRaw = ((formData.get('vitalni_znaci_default') as string) || '').trim()
+  const medopremaRaw = ((formData.get('medoprema_ids') as string) || '').trim()
+  const selectedSystemPromptRaw = ((formData.get('selected_system_prompt_id') as string) || '').trim()
   let parsedVitalni: Record<string, string | number> | null = null
+  let parsedMedOpremaIds: number[] = []
   if (vitalniRaw) {
     try {
       const parsed = JSON.parse(vitalniRaw) as Record<string, unknown>
@@ -73,6 +83,21 @@ function parseAssistantFormData(formData: FormData) {
       parsedVitalni = null
     }
   }
+
+  if (medopremaRaw) {
+    try {
+      const parsed = JSON.parse(medopremaRaw) as unknown
+      if (Array.isArray(parsed)) {
+        parsedMedOpremaIds = parsed
+          .map((item) => Number(item))
+          .filter((item) => Number.isFinite(item) && item > 0)
+      }
+    } catch {
+      parsedMedOpremaIds = []
+    }
+  }
+
+  const selectedSystemPromptId = selectedSystemPromptRaw ? Number(selectedSystemPromptRaw) : null
 
   return {
     assistant_id: ((formData.get('assistant_id') as string) || '').trim() || null,
@@ -88,12 +113,132 @@ function parseAssistantFormData(formData: FormData) {
     simli_max_session_length: simliSessionRaw ? Number(simliSessionRaw) : 600,
     simli_max_idle_time: simliIdleRaw ? Number(simliIdleRaw) : 600,
     vitalni_znaci_default: parsedVitalni,
+    medoprema_ids: parsedMedOpremaIds,
+    selected_system_prompt_id:
+      selectedSystemPromptId !== null && !Number.isNaN(selectedSystemPromptId)
+        ? selectedSystemPromptId
+        : null,
   }
+}
+
+async function listMedicinskaOpremaByAssistant(
+  assistantId: number
+): Promise<VapiMedicinskaOprema[]> {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('vapi_assistanmedoprema')
+    .select('vapi_medicinskaoprema(id, naziv, namena)')
+    .eq('assistantid', assistantId)
+
+  if (error || !data) return []
+
+  const items: VapiMedicinskaOprema[] = []
+  for (const row of data as Array<{ vapi_medicinskaoprema: unknown }>) {
+    const linked = row.vapi_medicinskaoprema
+    if (!linked) continue
+    if (Array.isArray(linked)) {
+      for (const item of linked) {
+        if (!item || typeof item !== 'object') continue
+        const rec = item as Record<string, unknown>
+        if (typeof rec.id === 'number' && typeof rec.naziv === 'string') {
+          items.push({ id: rec.id, naziv: rec.naziv, namena: (rec.namena as string | null) ?? null })
+        }
+      }
+      continue
+    }
+    if (typeof linked === 'object') {
+      const rec = linked as Record<string, unknown>
+      if (typeof rec.id === 'number' && typeof rec.naziv === 'string') {
+        items.push({ id: rec.id, naziv: rec.naziv, namena: (rec.namena as string | null) ?? null })
+      }
+    }
+  }
+
+  const byId = new Map<number, VapiMedicinskaOprema>()
+  for (const item of items) byId.set(item.id, item)
+  return Array.from(byId.values())
+}
+
+async function listSystemPromptsByAssistant(assistantId: number): Promise<VapiSystemPrompt[]> {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('vapi_SystemPrompt')
+    .select('*')
+    .eq('assistantid', assistantId)
+    .order('id', { ascending: false })
+
+  if (error || !data) return []
+  return data as VapiSystemPrompt[]
+}
+
+async function syncAssistantEquipmentLinks(assistantId: number, medOpremaIds: number[]) {
+  const supabase = createAdminClient()
+  const uniqueIds = Array.from(new Set(medOpremaIds.filter((id) => Number.isFinite(id) && id > 0)))
+
+  const { error: deleteError } = await supabase
+    .from('vapi_assistanmedoprema')
+    .delete()
+    .eq('assistantid', assistantId)
+  if (deleteError) return deleteError.message
+
+  if (uniqueIds.length === 0) return null
+
+  const rows = uniqueIds.map((medopremaid) => ({ assistantid: assistantId, medopremaid }))
+  const { error: insertError } = await supabase.from('vapi_assistanmedoprema').insert(rows)
+  return insertError ? insertError.message : null
+}
+
+async function syncSystemPromptSelection(
+  assistantId: number,
+  selectedSystemPromptId: number | null,
+  fallbackPrompt: string | null
+) {
+  const supabase = createAdminClient()
+
+  if (selectedSystemPromptId) {
+    const { data } = await supabase
+      .from('vapi_SystemPrompt')
+      .select('*')
+      .eq('id', selectedSystemPromptId)
+      .eq('assistantid', assistantId)
+      .single()
+
+    const selected = data as VapiSystemPrompt | null
+    if (selected) {
+      return { prompt: selected['SystemPrompt Vapi'], selectedPromptId: selected.id }
+    }
+  }
+
+  const prompt = fallbackPrompt?.trim() || null
+  if (!prompt) return { prompt: null, selectedPromptId: null }
+
+  const { data: existing } = await supabase
+    .from('vapi_SystemPrompt')
+    .select('*')
+    .eq('assistantid', assistantId)
+    .eq('SystemPrompt Vapi', prompt)
+    .limit(1)
+
+  const existingPrompt = (existing?.[0] as VapiSystemPrompt | undefined) || null
+  if (existingPrompt) {
+    return { prompt: existingPrompt['SystemPrompt Vapi'], selectedPromptId: existingPrompt.id }
+  }
+
+  const { data: inserted } = await supabase
+    .from('vapi_SystemPrompt')
+    .insert([{ assistantid: assistantId, 'SystemPrompt Vapi': prompt }])
+    .select('*')
+    .single()
+
+  const insertedPrompt = inserted as VapiSystemPrompt | null
+  if (!insertedPrompt) return { prompt, selectedPromptId: null }
+  return { prompt: insertedPrompt['SystemPrompt Vapi'], selectedPromptId: insertedPrompt.id }
 }
 
 async function syncAssistantWithVapi(
   assistant: VapiAssistant,
-  privateKey: string
+  privateKey: string,
+  systemPrompt: string | null = assistant.System_Prompt
 ): Promise<string | null> {
   if (assistant.assistant_id === PENDING_VAPI_ID) {
     return 'Asistent još nije povezan sa Vapi platformom.'
@@ -104,7 +249,7 @@ async function syncAssistantWithVapi(
     privateApiKey: privateKey,
     assistantDbId: assistant.id,
     name: assistant.opis_servisa,
-    systemPrompt: assistant.System_Prompt,
+    systemPrompt,
     enableVitalniZnaciTool: assistant.ima_video_pacijenta,
   })
 
@@ -160,6 +305,87 @@ export async function getVapiAssistantById(id: number) {
   return { data: data as VapiAssistant, error: null }
 }
 
+export async function getAssistantMedOpremaIds(assistantId: number) {
+  const access = await requireAdminAccess()
+  if (access.error) return { data: null, error: access.error }
+
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('vapi_assistanmedoprema')
+    .select('medopremaid')
+    .eq('assistantid', assistantId)
+
+  if (error) return { data: null, error: error.message }
+  const ids = data
+    .map((row) => Number(row.medopremaid))
+    .filter((id) => Number.isFinite(id) && id > 0)
+  return { data: ids, error: null }
+}
+
+export async function setAssistantMedOpremaIds(assistantId: number, medOpremaIds: number[]) {
+  const access = await requireAdminAccess()
+  if (access.error) return { error: access.error }
+
+  const syncError = await syncAssistantEquipmentLinks(assistantId, medOpremaIds)
+  if (syncError) return { error: syncError }
+
+  revalidatePath('/dashboard/vapi/assistants')
+  return { error: null, success: true }
+}
+
+export async function getAssistantSystemPrompts(assistantId: number) {
+  const access = await requireAdminAccess()
+  if (access.error) return { data: null, error: access.error }
+  const prompts = await listSystemPromptsByAssistant(assistantId)
+  return { data: prompts, error: null }
+}
+
+export async function setAssistantActiveSystemPrompt(
+  assistantId: number,
+  systemPromptId: number | null
+) {
+  const access = await requireAdminAccess()
+  if (access.error) return { error: access.error }
+
+  const supabase = createAdminClient()
+  const assistantResult = await getVapiAssistantById(assistantId)
+  if (assistantResult.error || !assistantResult.data) {
+    return { error: assistantResult.error || 'Asistent nije pronađen.' }
+  }
+  const assistant = assistantResult.data
+
+  let selectedText: string | null = null
+  if (systemPromptId) {
+    const { data, error } = await supabase
+      .from('vapi_SystemPrompt')
+      .select('*')
+      .eq('id', systemPromptId)
+      .eq('assistantid', assistantId)
+      .single()
+    if (error || !data) return { error: 'Izabrani SystemPrompt nije pronađen za ovog asistenta.' }
+    selectedText = (data as VapiSystemPrompt)['SystemPrompt Vapi']
+  }
+
+  const { error: updateError } = await supabase
+    .from('vapi_assistants')
+    .update({ System_Prompt: selectedText })
+    .eq('id', assistantId)
+  if (updateError) return { error: updateError.message }
+
+  const privateKey = getVapiPrivateKey(assistant.vapi_api_key)
+  if (privateKey && assistant.assistant_id && assistant.assistant_id !== PENDING_VAPI_ID) {
+    const syncErr = await syncAssistantWithVapi(
+      { ...assistant, System_Prompt: selectedText } as VapiAssistant,
+      privateKey,
+      selectedText
+    )
+    if (syncErr) return { error: syncErr }
+  }
+
+  revalidatePath('/dashboard/vapi/assistants')
+  return { error: null, success: true }
+}
+
 export async function getVapiStartConfig(assistantDbId: number) {
   const access = await requireAdminAccess()
   if (access.error) return { data: null, error: access.error }
@@ -195,6 +421,12 @@ export async function getVapiStartConfig(assistantDbId: number) {
         'Vapi Public key nije podešen. Dodajte ga u formi ili NEXT_PUBLIC_VAPI_PUBLIC_KEY u Vercel env.',
     }
   }
+
+  const linkedOprema = await listMedicinskaOpremaByAssistant(assistant.id)
+  const systemPrompts = await listSystemPromptsByAssistant(assistant.id)
+  const selectedPrompt =
+    systemPrompts.find((prompt) => prompt['SystemPrompt Vapi'] === (assistant.System_Prompt || '')) ||
+    null
 
   // Pri pokretanju poziva sinhronizujemo webhook i literalni System_Prompt
   // iz baze na Vapi asistenta. Za jednog asistenta je isti prompt svaki put
@@ -256,6 +488,9 @@ export async function getVapiStartConfig(assistantDbId: number) {
         ? null
         : sync.error ||
           'Webhook nije sinhronizovan. Proverite VAPI_WEBHOOK_SECRET u Vercel env.',
+      medicinskaOprema: linkedOprema,
+      systemPrompts,
+      selectedSystemPromptId: selectedPrompt?.id ?? null,
     },
     error: null,
   }
@@ -346,6 +581,30 @@ export async function createVapiAssistant(formData: FormData) {
   const created = data as VapiAssistant
   let vapiSyncWarning: string | null = null
 
+  const promptSync = await syncSystemPromptSelection(
+    created.id,
+    result.data.selected_system_prompt_id ?? null,
+    result.data.System_Prompt ?? null
+  )
+  const equipmentSyncError = await syncAssistantEquipmentLinks(
+    created.id,
+    result.data.medoprema_ids ?? []
+  )
+
+  if (equipmentSyncError) {
+    vapiSyncWarning = `Asistent je sačuvan, ali oprema nije povezana: ${equipmentSyncError}`
+  }
+
+  if (promptSync.prompt !== created.System_Prompt) {
+    const { error: updatePromptError } = await supabase
+      .from('vapi_assistants')
+      .update({ System_Prompt: promptSync.prompt })
+      .eq('id', created.id)
+    if (!updatePromptError) {
+      created.System_Prompt = promptSync.prompt
+    }
+  }
+
   // Sinhronizacija sa Vapi platformom je opciona — asistent je već sačuvan u bazi.
   if (!privateKey) {
     vapiSyncWarning =
@@ -374,7 +633,7 @@ export async function createVapiAssistant(formData: FormData) {
         created.assistant_id = push.assistantId
       }
     } else if (vapiIdFromForm) {
-      vapiSyncWarning = await syncAssistantWithVapi(created, privateKey)
+      vapiSyncWarning = await syncAssistantWithVapi(created, privateKey, created.System_Prompt)
     }
   }
 
@@ -422,6 +681,30 @@ export async function updateVapiAssistant(id: number, formData: FormData) {
 
   const updated = data as VapiAssistant
   let vapiSyncWarning: string | null = null
+
+  const promptSync = await syncSystemPromptSelection(
+    updated.id,
+    result.data.selected_system_prompt_id ?? null,
+    result.data.System_Prompt ?? null
+  )
+  const equipmentSyncError = await syncAssistantEquipmentLinks(
+    updated.id,
+    result.data.medoprema_ids ?? []
+  )
+
+  if (equipmentSyncError) {
+    vapiSyncWarning = `Asistent je sačuvan, ali oprema nije povezana: ${equipmentSyncError}`
+  }
+
+  if (promptSync.prompt !== updated.System_Prompt) {
+    const { error: updatePromptError } = await supabase
+      .from('vapi_assistants')
+      .update({ System_Prompt: promptSync.prompt })
+      .eq('id', updated.id)
+    if (!updatePromptError) {
+      updated.System_Prompt = promptSync.prompt
+    }
+  }
 
   // Sinhronizacija sa Vapi platformom je opciona — izmene su već sačuvane u bazi.
   if (!privateKey) {

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Vapi from '@vapi-ai/web'
 import DailyIframe, { type DailyCall } from '@daily-co/daily-js'
 import { Bot, Mic, PhoneOff, X } from 'lucide-react'
+import { setAssistantActiveSystemPrompt } from '@/lib/actions/vapi-assistants'
 import type { VapiUcenik } from '@/lib/types/vapi'
 import { VapiSimliAvatar } from '@/components/admin/vapi-simli-avatar'
 import {
@@ -31,6 +32,9 @@ export interface VapiStartConfig {
   simliIceServers?: RTCIceServer[]
   webhookSynced?: boolean
   webhookWarning?: string | null
+  medicinskaOprema?: Array<{ id: number; naziv: string; namena?: string | null }>
+  systemPrompts?: Array<{ id: number; assistantid: number | null; 'SystemPrompt Vapi': string }>
+  selectedSystemPromptId?: number | null
 }
 
 interface TranscriptLine {
@@ -45,6 +49,20 @@ interface VapiCallModalProps {
   loading?: boolean
   loadError?: string | null
   ucenici?: VapiUcenik[]
+}
+
+function vitalKeyFromOpremaLabel(label: string): VitalKey | null {
+  const text = label
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+
+  if (text.includes('pritis')) return 'pritisak'
+  if (text.includes('puls')) return 'puls'
+  if (text.includes('temperatur')) return 'temperatura'
+  if (text.includes('saturacij') || text.includes('oksimet') || text.includes('spo2')) return 'saturacija'
+  if (text.includes('secer') || text.includes('glukoz')) return 'secer'
+  return null
 }
 
 function extractVapiError(event: unknown): string {
@@ -219,6 +237,8 @@ export function VapiCallModal({
   const [revealedVitals, setRevealedVitals] = useState<Partial<Record<VitalKey, boolean>>>({})
   const [updatedVitalKey, setUpdatedVitalKey] = useState<VitalKey | null>(null)
   const [measuringVitalKey, setMeasuringVitalKey] = useState<VitalKey | null>(null)
+  const [selectedSystemPromptId, setSelectedSystemPromptId] = useState<string>('')
+  const [applyingSystemPrompt, setApplyingSystemPrompt] = useState(false)
   const defaultsRef = useRef<VitalSignsState>({})
   const revealingRef = useRef(false)
   const lastRequestedKeysRef = useRef<VitalKey[]>([])
@@ -531,6 +551,8 @@ export function VapiCallModal({
       measuringKeyRef.current = null
       pendingQueueRef.current = []
       revealingRef.current = false
+      setSelectedSystemPromptId('')
+      setApplyingSystemPrompt(false)
     }
   }, [open, cleanupCall])
 
@@ -571,6 +593,9 @@ export function VapiCallModal({
     measuringKeyRef.current = null
     pendingQueueRef.current = []
     revealingRef.current = false
+    setSelectedSystemPromptId(
+      config?.selectedSystemPromptId ? String(config.selectedSystemPromptId) : ''
+    )
   }, [config])
 
   useEffect(() => {
@@ -620,6 +645,20 @@ export function VapiCallModal({
     hasStartedRef.current = false
 
     try {
+      if (selectedSystemPromptId) {
+        setApplyingSystemPrompt(true)
+        const syncPrompt = await setAssistantActiveSystemPrompt(
+          config.assistantDbId,
+          Number(selectedSystemPromptId)
+        )
+        setApplyingSystemPrompt(false)
+        if (syncPrompt.error) {
+          setError(`SystemPrompt nije primenjen: ${syncPrompt.error}`)
+          setIsStarting(false)
+          return
+        }
+      }
+
       await cleanupCall()
 
       const vapi = initVapi(config.publicKey)
@@ -629,6 +668,7 @@ export function VapiCallModal({
         metadata: {
           assistantDbId: String(config.assistantDbId),
           ucenikid: selectedUcenikId,
+          selectedSystemPromptId: selectedSystemPromptId || null,
         },
         clientMessages: [
           'transcript',
@@ -697,7 +737,15 @@ export function VapiCallModal({
 
   if (!open) return null
 
-  const startDisabled = isStarting || isReleasing || !selectedUcenikId
+  const startDisabled = isStarting || isReleasing || applyingSystemPrompt || !selectedUcenikId
+  const visibleVitalKeys = (() => {
+    const linked = config?.medicinskaOprema || []
+    if (linked.length === 0) return undefined
+    const keys = linked
+      .map((item) => vitalKeyFromOpremaLabel(`${item.naziv} ${item.namena || ''}`))
+      .filter((key): key is VitalKey => Boolean(key))
+    return Array.from(new Set(keys))
+  })()
   const showVideoPatient = Boolean(
     config?.imaVideoPacijenta && config?.simliFaceId && config?.simliSessionToken
   )
@@ -805,8 +853,33 @@ export function VapiCallModal({
                       revealed={revealedVitals}
                       activeKey={updatedVitalKey}
                       measuringKey={measuringVitalKey}
+                      visibleKeys={visibleVitalKeys}
                     />
                   </div>
+                </div>
+              )}
+
+              {(config?.systemPrompts?.length || 0) > 0 && (
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Aktivni SystemPrompt za ovaj poziv
+                  </label>
+                  <select
+                    value={selectedSystemPromptId}
+                    onChange={(e) => setSelectedSystemPromptId(e.target.value)}
+                    disabled={isConnected || isStarting || applyingSystemPrompt}
+                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:opacity-60"
+                  >
+                    <option value="">-- Bez promene --</option>
+                    {config?.systemPrompts?.map((prompt) => (
+                      <option key={prompt.id} value={prompt.id}>
+                        {prompt['SystemPrompt Vapi'].slice(0, 120)}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Promena važi pre pokretanja poziva.
+                  </p>
                 </div>
               )}
 

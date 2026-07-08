@@ -69,6 +69,7 @@ interface VapiVitalniUredjajiProps {
   revealed: Partial<Record<VitalKey, boolean>>
   activeKey: VitalKey | null
   measuringKey: VitalKey | null
+  visibleKeys?: VitalKey[]
 }
 
 function formatValue(key: VitalKey, values: VitalSignsState): string {
@@ -82,7 +83,12 @@ export function VapiVitalniUredjaji({
   revealed,
   activeKey,
   measuringKey,
+  visibleKeys,
 }: VapiVitalniUredjajiProps) {
+  const devices = visibleKeys?.length
+    ? DEVICES.filter((device) => visibleKeys.includes(device.key))
+    : DEVICES
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-gradient-to-b from-slate-50 to-white p-3 sm:p-4 h-full flex flex-col">
       <h4 className="text-base sm:text-lg font-bold text-gray-900 shrink-0">Merni uređaji</h4>
@@ -90,7 +96,7 @@ export function VapiVitalniUredjaji({
         Recite naglas jednu od ovih rečenica:
       </p>
       <div className="grid grid-cols-1 gap-2.5 sm:gap-3 flex-1 content-start overflow-y-auto">
-        {DEVICES.map(({ key, label, device, unit, sayPhrase, Icon }) => {
+        {devices.map(({ key, label, device, unit, sayPhrase, Icon }) => {
           const isRevealed = Boolean(revealed[key])
           const isActive = activeKey === key
           const isMeasuring = measuringKey === key

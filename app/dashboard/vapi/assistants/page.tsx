@@ -1,7 +1,18 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Bot, Plus, Edit, Trash2, Play, ChevronRight, ChevronDown, Settings, Video } from 'lucide-react'
+import {
+  Bot,
+  Plus,
+  Edit,
+  Trash2,
+  Play,
+  ChevronRight,
+  ChevronDown,
+  Settings,
+  Video,
+  Stethoscope,
+} from 'lucide-react'
 import {
   getVapiAssistants,
   createVapiAssistant,
@@ -9,9 +20,17 @@ import {
   deleteVapiAssistant,
   getVapiStartConfig,
   getSimliEnvStatus,
+  getAssistantMedOpremaIds,
+  getAssistantSystemPrompts,
 } from '@/lib/actions/vapi-assistants'
 import { getVapiUcenici } from '@/lib/actions/vapi-ucenik'
-import type { VapiAssistant, VapiUcenik } from '@/lib/types/vapi'
+import { getVapiMedicinskaOprema } from '@/lib/actions/vapi-medicinska-oprema'
+import type {
+  VapiAssistant,
+  VapiMedicinskaOprema,
+  VapiSystemPrompt,
+  VapiUcenik,
+} from '@/lib/types/vapi'
 import { VapiCallModal, type VapiStartConfig } from '@/components/admin/vapi-call-modal'
 
 function truncateText(text: string | null, maxLength: number = 60): string {
@@ -43,6 +62,9 @@ export default function VapiAssistantsPage() {
   const [callError, setCallError] = useState<string | null>(null)
   const [ucenici, setUcenici] = useState<VapiUcenik[]>([])
   const [hasSimliApiKeyInEnv, setHasSimliApiKeyInEnv] = useState<boolean>(true)
+  const [opremaOptions, setOpremaOptions] = useState<VapiMedicinskaOprema[]>([])
+  const [selectedOpremaIds, setSelectedOpremaIds] = useState<number[]>([])
+  const [systemPromptOptions, setSystemPromptOptions] = useState<VapiSystemPrompt[]>([])
 
   const [formData, setFormData] = useState({
     assistant_id: '',
@@ -62,6 +84,7 @@ export default function VapiAssistantsPage() {
     temperatura: '36.6',
     saturacija: '98',
     secer: '5.4',
+    selected_system_prompt_id: '',
   })
 
   const loadAssistants = useCallback(async () => {
@@ -84,10 +107,18 @@ export default function VapiAssistantsPage() {
     }
   }, [])
 
+  const loadOprema = useCallback(async () => {
+    const result = await getVapiMedicinskaOprema(500, 0)
+    if (!result.error && result.data) {
+      setOpremaOptions(result.data)
+    }
+  }, [])
+
   useEffect(() => {
     loadAssistants()
     loadUcenici()
-  }, [loadAssistants, loadUcenici])
+    loadOprema()
+  }, [loadAssistants, loadUcenici, loadOprema])
 
   useEffect(() => {
     const loadSimliEnvStatus = async () => {
@@ -134,7 +165,10 @@ export default function VapiAssistantsPage() {
       temperatura: '36.6',
       saturacija: '98',
       secer: '5.4',
+      selected_system_prompt_id: '',
     })
+    setSelectedOpremaIds([])
+    setSystemPromptOptions([])
     setEditingAssistant(null)
     setShowAdvanced(false)
   }
@@ -144,7 +178,7 @@ export default function VapiAssistantsPage() {
     setShowForm(true)
   }
 
-  const handleEdit = (assistant: VapiAssistant) => {
+  const handleEdit = async (assistant: VapiAssistant) => {
     setEditingAssistant(assistant)
     setFormData({
       assistant_id: assistant.assistant_id && assistant.assistant_id !== 'pending-sync' ? assistant.assistant_id : '',
@@ -179,9 +213,28 @@ export default function VapiAssistantsPage() {
         typeof assistant.vitalni_znaci_default?.secer === 'number'
           ? String(assistant.vitalni_znaci_default.secer)
           : '5.4',
+      selected_system_prompt_id: '',
     })
+    const [opremaResult, promptsResult] = await Promise.all([
+      getAssistantMedOpremaIds(assistant.id),
+      getAssistantSystemPrompts(assistant.id),
+    ])
+    setSelectedOpremaIds(opremaResult.data || [])
+    const prompts = promptsResult.data || []
+    setSystemPromptOptions(prompts)
+    const selectedPrompt = prompts.find(
+      (prompt) => prompt['SystemPrompt Vapi'] === (assistant.System_Prompt || '')
+    )
+    setFormData((prev) => ({
+      ...prev,
+      selected_system_prompt_id: selectedPrompt ? String(selectedPrompt.id) : '',
+    }))
     setShowAdvanced(false)
     setShowForm(true)
+  }
+
+  const handleManageOprema = async (assistant: VapiAssistant) => {
+    await handleEdit(assistant)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -220,6 +273,8 @@ export default function VapiAssistantsPage() {
             })
           : ''
       )
+      fd.append('medoprema_ids', JSON.stringify(selectedOpremaIds))
+      fd.append('selected_system_prompt_id', formData.selected_system_prompt_id)
 
       let result
       if (editingAssistant) {
@@ -308,6 +363,12 @@ export default function VapiAssistantsPage() {
             <Edit className="w-3.5 h-3.5 shrink-0" />Izmeni
           </button>
           <button
+            onClick={() => handleManageOprema(assistant)}
+            className="flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 shadow-sm shadow-indigo-500/20"
+          >
+            <Stethoscope className="w-3.5 h-3.5 shrink-0" />Oprema
+          </button>
+          <button
             onClick={() => handleDelete(assistant)}
             className="flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-sm shadow-red-500/20"
           >
@@ -332,6 +393,12 @@ export default function VapiAssistantsPage() {
           className="flex items-center justify-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-md shadow-amber-500/20"
         >
           <Edit className="w-4 h-4" /><span className="hidden lg:inline">Izmeni</span>
+        </button>
+        <button
+          onClick={() => handleManageOprema(assistant)}
+          className="flex items-center justify-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 shadow-md shadow-indigo-500/20"
+        >
+          <Stethoscope className="w-4 h-4" /><span className="hidden lg:inline">Oprema</span>
         </button>
         <button
           onClick={() => handleDelete(assistant)}
@@ -534,6 +601,76 @@ export default function VapiAssistantsPage() {
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all resize-y font-mono text-sm"
                   placeholder="Uputstvo za asistenta (opciono)"
                 />
+              </div>
+
+              <div className="rounded-xl border border-gray-200 p-4 space-y-3">
+                <label className="block text-sm font-semibold text-gray-700">Izbor SystemPrompt iz tabele</label>
+                {systemPromptOptions.length > 0 ? (
+                  <select
+                    value={formData.selected_system_prompt_id}
+                    onChange={(e) => {
+                      const selectedId = e.target.value
+                      const selected = systemPromptOptions.find(
+                        (prompt) => String(prompt.id) === selectedId
+                      )
+                      setFormData((prev) => ({
+                        ...prev,
+                        selected_system_prompt_id: selectedId,
+                        System_Prompt: selected ? selected['SystemPrompt Vapi'] : prev.System_Prompt,
+                      }))
+                    }}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  >
+                    <option value="">-- Nije izabran --</option>
+                    {systemPromptOptions.map((prompt) => (
+                      <option key={prompt.id} value={prompt.id}>
+                        {prompt['SystemPrompt Vapi'].slice(0, 90)}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-xs text-gray-500">
+                    Nema promptova u tabeli za ovog asistenta. Kada sačuvate System Prompt, biće dodat u
+                    tabelu.
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-xl border border-gray-200 p-4 space-y-3">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Medicinska oprema povezana sa asistentom
+                </label>
+                {opremaOptions.length === 0 ? (
+                  <p className="text-xs text-gray-500">
+                    Nema unosa opreme. Dodajte opremu u modulu „Medicinska oprema“.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {opremaOptions.map((item) => (
+                      <label
+                        key={item.id}
+                        className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedOpremaIds.includes(item.id)}
+                          onChange={(e) => {
+                            setSelectedOpremaIds((prev) =>
+                              e.target.checked
+                                ? Array.from(new Set([...prev, item.id]))
+                                : prev.filter((id) => id !== item.id)
+                            )
+                          }}
+                          className="mt-0.5 h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                        />
+                        <span className="text-sm text-gray-700">
+                          <strong>{item.naziv}</strong>
+                          {item.namena ? <span className="block text-xs text-gray-500">{item.namena}</span> : null}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="rounded-xl border border-gray-200 p-4 space-y-4">
