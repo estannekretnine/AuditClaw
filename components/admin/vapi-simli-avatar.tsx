@@ -62,6 +62,7 @@ export function VapiSimliAvatar({
   const speechEndTimeoutRef = useRef<number | null>(null)
   const pollingRef = useRef<number | null>(null)
   const speechHandlersRef = useRef<{ start: () => void; end: () => void } | null>(null)
+  const muteWatchRef = useRef<number | null>(null)
   const [avatarStarted, setAvatarStarted] = useState(false)
 
   useEffect(() => {
@@ -72,13 +73,24 @@ export function VapiSimliAvatar({
     iceServersRef.current = iceServers
   }, [iceServers, iceKey])
 
-  const muteVapiAudio = () => {
-    const allAudioElements = document.getElementsByTagName('audio')
-    for (const audio of allAudioElements) {
-      if (audio.id !== 'simli_audio') {
-        audio.muted = true
-      }
+  /** Simli koristi samo usnu sinhronizaciju — glas ide isključivo preko Vapi/Daily. */
+  const muteSimliPlayback = () => {
+    if (audioRef.current) {
+      audioRef.current.muted = true
+      audioRef.current.volume = 0
     }
+    if (videoRef.current) {
+      videoRef.current.muted = true
+      videoRef.current.volume = 0
+    }
+  }
+
+  const startMuteWatch = () => {
+    if (muteWatchRef.current) window.clearInterval(muteWatchRef.current)
+    muteSimliPlayback()
+    muteWatchRef.current = window.setInterval(() => {
+      muteSimliPlayback()
+    }, 400)
   }
 
   const flushBuffer = () => {
@@ -145,8 +157,12 @@ export function VapiSimliAvatar({
       processAudio(pcm16)
     }
 
+    // Ne povezuj na destination — to bi ponovo puštalo Vapi audio (echo).
+    const silentGain = ctx.createGain()
+    silentGain.gain.value = 0
     source.connect(processor)
-    processor.connect(ctx.destination)
+    processor.connect(silentGain)
+    silentGain.connect(ctx.destination)
   }
 
   const findSpeakerTrack = (): MediaStreamTrack | null => {
@@ -185,6 +201,10 @@ export function VapiSimliAvatar({
       if (pollingRef.current) {
         window.clearInterval(pollingRef.current)
         pollingRef.current = null
+      }
+      if (muteWatchRef.current) {
+        window.clearInterval(muteWatchRef.current)
+        muteWatchRef.current = null
       }
 
       if (vapi && speechHandlersRef.current) {
@@ -241,7 +261,7 @@ export function VapiSimliAvatar({
       if (disposed || !videoRef.current || !audioRef.current) return
 
       try {
-        muteVapiAudio()
+        muteSimliPlayback()
 
         const currentIce = iceServersRef.current
         const resolvedIce = currentIce.length > 0 ? currentIce : null
@@ -264,6 +284,7 @@ export function VapiSimliAvatar({
         const handleStart = () => {
           if (disposed) return
           setAvatarStarted(true)
+          startMuteWatch()
           const warmup = new Uint8Array(6000).fill(0)
           client.sendAudioData(warmup)
           startPollingForTrack()
@@ -339,14 +360,20 @@ export function VapiSimliAvatar({
           large ? 'h-full min-h-[280px]' : 'aspect-video'
         }`}
       >
-        <video ref={videoRef} autoPlay playsInline muted={false} className="h-full w-full object-cover" />
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className="h-full w-full object-cover"
+        />
         {!avatarStarted && (
           <div className="absolute inset-0 flex items-center justify-center text-xs sm:text-sm text-gray-300">
             Pokretanje video pacijenta...
           </div>
         )}
       </div>
-      <audio ref={audioRef} id="simli_audio" autoPlay />
+      <audio ref={audioRef} id="simli_audio" autoPlay muted />
     </div>
   )
 }
