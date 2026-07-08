@@ -738,10 +738,10 @@ export function VapiCallModal({
   if (!open) return null
 
   const startDisabled = isStarting || isReleasing || applyingSystemPrompt || !selectedUcenikId
+  const linkedEquipment = config?.medicinskaOprema || []
   const visibleVitalKeys = (() => {
-    const linked = config?.medicinskaOprema || []
-    if (linked.length === 0) return undefined
-    const keys = linked
+    if (linkedEquipment.length === 0) return undefined
+    const keys = linkedEquipment
       .map((item) => vitalKeyFromOpremaLabel(`${item.naziv} ${item.namena || ''}`))
       .filter((key): key is VitalKey => Boolean(key))
     return Array.from(new Set(keys))
@@ -859,29 +859,54 @@ export function VapiCallModal({
                 </div>
               )}
 
-              {(config?.systemPrompts?.length || 0) > 0 && (
-                <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Aktivni SystemPrompt za ovaj poziv
-                  </label>
-                  <select
-                    value={selectedSystemPromptId}
-                    onChange={(e) => setSelectedSystemPromptId(e.target.value)}
-                    disabled={isConnected || isStarting || applyingSystemPrompt}
-                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:opacity-60"
-                  >
-                    <option value="">-- Bez promene --</option>
-                    {config?.systemPrompts?.map((prompt) => (
-                      <option key={prompt.id} value={prompt.id}>
-                        {prompt['SystemPrompt Vapi'].slice(0, 120)}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Promena važi pre pokretanja poziva.
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Aktivni SystemPrompt za ovaj poziv
+                </label>
+                <select
+                  value={selectedSystemPromptId}
+                  onChange={(e) => setSelectedSystemPromptId(e.target.value)}
+                  disabled={isConnected || isStarting || applyingSystemPrompt || (config?.systemPrompts?.length || 0) === 0}
+                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:opacity-60"
+                >
+                  <option value="">-- Bez promene --</option>
+                  {(config?.systemPrompts || []).map((prompt) => (
+                    <option key={prompt.id} value={prompt.id}>
+                      {prompt['SystemPrompt Vapi'].slice(0, 120)}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {(config?.systemPrompts?.length || 0) > 0
+                    ? 'Promena važi pre pokretanja poziva.'
+                    : 'Nema promptova za izbor. Dodajte ih kroz dugme SysPrompt ili modul System Prompt.'}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Povezana medicinska oprema za ovaj poziv
+                </label>
+                {linkedEquipment.length === 0 ? (
+                  <p className="text-xs text-gray-500">
+                    Nema povezane opreme. Dodajte je kroz dugme Oprema na asistentu.
                   </p>
-                </div>
-              )}
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {linkedEquipment.map((item) => (
+                      <div
+                        key={item.id}
+                        className="rounded-lg border border-gray-200 bg-white px-3 py-2"
+                      >
+                        <p className="text-sm font-semibold text-gray-800">{item.naziv}</p>
+                        {item.namena ? (
+                          <p className="text-xs text-gray-500 mt-0.5">{item.namena}</p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-center">
                 <p className="text-sm text-amber-800">

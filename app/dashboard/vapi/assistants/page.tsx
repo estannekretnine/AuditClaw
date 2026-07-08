@@ -24,11 +24,16 @@ import {
   getSimliEnvStatus,
   getAssistantMedOpremaIds,
   setAssistantMedOpremaIds,
-  getAssistantSystemPrompts,
   setAssistantActiveSystemPrompt,
 } from '@/lib/actions/vapi-assistants'
 import { getVapiUcenici } from '@/lib/actions/vapi-ucenik'
 import { getVapiMedicinskaOprema } from '@/lib/actions/vapi-medicinska-oprema'
+import {
+  createVapiSystemPrompt,
+  deleteVapiSystemPrompt,
+  getVapiSystemPromptByAssistant,
+  updateVapiSystemPrompt,
+} from '@/lib/actions/vapi-system-prompt'
 import type {
   VapiAssistant,
   VapiMedicinskaOprema,
@@ -79,6 +84,10 @@ export default function VapiAssistantsPage() {
   const [sysPromptSearch, setSysPromptSearch] = useState('')
   const [sysPromptOptions, setSysPromptOptions] = useState<VapiSystemPrompt[]>([])
   const [selectedSysPromptId, setSelectedSysPromptId] = useState('')
+  const [newSysPromptText, setNewSysPromptText] = useState('')
+  const [savingSysPromptCrud, setSavingSysPromptCrud] = useState(false)
+  const [editingSysPromptId, setEditingSysPromptId] = useState<number | null>(null)
+  const [editingSysPromptText, setEditingSysPromptText] = useState('')
 
   const [formData, setFormData] = useState({
     assistant_id: '',
@@ -247,6 +256,22 @@ export default function VapiAssistantsPage() {
     return item['SystemPrompt Vapi'].toLowerCase().includes(q)
   })
 
+  const reloadAssistantPrompts = async (assistant: VapiAssistant) => {
+    const result = await getVapiSystemPromptByAssistant(assistant.id)
+    if (result.error) {
+      alert('Greška pri učitavanju promptova: ' + result.error)
+      return
+    }
+    const prompts = result.data || []
+    setSysPromptOptions(prompts)
+    const freshAssistant = assistants.find((item) => item.id === assistant.id) || assistant
+    const active = prompts.find(
+      (prompt) => prompt['SystemPrompt Vapi'] === (freshAssistant.System_Prompt || '')
+    )
+    setSelectedSysPromptId(active ? String(active.id) : '')
+    setSysPromptAssistant(freshAssistant)
+  }
+
   const handleManageOprema = async (assistant: VapiAssistant) => {
     setOpremaAssistant(assistant)
     setSelectedOpremaIds([])
@@ -290,20 +315,11 @@ export default function VapiAssistantsPage() {
     setSysPromptSearch('')
     setSelectedSysPromptId('')
     setSysPromptOptions([])
+    setNewSysPromptText('')
+    setEditingSysPromptId(null)
+    setEditingSysPromptText('')
     setShowSysPromptModal(true)
-
-    const result = await getAssistantSystemPrompts(assistant.id)
-    if (result.error) {
-      alert('Greška pri učitavanju promptova: ' + result.error)
-      return
-    }
-
-    const prompts = result.data || []
-    setSysPromptOptions(prompts)
-    const active = prompts.find(
-      (prompt) => prompt['SystemPrompt Vapi'] === (assistant.System_Prompt || '')
-    )
-    setSelectedSysPromptId(active ? String(active.id) : '')
+    await reloadAssistantPrompts(assistant)
   }
 
   const handleCloseSysPromptModal = () => {
@@ -312,7 +328,81 @@ export default function VapiAssistantsPage() {
     setSysPromptSearch('')
     setSelectedSysPromptId('')
     setSysPromptOptions([])
+    setNewSysPromptText('')
+    setEditingSysPromptId(null)
+    setEditingSysPromptText('')
     setSavingSysPrompt(false)
+    setSavingSysPromptCrud(false)
+  }
+
+  const handleAddAssistantPrompt = async () => {
+    if (!sysPromptAssistant || !newSysPromptText.trim()) return
+    setSavingSysPromptCrud(true)
+    try {
+      const form = new FormData()
+      form.append('SystemPromptVapi', newSysPromptText.trim())
+      form.append('assistantid', String(sysPromptAssistant.id))
+      const result = await createVapiSystemPrompt(form)
+      if (result.error) {
+        alert('Greška: ' + result.error)
+        return
+      }
+      setNewSysPromptText('')
+      await reloadAssistantPrompts(sysPromptAssistant)
+    } finally {
+      setSavingSysPromptCrud(false)
+    }
+  }
+
+  const handleStartEditSysPrompt = (prompt: VapiSystemPrompt) => {
+    setEditingSysPromptId(prompt.id)
+    setEditingSysPromptText(prompt['SystemPrompt Vapi'])
+  }
+
+  const handleCancelEditSysPrompt = () => {
+    setEditingSysPromptId(null)
+    setEditingSysPromptText('')
+  }
+
+  const handleSaveEditSysPrompt = async () => {
+    if (!sysPromptAssistant || editingSysPromptId === null || !editingSysPromptText.trim()) return
+    setSavingSysPromptCrud(true)
+    try {
+      const form = new FormData()
+      form.append('SystemPromptVapi', editingSysPromptText.trim())
+      form.append('assistantid', String(sysPromptAssistant.id))
+      const result = await updateVapiSystemPrompt(editingSysPromptId, form)
+      if (result.error) {
+        alert('Greška: ' + result.error)
+        return
+      }
+      handleCancelEditSysPrompt()
+      await reloadAssistantPrompts(sysPromptAssistant)
+    } finally {
+      setSavingSysPromptCrud(false)
+    }
+  }
+
+  const handleDeleteAssistantPrompt = async (prompt: VapiSystemPrompt) => {
+    if (!sysPromptAssistant) return
+    if (!window.confirm('Obrisati ovaj SystemPrompt iz tabele?')) return
+    setSavingSysPromptCrud(true)
+    try {
+      const result = await deleteVapiSystemPrompt(prompt.id)
+      if (result.error) {
+        alert('Greška: ' + result.error)
+        return
+      }
+      if (selectedSysPromptId === String(prompt.id)) {
+        setSelectedSysPromptId('')
+      }
+      if (editingSysPromptId === prompt.id) {
+        handleCancelEditSysPrompt()
+      }
+      await reloadAssistantPrompts(sysPromptAssistant)
+    } finally {
+      setSavingSysPromptCrud(false)
+    }
   }
 
   const handleSaveSysPrompt = async () => {
@@ -1048,7 +1138,7 @@ export default function VapiAssistantsPage() {
 
       {showSysPromptModal && sysPromptAssistant && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-100 w-full max-w-2xl max-h-[90vh] overflow-y-auto my-auto">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-100 w-full max-w-4xl max-h-[90vh] overflow-y-auto my-auto">
             <div className="px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-violet-600 to-violet-800 rounded-t-2xl sm:rounded-t-3xl">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
@@ -1063,71 +1153,138 @@ export default function VapiAssistantsPage() {
 
             <div className="p-4 sm:p-6 space-y-4">
               <p className="text-sm text-gray-600">
-                Izaberite aktivni SystemPrompt za ovog asistenta (globalni ili vezan za asistenta).
+                Dodajte više promptova u tabelu za ovog asistenta i označite koji je aktivan.
               </p>
+
+              <div className="rounded-xl border border-gray-200 p-4 space-y-3 bg-gray-50/50">
+                <label className="block text-sm font-semibold text-gray-700">Novi prompt u tabelu</label>
+                <textarea
+                  value={newSysPromptText}
+                  onChange={(e) => setNewSysPromptText(e.target.value)}
+                  rows={4}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all resize-y font-mono text-sm"
+                  placeholder="Unesite tekst SystemPrompt-a..."
+                />
+                <button
+                  type="button"
+                  onClick={handleAddAssistantPrompt}
+                  disabled={savingSysPromptCrud || !newSysPromptText.trim()}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 text-sm bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl hover:from-violet-600 hover:to-violet-700 transition-all duration-200 shadow-md shadow-violet-500/20 font-medium disabled:opacity-50"
+                >
+                  <Plus className="w-4 h-4" />
+                  {savingSysPromptCrud ? 'Dodavanje...' : 'Dodaj u tabelu'}
+                </button>
+              </div>
+
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={sysPromptSearch}
+                  onChange={(e) => setSysPromptSearch(e.target.value)}
+                  placeholder="Pretraži promptove..."
+                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all text-sm"
+                />
+              </div>
 
               {sysPromptOptions.length === 0 ? (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                  Nema dostupnih promptova. Prvo dodajte prompt u modulu „System Prompt“.
+                  Još nema promptova za ovog asistenta. Dodajte prvi prompt iznad.
+                </div>
+              ) : filteredSysPromptOptions.length === 0 ? (
+                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500">
+                  Nema rezultata za aktivne filtere.
                 </div>
               ) : (
-                <>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    <input
-                      type="text"
-                      value={sysPromptSearch}
-                      onChange={(e) => setSysPromptSearch(e.target.value)}
-                      placeholder="Pretraži prompt..."
-                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all text-sm"
-                    />
-                  </div>
-
-                  {filteredSysPromptOptions.length === 0 ? (
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500">
-                      Nema rezultata za aktivne filtere.
-                    </div>
-                  ) : (
-                    <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
-                      <label className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 cursor-pointer hover:border-violet-300 hover:bg-violet-50/40 transition-colors">
-                        <input
-                          type="radio"
-                          name="sys-prompt"
-                          checked={selectedSysPromptId === ''}
-                          onChange={() => setSelectedSysPromptId('')}
-                          className="mt-0.5 h-4 w-4 border-gray-300 text-violet-600 focus:ring-violet-500"
-                        />
-                        <span className="text-sm text-gray-700">-- Bez aktivnog prompta --</span>
-                      </label>
+                <div className="overflow-x-auto rounded-xl border border-gray-200">
+                  <table className="min-w-full divide-y divide-gray-100">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Aktivan</th>
+                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ID</th>
+                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Prompt</th>
+                        <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Akcije</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 bg-white">
                       {filteredSysPromptOptions.map((item) => (
-                        <label
-                          key={item.id}
-                          className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 cursor-pointer hover:border-violet-300 hover:bg-violet-50/40 transition-colors"
-                        >
-                          <input
-                            type="radio"
-                            name="sys-prompt"
-                            checked={selectedSysPromptId === String(item.id)}
-                            onChange={() => setSelectedSysPromptId(String(item.id))}
-                            className="mt-0.5 h-4 w-4 border-gray-300 text-violet-600 focus:ring-violet-500"
-                          />
-                          <span className="text-sm text-gray-700 min-w-0">
-                            <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded-md bg-violet-100 text-violet-700 mb-1">
-                              {item.assistantid ? `Asistent #${item.assistantid}` : 'Globalni'}
-                            </span>
-                            <span className="block whitespace-pre-wrap">{item['SystemPrompt Vapi']}</span>
-                          </span>
-                        </label>
+                        <tr key={item.id} className="hover:bg-violet-50/30 transition-colors">
+                          <td className="px-3 py-3 align-top">
+                            <input
+                              type="radio"
+                              name="sys-prompt-active"
+                              checked={selectedSysPromptId === String(item.id)}
+                              onChange={() => setSelectedSysPromptId(String(item.id))}
+                              className="mt-1 h-4 w-4 border-gray-300 text-violet-600 focus:ring-violet-500"
+                            />
+                          </td>
+                          <td className="px-3 py-3 text-sm text-gray-600 align-top whitespace-nowrap">{item.id}</td>
+                          <td className="px-3 py-3 text-sm text-gray-800 align-top min-w-[240px]">
+                            {editingSysPromptId === item.id ? (
+                              <textarea
+                                value={editingSysPromptText}
+                                onChange={(e) => setEditingSysPromptText(e.target.value)}
+                                rows={5}
+                                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent font-mono text-xs"
+                              />
+                            ) : (
+                              <span className="whitespace-pre-wrap">{item['SystemPrompt Vapi']}</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-3 text-right align-top whitespace-nowrap">
+                            {editingSysPromptId === item.id ? (
+                              <div className="inline-flex flex-col sm:flex-row gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={handleSaveEditSysPrompt}
+                                  disabled={savingSysPromptCrud}
+                                  className="px-3 py-1.5 text-xs bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50"
+                                >
+                                  Sačuvaj
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={handleCancelEditSysPrompt}
+                                  className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50"
+                                >
+                                  Otkaži
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="inline-flex gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleStartEditSysPrompt(item)}
+                                  disabled={savingSysPromptCrud}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50"
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                  Izmeni
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteAssistantPrompt(item)}
+                                  disabled={savingSysPromptCrud}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  Obriši
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
                       ))}
-                    </div>
-                  )}
-                </>
+                    </tbody>
+                  </table>
+                </div>
               )}
 
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-4 border-t border-gray-100">
                 <p className="text-xs text-gray-500">
-                  Dostupno: {sysPromptOptions.length}
+                  Ukupno: {sysPromptOptions.length}
                   {sysPromptSearch.trim() ? ` · Prikazano: ${filteredSysPromptOptions.length}` : ''}
+                  {selectedSysPromptId ? ` · Aktivan ID: ${selectedSysPromptId}` : ' · Nije izabran aktivni prompt'}
                 </p>
                 <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-3">
                   <button
@@ -1140,10 +1297,10 @@ export default function VapiAssistantsPage() {
                   <button
                     type="button"
                     onClick={handleSaveSysPrompt}
-                    disabled={savingSysPrompt}
+                    disabled={savingSysPrompt || savingSysPromptCrud || !selectedSysPromptId}
                     className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl hover:from-violet-600 hover:to-violet-700 transition-all duration-200 shadow-lg shadow-violet-500/25 font-medium disabled:opacity-50"
                   >
-                    {savingSysPrompt ? 'Čuvanje...' : 'Sačuvaj prompt'}
+                    {savingSysPrompt ? 'Čuvanje...' : 'Sačuvaj aktivni prompt'}
                   </button>
                 </div>
               </div>
