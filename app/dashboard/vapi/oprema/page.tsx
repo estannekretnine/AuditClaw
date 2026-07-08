@@ -94,8 +94,8 @@ export default function VapiOpremaPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Medicinska oprema</h2>
-          <p className="text-gray-500 mt-1">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Medicinska oprema</h2>
+          <p className="text-sm sm:text-base text-gray-500 mt-1">
             Dodavanje opreme koja se povezuje sa Vapi asistentima.
           </p>
         </div>
@@ -118,7 +118,7 @@ export default function VapiOpremaPage() {
         </div>
       ) : (
         <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="hidden md:block overflow-x-auto">
             <table className="min-w-full">
               <thead className="bg-gradient-to-r from-gray-900 to-black">
                 <tr>
@@ -157,18 +157,47 @@ export default function VapiOpremaPage() {
               </tbody>
             </table>
           </div>
+          <div className="md:hidden divide-y divide-gray-100">
+            {items.map((item) => (
+              <div key={item.id} className="p-4 hover:bg-amber-50 transition-all duration-200">
+                <div className="space-y-2 mb-3">
+                  <span className="inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold text-white bg-gradient-to-r from-gray-900 to-black rounded-lg">
+                    ID: {item.id}
+                  </span>
+                  <div className="text-sm font-semibold text-gray-900 break-words">{item.naziv}</div>
+                  <div className="text-xs text-gray-600 break-words">{item.namena || '-'}</div>
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => handleEdit(item)}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-md shadow-amber-500/20 text-sm font-medium"
+                  >
+                    <Edit className="w-4 h-4" />
+                    Izmeni
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item)}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md shadow-red-500/20 text-sm font-medium"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Obriši
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 w-full max-w-xl max-h-[90vh] overflow-y-auto my-auto">
-            <div className="px-6 py-5 bg-gradient-to-r from-gray-900 to-black rounded-t-3xl">
-              <h3 className="text-xl font-bold text-white">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-100 w-full max-w-xl max-h-[90vh] overflow-y-auto my-auto">
+            <div className="px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-gray-900 to-black rounded-t-2xl sm:rounded-t-3xl">
+              <h3 className="text-lg sm:text-xl font-bold text-white">
                 {editing ? 'Izmeni medicinsku opremu' : 'Nova medicinska oprema'}
               </h3>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Naziv *</label>
                 <input
