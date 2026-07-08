@@ -28,6 +28,14 @@ function stopTracks(stream: MediaStream | null): void {
   }
 }
 
+function iceServersKey(servers: RTCIceServer[]): string {
+  try {
+    return JSON.stringify(servers)
+  } catch {
+    return String(servers.length)
+  }
+}
+
 export function VapiSimliAvatar({
   vapi,
   active,
@@ -40,6 +48,9 @@ export function VapiSimliAvatar({
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const simliRef = useRef<SimliClient | null>(null)
+  const onErrorRef = useRef(onError)
+  const iceServersRef = useRef(iceServers)
+  const iceKey = iceServersKey(iceServers)
 
   const contextRef = useRef<AudioContext | null>(null)
   const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null)
@@ -50,7 +61,16 @@ export function VapiSimliAvatar({
   const pcmBufferRef = useRef<Int16Array>(new Int16Array(0))
   const speechEndTimeoutRef = useRef<number | null>(null)
   const pollingRef = useRef<number | null>(null)
+  const speechHandlersRef = useRef<{ start: () => void; end: () => void } | null>(null)
   const [avatarStarted, setAvatarStarted] = useState(false)
+
+  useEffect(() => {
+    onErrorRef.current = onError
+  }, [onError])
+
+  useEffect(() => {
+    iceServersRef.current = iceServers
+  }, [iceServers, iceKey])
 
   const muteVapiAudio = () => {
     const allAudioElements = document.getElementsByTagName('audio')
@@ -101,6 +121,8 @@ export function VapiSimliAvatar({
   }
 
   const setupAudioPipeline = (audioTrack: MediaStreamTrack) => {
+    if (processorRef.current || contextRef.current) return
+
     const ctx = new AudioContext({ sampleRate: SIMLI_SAMPLE_RATE })
     contextRef.current = ctx
 
@@ -165,6 +187,16 @@ export function VapiSimliAvatar({
         pollingRef.current = null
       }
 
+      if (vapi && speechHandlersRef.current) {
+        try {
+          vapi.off('speech-start', speechHandlersRef.current.start)
+          vapi.off('speech-end', speechHandlersRef.current.end)
+        } catch {
+          // Vapi tipovi/okruženje mogu da ne podrže off u svim verzijama
+        }
+        speechHandlersRef.current = null
+      }
+
       speakingRef.current = false
       initialChunkSentRef.current = false
       pcmBufferRef.current = new Int16Array(0)
@@ -194,7 +226,7 @@ export function VapiSimliAvatar({
       setAvatarStarted(false)
     }
 
-    if (!active || !vapi || !sessionToken || !faceId || !videoRef.current || !audioRef.current) {
+    if (!active || !vapi || !sessionToken || !faceId) {
       cleanup().catch(() => undefined)
       return () => {
         disposed = true
@@ -202,17 +234,24 @@ export function VapiSimliAvatar({
     }
 
     const setup = async () => {
+      // Sačekaj da video/audio ref-ovi budu montirani
+      if (!videoRef.current || !audioRef.current) {
+        await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)))
+      }
+      if (disposed || !videoRef.current || !audioRef.current) return
+
       try {
         muteVapiAudio()
 
-        const resolvedIce = iceServers.length > 0 ? iceServers : null
+        const currentIce = iceServersRef.current
+        const resolvedIce = currentIce.length > 0 ? currentIce : null
         // Prefer p2p when ICE is available; SDK falls back to livekit after retries.
         const transportMode = resolvedIce ? 'p2p' : 'livekit'
 
         const client = new SimliClient(
           sessionToken,
-          videoRef.current as HTMLVideoElement,
-          audioRef.current as HTMLAudioElement,
+          videoRef.current,
+          audioRef.current,
           resolvedIce,
           LogLevel.INFO,
           transportMode,
@@ -231,14 +270,19 @@ export function VapiSimliAvatar({
         }
         const handleFail = (detail: string) => {
           if (disposed) return
-          onError(detail || 'Simli avatar konekcija je prekinuta. Pokušajte ponovo.')
+          // Ne prekidaj Vapi poziv zbog Simli greške; samo prikaži poruku.
+          onErrorRef.current(detail || 'Simli avatar konekcija je prekinuta. Pokušajte ponovo.')
         }
 
         client.on('start', handleStart)
         client.on('startup_error', handleFail)
         client.on('error', handleFail)
+        client.on('stop', () => {
+          if (disposed) return
+          setAvatarStarted(false)
+        })
 
-        vapi.on('speech-start', () => {
+        const onSpeechStart = () => {
           if (speechEndTimeoutRef.current) {
             window.clearTimeout(speechEndTimeoutRef.current)
             speechEndTimeoutRef.current = null
@@ -248,9 +292,9 @@ export function VapiSimliAvatar({
             initialChunkSentRef.current = false
           }
           speakingRef.current = true
-        })
+        }
 
-        vapi.on('speech-end', () => {
+        const onSpeechEnd = () => {
           if (speechEndTimeoutRef.current) {
             window.clearTimeout(speechEndTimeoutRef.current)
           }
@@ -259,12 +303,18 @@ export function VapiSimliAvatar({
             flushBuffer()
             speechEndTimeoutRef.current = null
           }, 500)
-        })
+        }
+
+        speechHandlersRef.current = { start: onSpeechStart, end: onSpeechEnd }
+        vapi.on('speech-start', onSpeechStart)
+        vapi.on('speech-end', onSpeechEnd)
 
         await client.start()
       } catch (error) {
         if (disposed) return
-        onError(error instanceof Error ? error.message : 'Greška pri pokretanju Simli avatara.')
+        onErrorRef.current(
+          error instanceof Error ? error.message : 'Greška pri pokretanju Simli avatara.'
+        )
       }
     }
 
@@ -274,17 +324,19 @@ export function VapiSimliAvatar({
       disposed = true
       cleanup().catch(() => undefined)
     }
-  }, [active, faceId, iceServers, onError, sessionToken, vapi])
+    // Namerno bez iceServers/onError objekata — restart samo kad se token/sesija menja.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, faceId, sessionToken, vapi, iceKey])
 
   return (
     <div
       className={`rounded-2xl border border-gray-200 bg-gray-950/95 h-full ${
-        large ? 'p-2 sm:p-3' : 'p-3 sm:p-4'
+        large ? 'p-1.5 sm:p-2' : 'p-3 sm:p-4'
       }`}
     >
       <div
         className={`relative w-full overflow-hidden rounded-xl bg-black ${
-          large ? 'h-full min-h-[42vh] sm:min-h-[48vh] lg:min-h-[54vh]' : 'aspect-video'
+          large ? 'h-full min-h-[280px]' : 'aspect-video'
         }`}
       >
         <video ref={videoRef} autoPlay playsInline muted={false} className="h-full w-full object-cover" />

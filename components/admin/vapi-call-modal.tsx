@@ -214,6 +214,10 @@ export function VapiCallModal({
   const [vitalSigns, setVitalSigns] = useState<VitalSigns>({})
   const [updatedVitalKey, setUpdatedVitalKey] = useState<string | null>(null)
 
+  const handleSimliError = useCallback((message: string) => {
+    setError(message)
+  }, [])
+
   const cleanupCall = useCallback(async () => {
     if (cleanupInProgressRef.current) return
     cleanupInProgressRef.current = true
@@ -624,21 +628,21 @@ export function VapiCallModal({
               </div>
 
               {showVideoPatient && (
-                <div className="flex flex-col gap-3 min-h-0">
-                  <div className="min-h-[42vh] sm:min-h-[48vh] lg:min-h-[54vh]">
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 sm:gap-4 min-h-[48vh] lg:min-h-[58vh]">
+                  <div className="lg:col-span-3 min-h-[280px] h-full">
                     <VapiSimliAvatar
                       vapi={vapiRef.current}
                       active={isConnected || isStarting}
                       faceId={config?.simliFaceId || ''}
                       sessionToken={config?.simliSessionToken || ''}
                       iceServers={config?.simliIceServers || []}
-                      onError={(message) => setError(message)}
+                      onError={handleSimliError}
                       large
                     />
                   </div>
-                  <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-4">
-                    <h4 className="text-sm font-semibold text-gray-800 mb-2 sm:mb-3">Vitalni znaci</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 text-xs sm:text-sm">
+                  <div className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white p-3 sm:p-4 h-full flex flex-col">
+                    <h4 className="text-sm font-semibold text-gray-800 mb-3 shrink-0">Vitalni znaci</h4>
+                    <div className="grid grid-cols-2 lg:grid-cols-1 gap-2 sm:gap-3 text-xs sm:text-sm flex-1 content-start">
                       {[
                         { key: 'pritisak', label: 'Pritisak', value: vitalSigns.pritisak ?? '-' },
                         { key: 'puls', label: 'Puls', value: vitalSigns.puls ?? '-' },
@@ -648,14 +652,14 @@ export function VapiCallModal({
                       ].map((item) => (
                         <div
                           key={item.key}
-                          className={`rounded-xl border p-2.5 sm:p-3 transition-colors ${
+                          className={`rounded-xl border p-3 transition-colors ${
                             updatedVitalKey === item.key
                               ? 'border-emerald-300 bg-emerald-50'
                               : 'border-gray-200 bg-gray-50'
                           }`}
                         >
                           <p className="text-[11px] text-gray-500">{item.label}</p>
-                          <p className="font-semibold text-gray-900 text-base sm:text-lg">{String(item.value)}</p>
+                          <p className="font-semibold text-gray-900 text-lg sm:text-xl">{String(item.value)}</p>
                         </div>
                       ))}
                     </div>
