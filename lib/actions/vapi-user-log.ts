@@ -25,22 +25,28 @@ export async function getVapiUserLogs(limit: number = 300) {
   }
 
   const supabase = createAdminClient()
-  let query = supabase
-    .from('vapi_user_log')
-    .select('*', { count: 'exact' })
-    .order('created_at', { ascending: false })
-    .limit(limit)
-
+  let baseQuery = supabase.from('vapi_user_log').select('*', { count: 'exact' }).limit(limit)
   if (access.user.stsstatus === 'vapi') {
-    query = query.eq('korisnikid', access.user.id)
+    baseQuery = baseQuery.eq('korisnikid', access.user.id)
   }
 
-  const { data, error, count } = await query
-  if (error) {
-    return { data: null, error: error.message, count: 0 }
+  const { data, error, count } = await baseQuery.order('created_at', { ascending: false })
+  if (!error) {
+    return { data: (data || []) as VapiUserLog[], error: null, count: count || 0 }
   }
 
-  return { data: (data || []) as VapiUserLog[], error: null, count: count || 0 }
+  // Fallback za stariju strukturu tabele (npr. datumvreme umesto created_at).
+  const fallback = await baseQuery.order('id', { ascending: false })
+  if (fallback.error) {
+    return { data: null, error: fallback.error.message, count: 0 }
+  }
+
+  const normalized = ((fallback.data || []) as Array<Record<string, unknown>>).map((row) => ({
+    ...row,
+    created_at: (row.created_at as string | null) ?? (row.datumvreme as string | null) ?? null,
+  }))
+
+  return { data: normalized as VapiUserLog[], error: null, count: fallback.count || 0 }
 }
 
 export async function logCurrentVapiPageVisit(route: string, details?: string) {

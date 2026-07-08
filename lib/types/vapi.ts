@@ -145,5 +145,5 @@ export interface VapiUserLog {
   event_type: string
   route: string | null
   details: string | null
-  created_at: string
+  created_at: string | null
 }

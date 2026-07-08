@@ -5,7 +5,8 @@ import { ScrollText, LogIn, Route } from 'lucide-react'
 import { getVapiUserLogs } from '@/lib/actions/vapi-user-log'
 import type { VapiUserLog } from '@/lib/types/vapi'
 
-function formatDate(dateString: string) {
+function formatDate(dateString: string | null) {
+  if (!dateString) return '-'
   try {
     return new Date(dateString).toLocaleString('sr-RS', {
       year: 'numeric',
@@ -31,14 +32,20 @@ export default function LogVapiPage() {
   const [loading, setLoading] = useState(true)
   const [items, setItems] = useState<VapiUserLog[]>([])
   const [totalCount, setTotalCount] = useState(0)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const loadData = useCallback(async () => {
     setLoading(true)
+    setLoadError(null)
     try {
       const result = await getVapiUserLogs(300)
       if (!result.error && result.data) {
         setItems(result.data)
         setTotalCount(result.count)
+      } else {
+        setItems([])
+        setTotalCount(0)
+        setLoadError(result.error || 'Neuspelo učitavanje logova.')
       }
     } finally {
       setLoading(false)
@@ -73,6 +80,12 @@ export default function LogVapiPage() {
           Osveži log
         </button>
       </div>
+
+      {loadError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm">
+          Greška pri učitavanju logova: {loadError}
+        </div>
+      )}
 
       {items.length === 0 ? (
         <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-10 sm:p-16 text-center">
