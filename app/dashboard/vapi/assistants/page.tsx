@@ -24,6 +24,7 @@ import {
   getSimliEnvStatus,
   getAssistantMedOpremaIds,
   setAssistantMedOpremaIds,
+  getAssistantSystemPrompts,
   setAssistantActiveSystemPrompt,
 } from '@/lib/actions/vapi-assistants'
 import { getVapiUcenici } from '@/lib/actions/vapi-ucenik'
@@ -88,6 +89,7 @@ export default function VapiAssistantsPage() {
   const [savingSysPromptCrud, setSavingSysPromptCrud] = useState(false)
   const [editingSysPromptId, setEditingSysPromptId] = useState<number | null>(null)
   const [editingSysPromptText, setEditingSysPromptText] = useState('')
+  const [systemPromptOptions, setSystemPromptOptions] = useState<VapiSystemPrompt[]>([])
 
   const [formData, setFormData] = useState({
     assistant_id: '',
@@ -107,6 +109,7 @@ export default function VapiAssistantsPage() {
     temperatura: '36.6',
     saturacija: '98',
     secer: '5.4',
+    selected_system_prompt_id: '',
   })
 
   const loadAssistants = useCallback(async () => {
@@ -187,8 +190,10 @@ export default function VapiAssistantsPage() {
       temperatura: '36.6',
       saturacija: '98',
       secer: '5.4',
+      selected_system_prompt_id: '',
     })
     setEditingAssistant(null)
+    setSystemPromptOptions([])
     setShowAdvanced(false)
   }
 
@@ -232,7 +237,18 @@ export default function VapiAssistantsPage() {
         typeof assistant.vitalni_znaci_default?.secer === 'number'
           ? String(assistant.vitalni_znaci_default.secer)
           : '5.4',
+      selected_system_prompt_id: '',
     })
+    const promptsResult = await getAssistantSystemPrompts(assistant.id)
+    const prompts = promptsResult.data || []
+    setSystemPromptOptions(prompts)
+    const selectedPrompt = prompts.find(
+      (prompt) => prompt['SystemPrompt Vapi'] === (assistant.System_Prompt || '')
+    )
+    setFormData((prev) => ({
+      ...prev,
+      selected_system_prompt_id: selectedPrompt ? String(selectedPrompt.id) : '',
+    }))
     setShowAdvanced(false)
     setShowForm(true)
   }
@@ -458,6 +474,7 @@ export default function VapiAssistantsPage() {
             })
           : ''
       )
+      fd.append('selected_system_prompt_id', formData.selected_system_prompt_id)
 
       let result
       if (editingAssistant) {
@@ -807,6 +824,44 @@ export default function VapiAssistantsPage() {
                 <p className="text-xs text-gray-500 mt-1">
                   Za podređene asistente koristite dugme <strong>SysPrompt</strong> u listi za izbor iz tabele.
                 </p>
+              </div>
+
+              <div className="rounded-xl border border-gray-200 p-4 space-y-3">
+                <label className="block text-sm font-semibold text-gray-700">Izbor SystemPrompt iz tabele</label>
+                {editingAssistant ? (
+                  systemPromptOptions.length > 0 ? (
+                    <select
+                      value={formData.selected_system_prompt_id}
+                      onChange={(e) => {
+                        const selectedId = e.target.value
+                        const selected = systemPromptOptions.find(
+                          (prompt) => String(prompt.id) === selectedId
+                        )
+                        setFormData((prev) => ({
+                          ...prev,
+                          selected_system_prompt_id: selectedId,
+                          System_Prompt: selected ? selected['SystemPrompt Vapi'] : prev.System_Prompt,
+                        }))
+                      }}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                    >
+                      <option value="">-- Nije izabran --</option>
+                      {systemPromptOptions.map((prompt) => (
+                        <option key={prompt.id} value={prompt.id}>
+                          {prompt['SystemPrompt Vapi'].slice(0, 90)}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="text-xs text-gray-500">
+                      Nema promptova za ovog asistenta. Dodajte ih preko dugmeta <strong>SysPrompt</strong>.
+                    </p>
+                  )
+                ) : (
+                  <p className="text-xs text-gray-500">
+                    Dostupno nakon čuvanja asistenta (kada dobije ID).
+                  </p>
+                )}
               </div>
 
               <div className="rounded-xl border border-gray-200 p-4 space-y-4">
