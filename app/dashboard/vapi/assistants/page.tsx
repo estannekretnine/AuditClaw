@@ -13,13 +13,6 @@ import { getVapiUcenici } from '@/lib/actions/vapi-ucenik'
 import type { VapiAssistant, VapiUcenik } from '@/lib/types/vapi'
 import { VapiCallModal, type VapiStartConfig } from '@/components/admin/vapi-call-modal'
 
-const SIMLI_FACE_OPTIONS = [
-  { id: '5514e24d-6086-46a3-ace4-6a7264e5cb7c', label: 'Pacijent M' },
-  { id: 'f8bf3b2d-8162-4436-8452-e4f96f3c8e2f', label: 'Pacijentkinja A' },
-  { id: '76a4f8d6-7b1f-4ce8-9098-026f5ba64a9f', label: 'Pacijentkinja B' },
-  { id: '35f9cc21-c5fe-4c69-8f5d-9f01a2c9f728', label: 'Pacijent S' },
-]
-
 function truncateText(text: string | null, maxLength: number = 60): string {
   if (!text) return '-'
   if (text.length <= maxLength) return text
@@ -94,6 +87,13 @@ export default function VapiAssistantsPage() {
   }, [loadAssistants, loadUcenici])
 
   const topLevel = assistants.filter((a) => a.servisid === null)
+  const knownSimliFaceIds = Array.from(
+    new Set(
+      assistants
+        .map((assistant) => assistant.simli_face_id?.trim() || '')
+        .filter((faceId) => faceId.length > 0)
+    )
+  )
   const childrenByParent = assistants.reduce<Record<number, VapiAssistant[]>>((acc, a) => {
     if (a.servisid !== null) {
       if (!acc[a.servisid]) acc[a.servisid] = []
@@ -535,19 +535,23 @@ export default function VapiAssistantsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="sm:col-span-2">
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Simli lice</label>
-                      <select
+                      <input
+                        type="text"
                         value={formData.simli_face_id}
                         onChange={(e) => setFormData({ ...formData, simli_face_id: e.target.value })}
+                        list="simli-face-id-options"
                         required={formData.ima_video_pacijenta}
                         className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                      >
-                        <option value="">Izaberi lice...</option>
-                        {SIMLI_FACE_OPTIONS.map((option) => (
-                          <option key={option.id} value={option.id}>
-                            {option.label}
-                          </option>
+                        placeholder="Unesite face ID iz Simli naloga"
+                      />
+                      <datalist id="simli-face-id-options">
+                        {knownSimliFaceIds.map((faceId) => (
+                          <option key={faceId} value={faceId} />
                         ))}
-                      </select>
+                      </datalist>
+                      <p className="text-[11px] text-gray-500 mt-1">
+                        Face ID se čuva u tabeli i predlaže iz postojećih unosa.
+                      </p>
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-600 mb-1">Simli model</label>

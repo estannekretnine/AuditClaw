@@ -1,17 +1,5 @@
 import 'server-only'
 
-export interface SimliFaceOption {
-  id: string
-  label: string
-}
-
-export const DEFAULT_SIMLI_FACE_OPTIONS: SimliFaceOption[] = [
-  { id: '5514e24d-6086-46a3-ace4-6a7264e5cb7c', label: 'Pacijent M' },
-  { id: 'f8bf3b2d-8162-4436-8452-e4f96f3c8e2f', label: 'Pacijentkinja A' },
-  { id: '76a4f8d6-7b1f-4ce8-9098-026f5ba64a9f', label: 'Pacijentkinja B' },
-  { id: '35f9cc21-c5fe-4c69-8f5d-9f01a2c9f728', label: 'Pacijent S' },
-]
-
 function requireSimliApiKey(): string {
   const key = process.env.SIMLI_API_KEY?.trim()
   if (!key) {
