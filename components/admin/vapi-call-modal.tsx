@@ -224,24 +224,28 @@ export function VapiCallModal({
   const lastRequestedKeysRef = useRef<VitalKey[]>([])
   const measuringKeyRef = useRef<VitalKey | null>(null)
   const revealedVitalsRef = useRef<Partial<Record<VitalKey, boolean>>>({})
-  const pendingRevealRef = useRef<{ keys: VitalKey[]; payload: Record<string, unknown> } | null>(
-    null
-  )
+  const pendingQueueRef = useRef<Array<{ keys: VitalKey[]; payload: Record<string, unknown> }>>([])
   const revealTimeoutRef = useRef<number | null>(null)
 
   const handleSimliError = useCallback((message: string) => {
     setError(message)
   }, [])
 
-  const revealVitalMeasurement = useCallback((keysToShow: VitalKey[], payload: Record<string, unknown>) => {
-    const applyReveal = (keys: VitalKey[], sourcePayload: Record<string, unknown>) => {
+  const revealVitalMeasurement = useCallback((keysInput: VitalKey[], payload: Record<string, unknown>) => {
+    const enqueueAndProcess = (keys: VitalKey[], sourcePayload: Record<string, unknown>) => {
       const narrowed = narrowVitalKeysToReveal(
         keys,
         lastRequestedKeysRef.current,
         measuringKeyRef.current,
         revealedVitalsRef.current
       )
-      if (narrowed.length === 0) return false
+      if (narrowed.length === 0) return
+
+      if (revealingRef.current) {
+        // Sačuvaj naredno merenje (puls posle pritiska) umesto da ga odbaciš.
+        pendingQueueRef.current.push({ keys: narrowed, payload: sourcePayload })
+        return
+      }
 
       const defaults = defaultsRef.current
       const measurementPayload: Record<string, unknown> = {}
@@ -271,44 +275,6 @@ export function VapiCallModal({
       }
 
       const primary = narrowed[0]
-      const hasExplicitValues = Object.keys(sourcePayload).some((key) =>
-        narrowed.includes(key as VitalKey)
-      )
-
-      // Tool stigao dok merenje već traje — upiši samo traženo polje.
-      if (revealingRef.current && measuringKeyRef.current === primary && hasExplicitValues) {
-        setVitalSigns((prev) => applyVitalPayload(prev, measurementPayload))
-        setRevealedVitals((prev) => {
-          const next = { ...prev }
-          for (const key of narrowed) next[key] = true
-          revealedVitalsRef.current = next
-          return next
-        })
-        setUpdatedVitalKey(primary)
-        setMeasuringVitalKey(null)
-        measuringKeyRef.current = null
-        lastRequestedKeysRef.current = lastRequestedKeysRef.current.filter(
-          (key) => !narrowed.includes(key)
-        )
-        revealingRef.current = false
-        if (revealTimeoutRef.current) {
-          window.clearTimeout(revealTimeoutRef.current)
-          revealTimeoutRef.current = null
-        }
-        const pending = pendingRevealRef.current
-        pendingRevealRef.current = null
-        if (pending) {
-          window.setTimeout(() => revealVitalMeasurement(pending.keys, pending.payload), 0)
-        }
-        return true
-      }
-
-      if (revealingRef.current) {
-        // Ne gubi drugo merenje (npr. puls posle pritiska) — stavi u red.
-        pendingRevealRef.current = { keys: narrowed, payload: sourcePayload }
-        return true
-      }
-
       revealingRef.current = true
       measuringKeyRef.current = primary
       setMeasuringVitalKey(primary)
@@ -331,17 +297,24 @@ export function VapiCallModal({
         revealingRef.current = false
         revealTimeoutRef.current = null
 
-        const pending = pendingRevealRef.current
-        pendingRevealRef.current = null
-        if (pending) {
-          revealVitalMeasurement(pending.keys, pending.payload)
+        const nextJob = pendingQueueRef.current.shift()
+        if (nextJob) {
+          enqueueAndProcess(nextJob.keys, nextJob.payload)
         }
-      }, hasExplicitValues ? 450 : 900)
-
-      return true
+      }, 700)
     }
 
-    applyReveal(keysToShow, payload)
+    // Ako tool/završetak šalje eksplicitnu vrednost za merenje koje već traje — odmah dopuni.
+    if (
+      revealingRef.current &&
+      measuringKeyRef.current &&
+      keysInput.includes(measuringKeyRef.current) &&
+      Object.prototype.hasOwnProperty.call(payload, measuringKeyRef.current)
+    ) {
+      setVitalSigns((prev) => applyVitalPayload(prev, payload))
+    }
+
+    enqueueAndProcess(keysInput, payload)
   }, [])
 
   const cleanupCall = useCallback(async () => {
@@ -498,18 +471,16 @@ export function VapiCallModal({
         const text = message.transcript
         setTranscript((prev) => [...prev, { role, text }])
 
-        // Zapamti šta je učenik tražio; tool-call često pošalje sva polja.
+        // Zapamti šta je učenik tražio — svaki novi zahtev zamenjuje prethodni.
         if (role === 'user') {
           const speechKeys = detectMeasurementKeysFromSpeech(text)
           if (speechKeys.length > 0) {
             lastRequestedKeysRef.current = speechKeys
-            // Pokreni "Merenje u toku..." odmah; AI vrednost će dopuniti kasnije.
             revealVitalMeasurement(speechKeys, {})
           }
         }
       }
 
-      // I partial user transcript može ranije da uhvati "izmeriti puls".
       if (
         message.type === 'transcript' &&
         message.transcript &&
@@ -528,14 +499,14 @@ export function VapiCallModal({
         const fromName = vitalKeysFromToolName(call.name)
         const fromPayload = extractVitalKeysFromPayload(call.payload)
         const keysToShow = fromName.length > 0 ? fromName : fromPayload
+        if (fromName.length > 0) {
+          lastRequestedKeysRef.current = fromName
+        }
         if (keysToShow.length === 0) {
           if (lastRequestedKeysRef.current.length > 0) {
             revealVitalMeasurement(lastRequestedKeysRef.current, call.payload)
           }
           continue
-        }
-        if (fromName.length > 0) {
-          lastRequestedKeysRef.current = fromName
         }
         revealVitalMeasurement(keysToShow, call.payload)
       }
@@ -558,7 +529,7 @@ export function VapiCallModal({
       setMeasuringVitalKey(null)
       lastRequestedKeysRef.current = []
       measuringKeyRef.current = null
-      pendingRevealRef.current = null
+      pendingQueueRef.current = []
       revealingRef.current = false
     }
   }, [open, cleanupCall])
@@ -598,7 +569,7 @@ export function VapiCallModal({
     setMeasuringVitalKey(null)
     lastRequestedKeysRef.current = []
     measuringKeyRef.current = null
-    pendingRevealRef.current = null
+    pendingQueueRef.current = []
     revealingRef.current = false
   }, [config])
 
@@ -640,7 +611,7 @@ export function VapiCallModal({
     lastRequestedKeysRef.current = []
     measuringKeyRef.current = null
     revealedVitalsRef.current = {}
-    pendingRevealRef.current = null
+    pendingQueueRef.current = []
     if (revealTimeoutRef.current) {
       window.clearTimeout(revealTimeoutRef.current)
       revealTimeoutRef.current = null

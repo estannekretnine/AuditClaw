@@ -17,6 +17,7 @@ interface DeviceDef {
   label: string
   device: string
   unit: string
+  sayPhrase: string
   Icon: typeof HeartPulse
 }
 
@@ -26,6 +27,7 @@ const DEVICES: DeviceDef[] = [
     label: 'Krvni pritisak',
     device: 'Aparat za pritisak',
     unit: 'mmHg',
+    sayPhrase: 'Izmeri pritisak',
     Icon: HeartPulse,
   },
   {
@@ -33,6 +35,7 @@ const DEVICES: DeviceDef[] = [
     label: 'Puls',
     device: 'Monitor pulsa',
     unit: 'bpm',
+    sayPhrase: 'Izmeri puls',
     Icon: Activity,
   },
   {
@@ -40,6 +43,7 @@ const DEVICES: DeviceDef[] = [
     label: 'Temperatura',
     device: 'Termometar',
     unit: '°C',
+    sayPhrase: 'Izmeri temperaturu',
     Icon: Thermometer,
   },
   {
@@ -47,6 +51,7 @@ const DEVICES: DeviceDef[] = [
     label: 'Saturacija',
     device: 'Pulsni oksimetar',
     unit: '%',
+    sayPhrase: 'Izmeri saturaciju',
     Icon: Wifi,
   },
   {
@@ -54,15 +59,14 @@ const DEVICES: DeviceDef[] = [
     label: 'Šećer',
     device: 'Glukometar',
     unit: 'mmol/L',
+    sayPhrase: 'Izmeri šećer',
     Icon: Droplets,
   },
 ]
 
 interface VapiVitalniUredjajiProps {
   values: VitalSignsState
-  /** Ključevi za koje je merenje već prikazano. */
   revealed: Partial<Record<VitalKey, boolean>>
-  /** Uređaj koji je upravo izmeren — kratko animacija. */
   activeKey: VitalKey | null
   measuringKey: VitalKey | null
 }
@@ -81,12 +85,12 @@ export function VapiVitalniUredjaji({
 }: VapiVitalniUredjajiProps) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-gradient-to-b from-slate-50 to-white p-3 sm:p-4 h-full flex flex-col">
-      <h4 className="text-sm font-semibold text-gray-800 mb-1 shrink-0">Merni uređaji</h4>
-      <p className="text-[11px] text-gray-500 mb-3 shrink-0">
-        Vrednosti se pojavljuju tek kad kažete da izmerite (npr. „izmeri pritisak”).
+      <h4 className="text-base sm:text-lg font-bold text-gray-900 shrink-0">Merni uređaji</h4>
+      <p className="mt-1 mb-3 text-sm sm:text-base font-semibold text-slate-700 shrink-0 leading-snug">
+        Recite naglas jednu od ovih rečenica:
       </p>
-      <div className="grid grid-cols-1 gap-2.5 sm:gap-3 flex-1 content-start">
-        {DEVICES.map(({ key, label, device, unit, Icon }) => {
+      <div className="grid grid-cols-1 gap-2.5 sm:gap-3 flex-1 content-start overflow-y-auto">
+        {DEVICES.map(({ key, label, device, unit, sayPhrase, Icon }) => {
           const isRevealed = Boolean(revealed[key])
           const isActive = activeKey === key
           const isMeasuring = measuringKey === key
@@ -98,10 +102,10 @@ export function VapiVitalniUredjaji({
                 isMeasuring
                   ? 'border-amber-300 bg-amber-50 shadow-md shadow-amber-100'
                   : isActive
-                    ? 'border-emerald-300 bg-emerald-50 shadow-md shadow-emerald-100 scale-[1.01]'
+                    ? 'border-emerald-300 bg-emerald-50 shadow-md shadow-emerald-100'
                     : isRevealed
                       ? 'border-slate-200 bg-white'
-                      : 'border-dashed border-slate-200 bg-slate-50/80'
+                      : 'border-slate-200 bg-white'
               }`}
             >
               <div className="flex items-start gap-3">
@@ -111,7 +115,7 @@ export function VapiVitalniUredjaji({
                       ? 'bg-amber-200 text-amber-800 animate-pulse'
                       : isRevealed
                         ? 'bg-slate-900 text-white'
-                        : 'bg-slate-200 text-slate-500'
+                        : 'bg-slate-900 text-white'
                   }`}
                 >
                   <Icon className="h-5 w-5" />
@@ -119,17 +123,25 @@ export function VapiVitalniUredjaji({
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] uppercase tracking-wide text-slate-500">{device}</p>
                   <p className="text-sm font-semibold text-slate-800">{label}</p>
+
                   {isMeasuring ? (
-                    <p className="mt-1 text-sm font-medium text-amber-700">Merenje u toku...</p>
+                    <p className="mt-1 text-base font-semibold text-amber-700">Merenje u toku...</p>
                   ) : isRevealed ? (
                     <p className="mt-1 flex items-baseline gap-1.5">
-                      <span className="text-xl sm:text-2xl font-bold tabular-nums text-slate-900">
+                      <span className="text-2xl sm:text-3xl font-bold tabular-nums text-slate-900">
                         {formatValue(key, values)}
                       </span>
-                      <span className="text-xs text-slate-500">{unit}</span>
+                      <span className="text-sm text-slate-500">{unit}</span>
                     </p>
                   ) : (
-                    <p className="mt-1 text-sm text-slate-400">Čeka merenje</p>
+                    <div className="mt-1.5 rounded-xl bg-amber-100/90 px-2.5 py-2 border border-amber-200">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">
+                        Recite
+                      </p>
+                      <p className="text-lg sm:text-xl font-extrabold leading-tight text-slate-900">
+                        „{sayPhrase}“
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -153,10 +165,9 @@ export function detectMeasurementKeysFromSpeech(text: string): VitalKey[] {
     .trim()
 
   const keys: VitalKey[] = []
-  const asks =
-    /\b(izmeri\w*|izmjeri\w*|meri\w*|meren\w*|proveri\w*|provjeri\w*|pokazi\w*|pokazati)\b/.test(
-      normalized
-    )
+  const asks = /\b(izmeri\w*|izmjeri\w*|meri\w*|meren\w*|proveri\w*|provjeri\w*|pokazi\w*)\b/.test(
+    normalized
+  )
 
   const hasPritisak = /\bpritis\w*\b|\bblood pressure\b|\bbb\b/.test(normalized)
   const hasPuls = /\bpuls\w*\b|\bheartbeat\b|\bheart rate\b/.test(normalized)
@@ -170,7 +181,6 @@ export function detectMeasurementKeysFromSpeech(text: string): VitalKey[] {
   if (asks && hasSat) keys.push('saturacija')
   if (asks && hasSecer) keys.push('secer')
 
-  // „izmeriti mu puls“, „hajde pritisak“…
   if (keys.length === 0) {
     if (/\b(izmeri\w*|meri\w*|proveri\w*|provjeri\w*|pokazi\w*).{0,40}pritis/.test(normalized)) {
       keys.push('pritisak')
@@ -193,9 +203,8 @@ export function detectMeasurementKeysFromSpeech(text: string): VitalKey[] {
 }
 
 /**
- * AI često pošalje sva polja odjednom — otkrij samo ono što je korisnik tražio.
- * Ako nema konteksta zahteva, a stiglo je više polja: ne otkrivaj ništa
- * (osim ako je samo jedno još neotkriveno).
+ * Prioritet: trenutni zahtev korisnika → jedno polje iz tool-a → jedno još neotkriveno.
+ * Više polja bez zahteva se ignorišu (AI šalje sve odjednom).
  */
 export function narrowVitalKeysToReveal(
   payloadKeys: VitalKey[],
@@ -278,7 +287,6 @@ export function parseVitalToolCalls(message: {
     parsed.push({ name, payload: normalizeVitalToolPayload(rawArgs) })
   }
 
-  // Stari format: jedan function-call na root message
   if (parsed.length === 0 && message.type === 'function-call') {
     const root = message as Record<string, unknown>
     const fn =
