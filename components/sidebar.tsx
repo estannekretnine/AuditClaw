@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, Users, Shield, ChevronDown, ChevronRight, LogOut, Menu, X, Home, BarChart3, Upload, TrendingUp, Target, FileText, MessageSquare, UserCheck, Newspaper, Bot, Mic, MessageCircle, GraduationCap, Stethoscope } from 'lucide-react'
+import { Building2, Users, Shield, ChevronDown, ChevronRight, LogOut, Menu, X, Home, BarChart3, Upload, TrendingUp, Target, FileText, MessageSquare, UserCheck, Newspaper, Bot, Mic, MessageCircle, GraduationCap, Stethoscope, ScrollText } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -62,6 +62,7 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
     { id: 'aktuelnosti', label: 'Aktuelnosti', href: '/dashboard/aktuelnosti', icon: Newspaper },
     { id: 'poruke-sajt', label: 'Poruke-sajt', href: '/dashboard/poruke-sajt', icon: MessageSquare },
     { id: 'vapi', label: 'Vapi', icon: Mic, hasSubmenu: true, subItems: vapiSubItems },
+    { id: 'log-vapi', label: 'Log Vapi', href: '/dashboard/log-vapi', icon: ScrollText },
   ]
 
   // Agent vidi samo Ponude direktno (bez submenija)
@@ -210,55 +211,75 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
 
             {/* Vapi meni - samo Vapi modul */}
             {isVapi && (
-              <li>
-                <button
-                  onClick={() => setOpenNestedMenus(prev => ({ ...prev, vapi: !prev.vapi }))}
-                  className={`w-full flex items-center ${collapsed ? 'justify-center' : 'justify-between'} gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 ${
-                    pathname.startsWith('/dashboard/vapi')
-                      ? 'bg-gradient-to-r from-amber-500/20 to-amber-600/10 text-white border border-amber-500/30 shadow-lg shadow-amber-500/10'
-                      : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
-                  }`}
-                  title={collapsed ? 'Vapi' : undefined}
-                  type="button"
-                >
-                  <div className={`flex items-center ${collapsed ? 'justify-center' : ''} gap-3`}>
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${pathname.startsWith('/dashboard/vapi') ? 'bg-gradient-to-br from-amber-400 to-amber-600 shadow-md shadow-amber-500/30' : 'bg-white/5'}`}>
-                      <Mic className={`w-4 h-4 ${pathname.startsWith('/dashboard/vapi') ? 'text-white' : ''}`} />
+              <>
+                <li>
+                  <button
+                    onClick={() => setOpenNestedMenus(prev => ({ ...prev, vapi: !prev.vapi }))}
+                    className={`w-full flex items-center ${collapsed ? 'justify-center' : 'justify-between'} gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 ${
+                      pathname.startsWith('/dashboard/vapi')
+                        ? 'bg-gradient-to-r from-amber-500/20 to-amber-600/10 text-white border border-amber-500/30 shadow-lg shadow-amber-500/10'
+                        : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
+                    }`}
+                    title={collapsed ? 'Vapi' : undefined}
+                    type="button"
+                  >
+                    <div className={`flex items-center ${collapsed ? 'justify-center' : ''} gap-3`}>
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${pathname.startsWith('/dashboard/vapi') ? 'bg-gradient-to-br from-amber-400 to-amber-600 shadow-md shadow-amber-500/30' : 'bg-white/5'}`}>
+                        <Mic className={`w-4 h-4 ${pathname.startsWith('/dashboard/vapi') ? 'text-white' : ''}`} />
+                      </div>
+                      {!collapsed && <span className="font-medium">Vapi</span>}
                     </div>
-                    {!collapsed && <span className="font-medium">Vapi</span>}
-                  </div>
-                  {!collapsed && (
-                    <div className={`transition-transform duration-300 ${openNestedMenus.vapi ? 'rotate-180' : ''}`}>
-                      <ChevronDown className="w-4 h-4" />
-                    </div>
-                  )}
-                </button>
+                    {!collapsed && (
+                      <div className={`transition-transform duration-300 ${openNestedMenus.vapi ? 'rotate-180' : ''}`}>
+                        <ChevronDown className="w-4 h-4" />
+                      </div>
+                    )}
+                  </button>
 
-                {!collapsed && openNestedMenus.vapi && (
-                  <ul className="mt-2 ml-5 pl-4 border-l-2 border-amber-500/20 space-y-1">
-                    {vapiSubItems.map((subItem) => {
-                      const SubIcon = subItem.icon
-                      const isSubItemActive = pathname === subItem.href
-                      return (
-                        <li key={subItem.id}>
-                          <Link
-                            href={subItem.href}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
-                              isSubItemActive
-                                ? 'bg-white/10 text-amber-400'
-                                : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'
-                            }`}
-                          >
-                            <SubIcon className="w-4 h-4" />
-                            <span className="text-sm font-medium">{subItem.label}</span>
-                          </Link>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                )}
-              </li>
+                  {!collapsed && openNestedMenus.vapi && (
+                    <ul className="mt-2 ml-5 pl-4 border-l-2 border-amber-500/20 space-y-1">
+                      {vapiSubItems.map((subItem) => {
+                        const SubIcon = subItem.icon
+                        const isSubItemActive = pathname === subItem.href
+                        return (
+                          <li key={subItem.id}>
+                            <Link
+                              href={subItem.href}
+                              onClick={() => setIsMobileMenuOpen(false)}
+                              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                                isSubItemActive
+                                  ? 'bg-white/10 text-amber-400'
+                                  : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'
+                              }`}
+                            >
+                              <SubIcon className="w-4 h-4" />
+                              <span className="text-sm font-medium">{subItem.label}</span>
+                            </Link>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+                </li>
+                <li>
+                  <Link
+                    href="/dashboard/log-vapi"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`w-full flex items-center ${collapsed ? 'justify-center' : 'justify-between'} gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 ${
+                      pathname === '/dashboard/log-vapi'
+                        ? 'bg-gradient-to-r from-amber-500/20 to-amber-600/10 text-white border border-amber-500/30 shadow-lg shadow-amber-500/10'
+                        : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
+                    }`}
+                  >
+                    <div className={`flex items-center ${collapsed ? 'justify-center' : ''} gap-3`}>
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${pathname === '/dashboard/log-vapi' ? 'bg-gradient-to-br from-amber-400 to-amber-600 shadow-md shadow-amber-500/30' : 'bg-white/5'}`}>
+                        <ScrollText className={`w-4 h-4 ${pathname === '/dashboard/log-vapi' ? 'text-white' : ''}`} />
+                      </div>
+                      {!collapsed && <span className="font-medium">Log Vapi</span>}
+                    </div>
+                  </Link>
+                </li>
+              </>
             )}
 
             {/* Admin meni */}

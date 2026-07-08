@@ -136,3 +136,14 @@ export interface VapiUcenikInsert {
   razrednistaresina?: string | null
   napoemna?: string | null
 }
+
+export interface VapiUserLog {
+  id: number
+  korisnikid: number | null
+  naziv: string | null
+  email: string | null
+  event_type: string
+  route: string | null
+  details: string | null
+  created_at: string
+}

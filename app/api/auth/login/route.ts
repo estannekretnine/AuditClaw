@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { normalizeKorisnikForApp } from '@/lib/role-utils'
+import { writeVapiUserLog } from '@/lib/vapi-user-log'
 
 export async function POST(request: Request) {
   try {
@@ -63,6 +64,13 @@ export async function POST(request: Request) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 dana
+    })
+
+    await writeVapiUserLog({
+      user: korisnik,
+      eventType: 'login',
+      route: '/dashboard',
+      details: 'Prijava kroz API login rutu.',
     })
 
     return NextResponse.json({ success: true, user: korisnik })

@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { normalizeKorisnikForApp } from '@/lib/role-utils'
+import { writeVapiUserLog } from '@/lib/vapi-user-log'
 
 const loginSchema = z.object({
   email: z.string().email('Nevažeća email adresa'),
@@ -73,6 +74,13 @@ export async function login(formData: FormData) {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge: 60 * 60 * 24 * 7, // 7 dana
+  })
+
+  await writeVapiUserLog({
+    user: korisnik,
+    eventType: 'login',
+    route: '/dashboard',
+    details: 'Prijava kroz server action login formu.',
   })
 
   redirect('/dashboard')

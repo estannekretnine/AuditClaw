@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Sidebar from '@/components/sidebar'
 import { Building2, Menu, LogOut } from 'lucide-react'
 import type { Korisnik } from '@/lib/types/database'
 import { logout } from '@/lib/actions/auth'
+import { logCurrentVapiPageVisit } from '@/lib/actions/vapi-user-log'
 
 export default function DashboardLayout({
   children,
@@ -16,6 +17,7 @@ export default function DashboardLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
+  const lastLoggedPathRef = useRef<string | null>(null)
 
   useEffect(() => {
     // Čitanje korisnika iz cookie-a na klijentu
@@ -47,7 +49,7 @@ export default function DashboardLayout({
         router.replace('/dashboard/vapi/assistants')
         return
       }
-      if (!pathname.startsWith('/dashboard/vapi')) {
+      if (!pathname.startsWith('/dashboard/vapi') && pathname !== '/dashboard/log-vapi') {
         router.replace('/dashboard/vapi/assistants')
       }
       return
@@ -57,6 +59,15 @@ export default function DashboardLayout({
       router.replace('/dashboard/ponude')
     }
   }, [pathname, router, user])
+
+  useEffect(() => {
+    if (!user || user.stsstatus !== 'vapi') return
+    if (!(pathname.startsWith('/dashboard/vapi') || pathname === '/dashboard/log-vapi')) return
+    if (lastLoggedPathRef.current === pathname) return
+
+    lastLoggedPathRef.current = pathname
+    void logCurrentVapiPageVisit(pathname)
+  }, [pathname, user])
 
   async function handleLogout() {
     await logout()
