@@ -21,6 +21,7 @@ import {
   getVapiStartConfig,
   getSimliEnvStatus,
   getAssistantMedOpremaIds,
+  setAssistantMedOpremaIds,
   getAssistantSystemPrompts,
 } from '@/lib/actions/vapi-assistants'
 import { getVapiUcenici } from '@/lib/actions/vapi-ucenik'
@@ -64,6 +65,9 @@ export default function VapiAssistantsPage() {
   const [hasSimliApiKeyInEnv, setHasSimliApiKeyInEnv] = useState<boolean>(true)
   const [opremaOptions, setOpremaOptions] = useState<VapiMedicinskaOprema[]>([])
   const [selectedOpremaIds, setSelectedOpremaIds] = useState<number[]>([])
+  const [showOpremaModal, setShowOpremaModal] = useState(false)
+  const [opremaAssistant, setOpremaAssistant] = useState<VapiAssistant | null>(null)
+  const [savingOprema, setSavingOprema] = useState(false)
   const [systemPromptOptions, setSystemPromptOptions] = useState<VapiSystemPrompt[]>([])
 
   const [formData, setFormData] = useState({
@@ -167,7 +171,6 @@ export default function VapiAssistantsPage() {
       secer: '5.4',
       selected_system_prompt_id: '',
     })
-    setSelectedOpremaIds([])
     setSystemPromptOptions([])
     setEditingAssistant(null)
     setShowAdvanced(false)
@@ -215,11 +218,7 @@ export default function VapiAssistantsPage() {
           : '5.4',
       selected_system_prompt_id: '',
     })
-    const [opremaResult, promptsResult] = await Promise.all([
-      getAssistantMedOpremaIds(assistant.id),
-      getAssistantSystemPrompts(assistant.id),
-    ])
-    setSelectedOpremaIds(opremaResult.data || [])
+    const promptsResult = await getAssistantSystemPrompts(assistant.id)
     const prompts = promptsResult.data || []
     setSystemPromptOptions(prompts)
     const selectedPrompt = prompts.find(
@@ -234,7 +233,37 @@ export default function VapiAssistantsPage() {
   }
 
   const handleManageOprema = async (assistant: VapiAssistant) => {
-    await handleEdit(assistant)
+    setOpremaAssistant(assistant)
+    setSelectedOpremaIds([])
+    setShowOpremaModal(true)
+    const result = await getAssistantMedOpremaIds(assistant.id)
+    if (result.error) {
+      alert('Greška pri učitavanju opreme: ' + result.error)
+      return
+    }
+    setSelectedOpremaIds(result.data || [])
+  }
+
+  const handleCloseOpremaModal = () => {
+    setShowOpremaModal(false)
+    setOpremaAssistant(null)
+    setSelectedOpremaIds([])
+    setSavingOprema(false)
+  }
+
+  const handleSaveOprema = async () => {
+    if (!opremaAssistant) return
+    setSavingOprema(true)
+    try {
+      const result = await setAssistantMedOpremaIds(opremaAssistant.id, selectedOpremaIds)
+      if (result.error) {
+        alert('Greška: ' + result.error)
+        return
+      }
+      handleCloseOpremaModal()
+    } finally {
+      setSavingOprema(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -273,7 +302,6 @@ export default function VapiAssistantsPage() {
             })
           : ''
       )
-      fd.append('medoprema_ids', JSON.stringify(selectedOpremaIds))
       fd.append('selected_system_prompt_id', formData.selected_system_prompt_id)
 
       let result
@@ -636,43 +664,6 @@ export default function VapiAssistantsPage() {
                 )}
               </div>
 
-              <div className="rounded-xl border border-gray-200 p-4 space-y-3">
-                <label className="block text-sm font-semibold text-gray-700">
-                  Medicinska oprema povezana sa asistentom
-                </label>
-                {opremaOptions.length === 0 ? (
-                  <p className="text-xs text-gray-500">
-                    Nema unosa opreme. Dodajte opremu u modulu „Medicinska oprema“.
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {opremaOptions.map((item) => (
-                      <label
-                        key={item.id}
-                        className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedOpremaIds.includes(item.id)}
-                          onChange={(e) => {
-                            setSelectedOpremaIds((prev) =>
-                              e.target.checked
-                                ? Array.from(new Set([...prev, item.id]))
-                                : prev.filter((id) => id !== item.id)
-                            )
-                          }}
-                          className="mt-0.5 h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                        />
-                        <span className="text-sm text-gray-700">
-                          <strong>{item.naziv}</strong>
-                          {item.namena ? <span className="block text-xs text-gray-500">{item.namena}</span> : null}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-
               <div className="rounded-xl border border-gray-200 p-4 space-y-4">
                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                   <input
@@ -882,6 +873,87 @@ export default function VapiAssistantsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showOpremaModal && opremaAssistant && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-100 w-full max-w-2xl max-h-[90vh] overflow-y-auto my-auto">
+            <div className="px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-t-2xl sm:rounded-t-3xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
+                  <Stethoscope className="w-5 h-5 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-lg sm:text-xl font-bold text-white">Medicinska oprema</h3>
+                  <p className="text-sm text-indigo-100 truncate">{assistantName(opremaAssistant)}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 sm:p-6 space-y-4">
+              <p className="text-sm text-gray-600">
+                Izaberite opremu koja će biti dostupna učeniku pri pokretanju ove vežbe.
+              </p>
+
+              {opremaOptions.length === 0 ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  Nema unosa opreme. Prvo dodajte opremu u modulu „Medicinska oprema“.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[50vh] overflow-y-auto pr-1">
+                  {opremaOptions.map((item) => (
+                    <label
+                      key={item.id}
+                      className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 hover:border-indigo-300 hover:bg-indigo-50/40 transition-colors cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedOpremaIds.includes(item.id)}
+                        onChange={(e) => {
+                          setSelectedOpremaIds((prev) =>
+                            e.target.checked
+                              ? Array.from(new Set([...prev, item.id]))
+                              : prev.filter((id) => id !== item.id)
+                          )
+                        }}
+                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <span className="text-sm text-gray-700">
+                        <strong>{item.naziv}</strong>
+                        {item.namena ? (
+                          <span className="block text-xs text-gray-500">{item.namena}</span>
+                        ) : null}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-4 border-t border-gray-100">
+                <p className="text-xs text-gray-500">
+                  Izabrano: {selectedOpremaIds.length} / {opremaOptions.length}
+                </p>
+                <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCloseOpremaModal}
+                    className="w-full sm:w-auto px-6 py-3 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+                  >
+                    Otkaži
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveOprema}
+                    disabled={savingOprema || opremaOptions.length === 0}
+                    className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 shadow-lg shadow-indigo-500/25 font-medium disabled:opacity-50"
+                  >
+                    {savingOprema ? 'Čuvanje...' : 'Sačuvaj opremu'}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

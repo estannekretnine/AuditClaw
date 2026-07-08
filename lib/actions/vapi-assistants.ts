@@ -586,14 +586,9 @@ export async function createVapiAssistant(formData: FormData) {
     result.data.selected_system_prompt_id ?? null,
     result.data.System_Prompt ?? null
   )
-  const equipmentSyncError = await syncAssistantEquipmentLinks(
-    created.id,
-    result.data.medoprema_ids ?? []
-  )
 
-  if (equipmentSyncError) {
-    vapiSyncWarning = `Asistent je sačuvan, ali oprema nije povezana: ${equipmentSyncError}`
-  }
+  // Oprema se povezuje isključivo preko dugmeta „Oprema“ (setAssistantMedOpremaIds),
+  // da izmena asistenta ne obriše postojeće veze.
 
   if (promptSync.prompt !== created.System_Prompt) {
     const { error: updatePromptError } = await supabase
@@ -687,14 +682,9 @@ export async function updateVapiAssistant(id: number, formData: FormData) {
     result.data.selected_system_prompt_id ?? null,
     result.data.System_Prompt ?? null
   )
-  const equipmentSyncError = await syncAssistantEquipmentLinks(
-    updated.id,
-    result.data.medoprema_ids ?? []
-  )
 
-  if (equipmentSyncError) {
-    vapiSyncWarning = `Asistent je sačuvan, ali oprema nije povezana: ${equipmentSyncError}`
-  }
+  // Oprema se povezuje isključivo preko dugmeta „Oprema“ (setAssistantMedOpremaIds),
+  // da izmena asistenta ne obriše postojeće veze.
 
   if (promptSync.prompt !== updated.System_Prompt) {
     const { error: updatePromptError } = await supabase
