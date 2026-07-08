@@ -10,7 +10,7 @@ const korisnikSchema = z.object({
   password: z.string().optional().nullable(),
   brojmob: z.string().optional().nullable(),
   adresa: z.string().optional().nullable(),
-  stsstatus: z.enum(['kupac', 'prodavac', 'agent', 'admin', 'manager']).default('admin'),
+  stsstatus: z.enum(['kupac', 'prodavac', 'agent', 'admin', 'manager', 'vapi']).default('admin'),
   stsaktivan: z.enum(['da', 'ne']).default('da'),
 })
 

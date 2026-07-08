@@ -55,8 +55,13 @@ export async function login(formData: FormData) {
     return { error: 'Vaš nalog je deaktiviran. Kontaktirajte administratora.' }
   }
 
-  // Provera da li je admin, manager ili agent
-  if (korisnik.stsstatus !== 'admin' && korisnik.stsstatus !== 'manager' && korisnik.stsstatus !== 'agent') {
+  // Provera da li ima dozvoljenu dashboard rolu
+  if (
+    korisnik.stsstatus !== 'admin' &&
+    korisnik.stsstatus !== 'manager' &&
+    korisnik.stsstatus !== 'agent' &&
+    korisnik.stsstatus !== 'vapi'
+  ) {
     return { error: 'Nemate pristup panelu.' }
   }
 

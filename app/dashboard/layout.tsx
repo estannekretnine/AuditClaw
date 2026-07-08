@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Sidebar from '@/components/sidebar'
 import { Building2, Menu, LogOut } from 'lucide-react'
 import type { Korisnik } from '@/lib/types/database'
@@ -15,6 +15,7 @@ export default function DashboardLayout({
   const [user, setUser] = useState<Korisnik | null>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     // Čitanje korisnika iz cookie-a na klijentu
@@ -38,11 +39,31 @@ export default function DashboardLayout({
     }
   }, [router])
 
+  useEffect(() => {
+    if (!user) return
+
+    if (user.stsstatus === 'vapi') {
+      if (pathname === '/dashboard') {
+        router.replace('/dashboard/vapi/assistants')
+        return
+      }
+      if (!pathname.startsWith('/dashboard/vapi')) {
+        router.replace('/dashboard/vapi/assistants')
+      }
+      return
+    }
+
+    if (pathname.startsWith('/dashboard/vapi') && user.stsstatus === 'agent') {
+      router.replace('/dashboard/ponude')
+    }
+  }, [pathname, router, user])
+
   async function handleLogout() {
     await logout()
   }
 
   const isAdmin = user?.stsstatus === 'admin' || user?.stsstatus === 'manager'
+  const isVapi = user?.stsstatus === 'vapi'
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
@@ -70,7 +91,9 @@ export default function DashboardLayout({
                   </div>
                   <div>
                     <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">AuditClaw</h1>
-                    <p className="text-xs text-gray-500 hidden sm:block">Admin Panel</p>
+                    <p className="text-xs text-gray-500 hidden sm:block">
+                      {isVapi ? 'Vapi Panel' : 'Admin Panel'}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -78,6 +101,11 @@ export default function DashboardLayout({
                 {isAdmin && (
                   <span className="text-xs bg-gradient-to-r from-amber-100 to-amber-200 text-amber-800 px-3 py-1.5 rounded-lg font-semibold border border-amber-300/50">
                     Admin
+                  </span>
+                )}
+                {isVapi && (
+                  <span className="text-xs bg-gradient-to-r from-indigo-100 to-indigo-200 text-indigo-800 px-3 py-1.5 rounded-lg font-semibold border border-indigo-300/50">
+                    Vapi
                   </span>
                 )}
                 <span className="text-sm text-gray-600 truncate font-medium">

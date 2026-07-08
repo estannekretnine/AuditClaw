@@ -5,7 +5,7 @@ export interface Korisnik {
   password: string | null
   brojmob: string | null
   adresa: string | null
-  stsstatus: 'kupac' | 'prodavac' | 'agent' | 'admin' | 'manager' | null
+  stsstatus: 'kupac' | 'prodavac' | 'agent' | 'admin' | 'manager' | 'vapi' | null
   stsaktivan: 'da' | 'ne' | null
   datumk: string | null
   datump: string | null
@@ -18,7 +18,7 @@ export interface KorisnikInsert {
   password?: string | null
   brojmob?: string | null
   adresa?: string | null
-  stsstatus?: 'kupac' | 'prodavac' | 'agent' | 'admin' | 'manager' | null
+  stsstatus?: 'kupac' | 'prodavac' | 'agent' | 'admin' | 'manager' | 'vapi' | null
   stsaktivan?: 'da' | 'ne' | null
 }
 
@@ -28,7 +28,7 @@ export interface KorisnikUpdate {
   password?: string | null
   brojmob?: string | null
   adresa?: string | null
-  stsstatus?: 'kupac' | 'prodavac' | 'agent' | 'admin' | 'manager' | null
+  stsstatus?: 'kupac' | 'prodavac' | 'agent' | 'admin' | 'manager' | 'vapi' | null
   stsaktivan?: 'da' | 'ne' | null
   datumpt?: string | null
 }

@@ -45,8 +45,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Vaš nalog je deaktiviran. Kontaktirajte administratora.' }, { status: 403 })
     }
 
-    // Provera da li je admin, manager ili agent
-    if (korisnik.stsstatus !== 'admin' && korisnik.stsstatus !== 'manager' && korisnik.stsstatus !== 'agent') {
+    // Provera da li ima dozvoljenu dashboard rolu
+    if (
+      korisnik.stsstatus !== 'admin' &&
+      korisnik.stsstatus !== 'manager' &&
+      korisnik.stsstatus !== 'agent' &&
+      korisnik.stsstatus !== 'vapi'
+    ) {
       return NextResponse.json({ error: 'Nemate pristup panelu.' }, { status: 403 })
     }
 

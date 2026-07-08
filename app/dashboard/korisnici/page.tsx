@@ -154,6 +154,7 @@ export default function KorisniciPage() {
       'agent': 'bg-purple-100 text-purple-700 border-purple-200',
       'admin': 'bg-red-100 text-red-700 border-red-200',
       'manager': 'bg-amber-100 text-amber-700 border-amber-200',
+      'vapi': 'bg-indigo-100 text-indigo-700 border-indigo-200',
     }
     return colors[status] || 'bg-gray-100 text-gray-700 border-gray-200'
   }
@@ -419,6 +420,7 @@ export default function KorisniciPage() {
                   <option value="admin">Admin</option>
                   <option value="manager">Manager</option>
                   <option value="agent">Agent</option>
+                  <option value="vapi">Vapi</option>
                   <option value="prodavac">Prodavac</option>
                   <option value="kupac">Kupac</option>
                 </select>
