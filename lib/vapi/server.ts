@@ -42,10 +42,12 @@ interface VitalniZnaciToolOptions {
 function buildVitalniZnaciTool(): Record<string, unknown> {
   return {
     type: 'function',
+    // async: true — AI NE čeka tool result (client-side side-effect), inače „zamrzne“ razgovor.
+    async: true,
     function: {
       name: 'azurirajVitalneZnake',
       description:
-        'Pozovi ODMAH kada se meri ili izmeri vitalni znak (npr. "izmeri pritisak", "izmeri temperaturu", "proveri saturaciju"). Salji SAMO polja koja se trenutno mere, sa realisticnim vrednostima. Ne salji sva polja odjednom osim ako se sva mere.',
+        'Pozovi ODMAH kada korisnik traži merenje (npr. "izmeri pritisak", "izmeri temperaturu", "proveri saturaciju", "izmeri puls", "izmeri šećer"). Salji SAMO polja koja se trenutno mere, sa realisticnim vrednostima. Ne salji sva polja odjednom.',
       parameters: {
         type: 'object',
         properties: {
@@ -72,6 +74,13 @@ function buildVitalniZnaciTool(): Record<string, unknown> {
         },
       },
     },
+    messages: [
+      {
+        type: 'request-start',
+        content: 'Merim...',
+        blocking: false,
+      },
+    ],
   }
 }
 

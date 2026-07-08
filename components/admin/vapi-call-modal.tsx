@@ -8,8 +8,9 @@ import type { VapiUcenik } from '@/lib/types/vapi'
 import { VapiSimliAvatar } from '@/components/admin/vapi-simli-avatar'
 import {
   applyVitalPayload,
+  detectMeasurementKeysFromSpeech,
   extractVitalKeysFromPayload,
-  normalizeVitalToolPayload,
+  parseVitalToolCalls,
   VapiVitalniUredjaji,
   type VitalKey,
   type VitalSignsState,
@@ -216,9 +217,53 @@ export function VapiCallModal({
   const [updatedVitalKey, setUpdatedVitalKey] = useState<VitalKey | null>(null)
   const [measuringVitalKey, setMeasuringVitalKey] = useState<VitalKey | null>(null)
   const defaultsRef = useRef<VitalSignsState>({})
+  const revealingRef = useRef(false)
 
   const handleSimliError = useCallback((message: string) => {
     setError(message)
+  }, [])
+
+  const revealVitalMeasurement = useCallback((keysToShow: VitalKey[], payload: Record<string, unknown>) => {
+    if (keysToShow.length === 0 || revealingRef.current) return
+    revealingRef.current = true
+
+    const defaults = defaultsRef.current
+    const measurementPayload: Record<string, unknown> = {}
+    for (const key of keysToShow) {
+      if (key === 'pritisak') {
+        measurementPayload.pritisak =
+          typeof payload.pritisak === 'string' && payload.pritisak.trim()
+            ? payload.pritisak.trim()
+            : defaults.pritisak ?? '120/80'
+      } else if (key === 'puls') {
+        measurementPayload.puls =
+          typeof payload.puls === 'number' ? payload.puls : (defaults.puls ?? 72)
+      } else if (key === 'temperatura') {
+        measurementPayload.temperatura =
+          typeof payload.temperatura === 'number' ? payload.temperatura : (defaults.temperatura ?? 36.6)
+      } else if (key === 'saturacija') {
+        measurementPayload.saturacija =
+          typeof payload.saturacija === 'number' ? payload.saturacija : (defaults.saturacija ?? 98)
+      } else if (key === 'secer') {
+        measurementPayload.secer =
+          typeof payload.secer === 'number' ? payload.secer : (defaults.secer ?? 5.5)
+      }
+    }
+
+    const primary = keysToShow[0]
+    setMeasuringVitalKey(primary)
+
+    window.setTimeout(() => {
+      setVitalSigns((prev) => applyVitalPayload(prev, measurementPayload))
+      setRevealedVitals((prev) => {
+        const next = { ...prev }
+        for (const key of keysToShow) next[key] = true
+        return next
+      })
+      setUpdatedVitalKey(primary)
+      setMeasuringVitalKey(null)
+      revealingRef.current = false
+    }, 900)
   }, [])
 
   const cleanupCall = useCallback(async () => {
@@ -272,6 +317,12 @@ export function VapiCallModal({
       setIsConnected(true)
       setIsStarting(false)
       await disableLocalVideo(vapi)
+      try {
+        // Mikrofon mora ostati uključen da asistent čuje učenika.
+        vapi.setMuted(false)
+      } catch {
+        // ignore
+      }
     })
 
     vapi.on('call-start-success', async () => {
@@ -279,6 +330,11 @@ export function VapiCallModal({
       setIsConnected(true)
       setIsStarting(false)
       await disableLocalVideo(vapi)
+      try {
+        vapi.setMuted(false)
+      } catch {
+        // ignore
+      }
     })
 
     vapi.on('call-start-failed', async (event) => {
@@ -350,11 +406,8 @@ export function VapiCallModal({
       role?: string
       transcript?: string
       transcriptType?: string
-      toolCallList?: Array<{
-        name?: string
-        arguments?: Record<string, unknown>
-        parameters?: Record<string, unknown>
-      }>
+      toolCallList?: unknown
+      toolCalls?: unknown
     }) => {
       console.log('[Vapi] message', message)
 
@@ -363,62 +416,28 @@ export function VapiCallModal({
         message.transcript &&
         message.transcriptType === 'final'
       ) {
-        setTranscript((prev) => [
-          ...prev,
-          { role: message.role || 'unknown', text: message.transcript as string },
-        ])
-      }
+        const role = message.role || 'unknown'
+        const text = message.transcript
+        setTranscript((prev) => [...prev, { role, text }])
 
-      if (message.type === 'tool-calls' && Array.isArray(message.toolCallList)) {
-        const firstCall = message.toolCallList[0]
-        if (firstCall?.name !== 'azurirajVitalneZnake') return
-
-        const payload = normalizeVitalToolPayload(
-          firstCall.parameters || firstCall.arguments || {}
-        )
-        const defaults = defaultsRef.current
-        const keysToShow = extractVitalKeysFromPayload(payload)
-        if (keysToShow.length === 0) return
-
-        // Za prikaz uzmi AI vrednost, ili fallback sa forme ako polje nema broj.
-        const measurementPayload: Record<string, unknown> = {}
-        for (const key of keysToShow) {
-          if (key === 'pritisak') {
-            measurementPayload.pritisak =
-              typeof payload.pritisak === 'string' && payload.pritisak.trim()
-                ? payload.pritisak.trim()
-                : defaults.pritisak
-          } else if (key === 'puls') {
-            measurementPayload.puls =
-              typeof payload.puls === 'number' ? payload.puls : defaults.puls
-          } else if (key === 'temperatura') {
-            measurementPayload.temperatura =
-              typeof payload.temperatura === 'number' ? payload.temperatura : defaults.temperatura
-          } else if (key === 'saturacija') {
-            measurementPayload.saturacija =
-              typeof payload.saturacija === 'number' ? payload.saturacija : defaults.saturacija
-          } else if (key === 'secer') {
-            measurementPayload.secer =
-              typeof payload.secer === 'number' ? payload.secer : defaults.secer
+        // Fallback: ako učenik kaže "izmeri pritisak", prikaži uređaj i bez tool-call-a.
+        if (role === 'user') {
+          const speechKeys = detectMeasurementKeysFromSpeech(text)
+          if (speechKeys.length > 0) {
+            revealVitalMeasurement(speechKeys, {})
           }
         }
+      }
 
-        const primary = keysToShow[0]
-        setMeasuringVitalKey(primary)
-
-        window.setTimeout(() => {
-          setVitalSigns((prev) => applyVitalPayload(prev, measurementPayload))
-          setRevealedVitals((prev) => {
-            const next = { ...prev }
-            for (const key of keysToShow) next[key] = true
-            return next
-          })
-          setUpdatedVitalKey(primary)
-          setMeasuringVitalKey(null)
-        }, 900)
+      const toolCalls = parseVitalToolCalls(message)
+      for (const call of toolCalls) {
+        if (call.name !== 'azurirajVitalneZnake') continue
+        const keysToShow = extractVitalKeysFromPayload(call.payload)
+        if (keysToShow.length === 0) continue
+        revealVitalMeasurement(keysToShow, call.payload)
       }
     })
-  }, [cleanupCall, disableLocalVideo])
+  }, [cleanupCall, disableLocalVideo, revealVitalMeasurement])
 
   useEffect(() => {
     if (!open) {
@@ -518,13 +537,25 @@ export function VapiCallModal({
           assistantDbId: String(config.assistantDbId),
           ucenikid: selectedUcenikId,
         },
-        clientMessages: ['transcript', 'tool-calls'],
+        clientMessages: [
+          'transcript',
+          'tool-calls',
+          'function-call',
+          'speech-update',
+          'user-interrupted',
+          'conversation-update',
+        ],
       }
 
       await vapi.start(
         config.assistantId,
         assistantOverrides as Parameters<typeof vapi.start>[1]
       )
+      try {
+        vapi.setMuted(false)
+      } catch {
+        // ignore
+      }
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Neuspelo pokretanje poziva'
       if (isDeviceInUseMessage(message)) {

@@ -141,6 +141,96 @@ export function VapiVitalniUredjaji({
   )
 }
 
+/** Prepoznaj zahtev za merenje iz govora/transkripta (fallback ako tool-call kasni). */
+export function detectMeasurementKeysFromSpeech(text: string): VitalKey[] {
+  const normalized = text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+  const keys: VitalKey[] = []
+  const asks =
+    /\b(izmeri|izmjeri|meri|izmjeriti|izmeriti|proveri|provjeri|sada|hajde)\b/.test(
+      normalized
+    ) || /\bmerenje\b/.test(normalized)
+
+  const hasPritisak = /\bpritis(ak|ka|ku)?\b|\bblood pressure\b|\bbb\b/.test(normalized)
+  const hasPuls = /\bpuls(a|u)?\b|\bheartbeat\b|\bheart rate\b/.test(normalized)
+  const hasTemp = /\btemperatur(a|u|e)?\b|\btoplot(a|u)?\b|\bfever\b/.test(normalized)
+  const hasSat = /\bsaturacij(a|u|e)?\b|\boksimetr|\bspo2\b|\bkiseonik\b/.test(normalized)
+  const hasSecer = /\bsecer(a|u)?\b|\bglukoz|\bglukoza\b/.test(normalized)
+
+  if (asks && hasPritisak) keys.push('pritisak')
+  if (asks && hasPuls) keys.push('puls')
+  if (asks && hasTemp) keys.push('temperatura')
+  if (asks && hasSat) keys.push('saturacija')
+  if (asks && hasSecer) keys.push('secer')
+
+  // Česti kratki nalozi: "izmeri pritisak"
+  if (keys.length === 0) {
+    if (/\b(izmeri|izmjeri|meri)\s+pritis/.test(normalized)) keys.push('pritisak')
+    if (/\b(izmeri|izmjeri|meri)\s+puls/.test(normalized)) keys.push('puls')
+    if (/\b(izmeri|izmjeri|meri)\s+temperatur/.test(normalized)) keys.push('temperatura')
+    if (/\b(izmeri|izmjeri|meri|proveri|provjeri)\s+saturacij/.test(normalized)) keys.push('saturacija')
+    if (/\b(izmeri|izmjeri|meri)\s+secer/.test(normalized)) keys.push('secer')
+  }
+
+  return keys
+}
+
+export function parseVitalToolCalls(message: {
+  type?: string
+  toolCallList?: unknown
+  toolCalls?: unknown
+}): Array<{ name: string; payload: Record<string, unknown> }> {
+  if (message.type !== 'tool-calls' && message.type !== 'function-call') return []
+
+  const list = Array.isArray(message.toolCallList)
+    ? message.toolCallList
+    : Array.isArray(message.toolCalls)
+      ? message.toolCalls
+      : []
+
+  const parsed: Array<{ name: string; payload: Record<string, unknown> }> = []
+
+  for (const entry of list) {
+    if (!entry || typeof entry !== 'object') continue
+    const record = entry as Record<string, unknown>
+    const fn =
+      record.function && typeof record.function === 'object'
+        ? (record.function as Record<string, unknown>)
+        : null
+
+    const name =
+      (typeof fn?.name === 'string' && fn.name) ||
+      (typeof record.name === 'string' && record.name) ||
+      ''
+
+    const rawArgs = fn?.arguments ?? record.arguments ?? record.parameters ?? {}
+    parsed.push({ name, payload: normalizeVitalToolPayload(rawArgs) })
+  }
+
+  // Stari format: jedan function-call na root message
+  if (parsed.length === 0 && message.type === 'function-call') {
+    const root = message as Record<string, unknown>
+    const fn =
+      root.function && typeof root.function === 'object'
+        ? (root.function as Record<string, unknown>)
+        : null
+    const name =
+      (typeof fn?.name === 'string' && fn.name) ||
+      (typeof root.name === 'string' && root.name) ||
+      ''
+    if (name) {
+      parsed.push({
+        name,
+        payload: normalizeVitalToolPayload(fn?.arguments ?? root.parameters ?? root.arguments),
+      })
+    }
+  }
+
+  return parsed
+}
+
 export function normalizeVitalToolPayload(raw: unknown): Record<string, unknown> {
   let payload: Record<string, unknown> = {}
   if (typeof raw === 'string') {
