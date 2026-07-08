@@ -5,7 +5,9 @@ function requireSimliApiKey(rowKey?: string | null): string {
   if (row) return row
   const key = process.env.SIMLI_API_KEY?.trim()
   if (!key) {
-    throw new Error('SIMLI_API_KEY nije podešen u env varijablama.')
+    throw new Error(
+      'Simli API key nije podešen. Unesite ga u formi asistenta (Simli API Key) ili dodajte SIMLI_API_KEY u env varijable.'
+    )
   }
   return key
 }
@@ -64,8 +66,8 @@ export async function getSimliSessionToken(
   return tokenResult.session_token
 }
 
-export async function getSimliIceServers() {
-  const apiKey = requireSimliApiKey()
+export async function getSimliIceServers(rowKey?: string | null) {
+  const apiKey = requireSimliApiKey(rowKey)
   const response = await fetch('https://api.simli.ai/compose/ice', {
     method: 'GET',
     headers: {

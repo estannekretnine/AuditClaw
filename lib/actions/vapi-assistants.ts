@@ -224,7 +224,7 @@ export async function getVapiStartConfig(assistantDbId: number) {
         maxSessionLength: assistant.simli_max_session_length || 600,
         maxIdleTime: assistant.simli_max_idle_time || 600,
       })
-      simliIceServers = await getSimliIceServers()
+      simliIceServers = await getSimliIceServers(assistant.simli_api_key)
     } catch (error) {
       return {
         data: null,
