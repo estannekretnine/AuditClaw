@@ -47,7 +47,7 @@ function buildVitalniZnaciTool(): Record<string, unknown> {
     function: {
       name: 'azurirajVitalneZnake',
       description:
-        'Pozovi ODMAH kada korisnik traži merenje (npr. "izmeri pritisak", "izmeri temperaturu", "proveri saturaciju", "izmeri puls", "izmeri šećer"). Salji SAMO polja koja se trenutno mere, sa realisticnim vrednostima. Ne salji sva polja odjednom.',
+        'Pozovi ODMAH kada korisnik traži merenje (npr. "izmerite pritisak", "izmeri temperaturu"). KRITICNO: u jednom pozivu posalji TACNO JEDNO polje — ono koje je korisnik upravo trazio. Nikad ne salji pritisak+puls+temperaturu+saturaciju+secer zajedno.',
       parameters: {
         type: 'object',
         properties: {
