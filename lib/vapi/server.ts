@@ -80,11 +80,6 @@ function buildModelConfig(
     nextModel.tools = [...existingTools, buildVitalniZnaciTool()]
   }
 
-  const existingClientMessages = Array.isArray(nextModel.clientMessages) ? nextModel.clientMessages : []
-  if (!existingClientMessages.includes('tool-calls')) {
-    nextModel.clientMessages = [...existingClientMessages, 'tool-calls']
-  }
-
   return nextModel
 }
 
