@@ -603,51 +603,85 @@ export default function VapiAssistantsPage() {
 
   const renderActions = (assistant: VapiAssistant, compact = false, canStart = false) => {
     if (compact) {
-      // Na mobilnom prikazu akcije su u 2 reda (3 kolone) da se sve jasno vide.
+      const compactBtn =
+        'inline-flex items-center justify-center gap-0.5 px-1.5 py-0.5 text-[10px] leading-tight rounded-md whitespace-nowrap transition-colors'
+
+      if (!canStart) {
+        return (
+          <div className="flex flex-wrap gap-1">
+            <button
+              onClick={() => handleEdit(assistant)}
+              className={`${compactBtn} bg-amber-600 text-white hover:bg-amber-700`}
+            >
+              <Edit className="w-3 h-3 shrink-0" />
+              Izmeni
+            </button>
+            <button
+              onClick={() => handleCopy(assistant)}
+              className={`${compactBtn} bg-slate-600 text-white hover:bg-slate-700`}
+            >
+              <Copy className="w-3 h-3 shrink-0" />
+              Kopiraj
+            </button>
+            <button
+              onClick={() => handleDelete(assistant)}
+              className={`${compactBtn} bg-red-600 text-white hover:bg-red-700`}
+            >
+              <Trash2 className="w-3 h-3 shrink-0" />
+              Obriši
+            </button>
+          </div>
+        )
+      }
+
       return (
-        <div className="grid grid-cols-3 gap-1 w-full">
-          {canStart && (
+        <div className="flex flex-col gap-1">
+          <div className="flex flex-wrap gap-1">
             <button
               onClick={() => handleStart(assistant)}
-              className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm shadow-green-500/20"
+              className={`${compactBtn} bg-green-600 text-white hover:bg-green-700`}
             >
-              <Play className="w-3.5 h-3.5 shrink-0" />Započni
+              <Play className="w-3 h-3 shrink-0" />
+              Započni
             </button>
-          )}
-          <button
-            onClick={() => handleEdit(assistant)}
-            className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-sm shadow-amber-500/20"
-          >
-            <Edit className="w-3.5 h-3.5 shrink-0" />Izmeni
-          </button>
-          <button
-            onClick={() => handleCopy(assistant)}
-            className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-slate-500 to-slate-600 text-white rounded-lg hover:from-slate-600 hover:to-slate-700 transition-all duration-200 shadow-sm shadow-slate-500/20"
-          >
-            <Copy className="w-3.5 h-3.5 shrink-0" />Kopiraj
-          </button>
-          {canStart && (
+            <button
+              onClick={() => handleEdit(assistant)}
+              className={`${compactBtn} bg-amber-600 text-white hover:bg-amber-700`}
+            >
+              <Edit className="w-3 h-3 shrink-0" />
+              Izmeni
+            </button>
+            <button
+              onClick={() => handleCopy(assistant)}
+              className={`${compactBtn} bg-slate-600 text-white hover:bg-slate-700`}
+            >
+              <Copy className="w-3 h-3 shrink-0" />
+              Kopiraj
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1">
             <button
               onClick={() => handleManageOprema(assistant)}
-              className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 shadow-sm shadow-indigo-500/20"
+              className={`${compactBtn} bg-indigo-600 text-white hover:bg-indigo-700`}
             >
-              <Stethoscope className="w-3.5 h-3.5 shrink-0" />Oprema
+              <Stethoscope className="w-3 h-3 shrink-0" />
+              Oprema
             </button>
-          )}
-          {canStart && (
             <button
               onClick={() => handleManageSysPrompt(assistant)}
-              className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-lg hover:from-violet-600 hover:to-violet-700 transition-all duration-200 shadow-sm shadow-violet-500/20"
+              className={`${compactBtn} bg-violet-600 text-white hover:bg-violet-700`}
             >
-              <MessageSquare className="w-3.5 h-3.5 shrink-0" />SysPrompt
+              <MessageSquare className="w-3 h-3 shrink-0" />
+              Prompt
             </button>
-          )}
-          <button
-            onClick={() => handleDelete(assistant)}
-            className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-sm shadow-red-500/20"
-          >
-            <Trash2 className="w-3.5 h-3.5 shrink-0" />Obriši
-          </button>
+            <button
+              onClick={() => handleDelete(assistant)}
+              className={`${compactBtn} bg-red-600 text-white hover:bg-red-700`}
+            >
+              <Trash2 className="w-3 h-3 shrink-0" />
+              Obriši
+            </button>
+          </div>
         </div>
       )
     }
