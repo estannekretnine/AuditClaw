@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type Vapi from '@vapi-ai/web'
-import { SimliClient } from 'simli-client'
+// Direct path: package root re-exports `./Client` but the file is `client.js`
+// (breaks case-sensitive Linux / Turbopack builds).
+import { LogLevel, SimliClient } from 'simli-client/dist/client'
 
 const SIMLI_SAMPLE_RATE = 16000
 const SIMLI_AUDIO_BUFFER_SIZE = 4800
@@ -177,8 +179,15 @@ export function VapiSimliAvatar({
       }
       contextRef.current = null
 
-      simliRef.current?.close()
+      const client = simliRef.current
       simliRef.current = null
+      if (client) {
+        try {
+          await client.stop()
+        } catch {
+          // ignore cleanup errors
+        }
+      }
       setAvatarStarted(false)
     }
 
@@ -193,37 +202,38 @@ export function VapiSimliAvatar({
       try {
         muteVapiAudio()
 
-        const client = new SimliClient()
-        client.Initialize({
-          apiKey: '',
-          faceID: faceId,
-          handleSilence: true,
-          maxSessionLength: 600,
-          maxIdleTime: 600,
-          session_token: sessionToken,
-          videoRef: videoRef.current as HTMLVideoElement,
-          audioRef: audioRef.current as HTMLAudioElement,
-          enableConsoleLogs: false,
-          SimliURL: 'https://api.simli.ai',
-          maxRetryAttempts: 100,
-          retryDelay_ms: 2000,
-          videoReceivedTimeout: 15000,
-          enableSFU: true,
-          model: 'fasttalk',
-          ...(iceServers.length > 0 ? { inputIceServers: iceServers } : {}),
-        } as never)
+        const resolvedIce = iceServers.length > 0 ? iceServers : null
+        // Prefer p2p when ICE is available; SDK falls back to livekit after retries.
+        const transportMode = resolvedIce ? 'p2p' : 'livekit'
+
+        const client = new SimliClient(
+          sessionToken,
+          videoRef.current as HTMLVideoElement,
+          audioRef.current as HTMLAudioElement,
+          resolvedIce,
+          LogLevel.INFO,
+          transportMode,
+          'websockets',
+          'wss://api.simli.ai',
+          3000
+        )
         simliRef.current = client
 
-        client.on('connected', () => {
+        const handleStart = () => {
           if (disposed) return
           setAvatarStarted(true)
           const warmup = new Uint8Array(6000).fill(0)
           client.sendAudioData(warmup)
           startPollingForTrack()
-        })
-        client.on('failed', () => {
-          onError('Simli avatar konekcija je prekinuta. Pokušajte ponovo.')
-        })
+        }
+        const handleFail = (detail: string) => {
+          if (disposed) return
+          onError(detail || 'Simli avatar konekcija je prekinuta. Pokušajte ponovo.')
+        }
+
+        client.on('start', handleStart)
+        client.on('startup_error', handleFail)
+        client.on('error', handleFail)
 
         vapi.on('speech-start', () => {
           if (speechEndTimeoutRef.current) {
@@ -250,6 +260,7 @@ export function VapiSimliAvatar({
 
         await client.start()
       } catch (error) {
+        if (disposed) return
         onError(error instanceof Error ? error.message : 'Greška pri pokretanju Simli avatara.')
       }
     }
