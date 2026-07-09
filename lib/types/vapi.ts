@@ -112,6 +112,7 @@ export interface VapiProfesor {
   email: string | null
   pasword: string | null
   stsaktivan: boolean | null
+  predmet: string | null
 }
 
 export interface VapiProfesorInsert {
@@ -120,6 +121,7 @@ export interface VapiProfesorInsert {
   email?: string | null
   pasword?: string | null
   stsaktivan?: boolean | null
+  predmet?: string | null
 }
 
 export interface VapiProfesorUpdate extends Partial<VapiProfesorInsert> {}

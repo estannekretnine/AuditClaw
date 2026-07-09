@@ -16,6 +16,7 @@ const vapiProfesorSchema = z.object({
   email: z.string().email('Neispravan email').optional().nullable().or(z.literal('').transform(() => null)),
   pasword: z.string().optional().nullable(),
   stsaktivan: z.boolean().optional().nullable(),
+  predmet: z.string().optional().nullable(),
 })
 
 async function requireAdminAccess() {
@@ -38,6 +39,7 @@ function parseProfesorFormData(formData: FormData) {
     email: trim(formData.get('email')),
     pasword: trim(formData.get('pasword')),
     stsaktivan: formData.get('stsaktivan') === 'true',
+    predmet: trim(formData.get('predmet')),
   }
 }
 

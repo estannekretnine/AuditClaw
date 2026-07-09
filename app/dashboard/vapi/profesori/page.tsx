@@ -33,6 +33,7 @@ export default function VapiProfesoriPage() {
     prezime: '',
     email: '',
     pasword: '',
+    predmet: '',
     stsaktivan: true,
   })
 
@@ -66,7 +67,7 @@ export default function VapiProfesoriPage() {
   }, [loadData])
 
   const resetForm = () => {
-    setFormData({ ime: '', prezime: '', email: '', pasword: '', stsaktivan: true })
+    setFormData({ ime: '', prezime: '', email: '', pasword: '', predmet: '', stsaktivan: true })
     setEditingProfesor(null)
   }
 
@@ -82,6 +83,7 @@ export default function VapiProfesoriPage() {
       prezime: profesor.prezime || '',
       email: profesor.email || '',
       pasword: profesor.pasword || '',
+      predmet: profesor.predmet || '',
       stsaktivan: profesor.stsaktivan ?? true,
     })
     setShowForm(true)
@@ -97,6 +99,7 @@ export default function VapiProfesoriPage() {
       fd.append('prezime', formData.prezime)
       fd.append('email', formData.email)
       fd.append('pasword', formData.pasword)
+      fd.append('predmet', formData.predmet)
       fd.append('stsaktivan', String(formData.stsaktivan))
 
       const result = editingProfesor
@@ -226,6 +229,7 @@ export default function VapiProfesoriPage() {
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">ID</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Ime i prezime</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Predmet</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Email</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Status</th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-white uppercase tracking-wider">Akcije</th>
@@ -239,6 +243,9 @@ export default function VapiProfesoriPage() {
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm text-gray-900 font-medium">{profesor.ime} {profesor.prezime || ''}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-600">{profesor.predmet || '-'}</p>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm text-gray-500">{profesor.email || '-'}</p>
@@ -288,6 +295,7 @@ export default function VapiProfesoriPage() {
                 <div className="mb-3">
                   <span className="inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold text-white bg-gradient-to-r from-gray-900 to-black rounded-lg mb-1">ID: {profesor.id}</span>
                   <p className="text-sm font-medium text-gray-900">{profesor.ime} {profesor.prezime || ''}</p>
+                  <p className="text-xs text-gray-600 mt-1">{profesor.predmet ? `Predmet: ${profesor.predmet}` : 'Predmet: —'}</p>
                   <p className="text-xs text-gray-500 mt-1">{profesor.email || '-'}</p>
                   <p className="text-xs mt-1">
                     {profesor.stsaktivan ? (
@@ -360,6 +368,17 @@ export default function VapiProfesoriPage() {
               </div>
 
               <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Predmet</label>
+                <input
+                  type="text"
+                  value={formData.predmet}
+                  onChange={(e) => setFormData({ ...formData, predmet: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  placeholder="Npr. Medicinska sestra"
+                />
+              </div>
+
+              <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
                 <input
                   type="email"
@@ -424,6 +443,9 @@ export default function VapiProfesoriPage() {
                 <div>
                   <h3 className="text-xl font-bold text-white">Servisi profesora</h3>
                   <p className="text-sm text-gray-300">{serviceProfesor.ime} {serviceProfesor.prezime || ''}</p>
+                  {serviceProfesor.predmet && (
+                    <p className="text-xs text-gray-400 mt-0.5">{serviceProfesor.predmet}</p>
+                  )}
                 </div>
               </div>
               <button
