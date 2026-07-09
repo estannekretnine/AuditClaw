@@ -11,6 +11,7 @@ import {
 import { getVapiAssistants } from '@/lib/actions/vapi-assistants'
 import { getVapiUcenici } from '@/lib/actions/vapi-ucenik'
 import { getVapiProfesori } from '@/lib/actions/vapi-profesor'
+import type { VapiOdgovor, VapiAssistant, VapiUcenik, VapiProfesor } from '@/lib/types/vapi'
 import { getEffectiveStatus } from '@/lib/role-utils'
 
 function formatDatumVreme(value: string | null, compact = false): string {
