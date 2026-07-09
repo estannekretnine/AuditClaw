@@ -10,6 +10,8 @@ const vapiOdgovorSchema = z.object({
   dijalog: z.string().min(1, 'Dijalog je obavezan'),
   obrazlozenjeocene_ai: z.string().optional().nullable(),
   ocena_ai: z.string().optional().nullable(),
+  ocena_profesor: z.string().optional().nullable(),
+  komentar_profesor: z.string().optional().nullable(),
   assistant_id: z.number().optional().nullable(),
   ucenikid: z.number().optional().nullable(),
 })
@@ -32,6 +34,8 @@ function parseOdgovorFormData(formData: FormData) {
     dijalog: formData.get('dijalog') as string,
     obrazlozenjeocene_ai: (formData.get('obrazlozenjeocene_ai') as string) || null,
     ocena_ai: (formData.get('ocena_ai') as string) || null,
+    ocena_profesor: (formData.get('ocena_profesor') as string) || null,
+    komentar_profesor: (formData.get('komentar_profesor') as string) || null,
     assistant_id: assistantIdRaw && assistantIdRaw !== '' ? Number(assistantIdRaw) : null,
     ucenikid: ucenikIdRaw && ucenikIdRaw !== '' ? Number(ucenikIdRaw) : null,
   }

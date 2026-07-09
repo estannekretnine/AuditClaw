@@ -55,6 +55,8 @@ export default function VapiOdgovorPage() {
     dijalog: '',
     obrazlozenjeocene_ai: '',
     ocena_ai: '',
+    ocena_profesor: '',
+    komentar_profesor: '',
     assistant_id: '',
     ucenikid: '',
   })
@@ -91,6 +93,8 @@ export default function VapiOdgovorPage() {
       dijalog: '',
       obrazlozenjeocene_ai: '',
       ocena_ai: '',
+      ocena_profesor: '',
+      komentar_profesor: '',
       assistant_id: '',
       ucenikid: '',
     })
@@ -108,6 +112,8 @@ export default function VapiOdgovorPage() {
       dijalog: odgovor.dijalog || '',
       obrazlozenjeocene_ai: odgovor.obrazlozenjeocene_ai || '',
       ocena_ai: odgovor.ocena_ai || '',
+      ocena_profesor: odgovor.ocena_profesor || '',
+      komentar_profesor: odgovor.komentar_profesor || '',
       assistant_id: odgovor.assistant_id ? String(odgovor.assistant_id) : '',
       ucenikid: odgovor.ucenikid ? String(odgovor.ucenikid) : '',
     })
@@ -123,6 +129,8 @@ export default function VapiOdgovorPage() {
       fd.append('dijalog', formData.dijalog)
       fd.append('obrazlozenjeocene_ai', formData.obrazlozenjeocene_ai)
       fd.append('ocena_ai', formData.ocena_ai)
+      fd.append('ocena_profesor', formData.ocena_profesor)
+      fd.append('komentar_profesor', formData.komentar_profesor)
       fd.append('assistant_id', formData.assistant_id)
       fd.append('ucenikid', formData.ucenikid)
 
@@ -224,6 +232,7 @@ export default function VapiOdgovorPage() {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Datum i vreme</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Učenik</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Ocena AI</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Ocena profesor</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Assistant</th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-white uppercase tracking-wider">Akcije</th>
                 </tr>
@@ -245,6 +254,9 @@ export default function VapiOdgovorPage() {
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm text-gray-500">{odgovor.ocena_ai || '-'}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-500">{odgovor.ocena_profesor || '-'}</p>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5 text-sm text-gray-500">
@@ -284,7 +296,8 @@ export default function VapiOdgovorPage() {
                     <User className="w-3.5 h-3.5 text-gray-400" />
                     {getUcenikLabel(odgovor)}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Ocena: {odgovor.ocena_ai || '-'}</p>
+                  <p className="text-xs text-gray-500 mt-1">Ocena AI: {odgovor.ocena_ai || '-'}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Ocena profesor: {odgovor.ocena_profesor || '-'}</p>
                   <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
                     <Bot className="w-3.5 h-3.5" />
                     {getAssistantLabel(odgovor)}
@@ -405,6 +418,30 @@ export default function VapiOdgovorPage() {
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all resize-y"
                   placeholder="Obrazloženje ocene"
                 />
+              </div>
+
+              <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4 space-y-4">
+                <p className="text-sm font-semibold text-indigo-900">Ocena profesora</p>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Ocena profesor</label>
+                  <input
+                    type="text"
+                    value={formData.ocena_profesor}
+                    onChange={(e) => setFormData({ ...formData, ocena_profesor: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    placeholder="Ocena koju unosi profesor"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Komentar profesor</label>
+                  <textarea
+                    value={formData.komentar_profesor}
+                    onChange={(e) => setFormData({ ...formData, komentar_profesor: e.target.value })}
+                    rows={4}
+                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-y"
+                    placeholder="Komentar profesora"
+                  />
+                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-100">

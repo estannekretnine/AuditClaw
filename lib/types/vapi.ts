@@ -70,6 +70,8 @@ export interface VapiOdgovor {
   dijalog: string
   obrazlozenjeocene_ai: string | null
   ocena_ai: string | null
+  ocena_profesor: string | null
+  komentar_profesor: string | null
   assistant_id: number | null
   datumvreme: string | null
   ucenikid: number | null
@@ -88,6 +90,8 @@ export interface VapiOdgovorInsert {
   dijalog: string
   obrazlozenjeocene_ai?: string | null
   ocena_ai?: string | null
+  ocena_profesor?: string | null
+  komentar_profesor?: string | null
   assistant_id?: number | null
   datumvreme?: string | null
   ucenikid?: number | null
