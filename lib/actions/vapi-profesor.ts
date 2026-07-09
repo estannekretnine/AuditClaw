@@ -21,20 +21,6 @@ const vapiProfesorSchema = z.object({
   predmet: z.string().optional().nullable(),
 })
 
-async function requireAdminAccess() {
-  const user = await getCurrentUser()
-  if (!user) {
-    return { error: 'Nemate dozvolu za ovu akciju.', user: null as Korisnik | null }
-  }
-
-  const effectiveStatus = getEffectiveStatus(user.stsstatus, user.adresa)
-  if (effectiveStatus !== 'admin' && effectiveStatus !== 'manager') {
-    return { error: 'Nemate dozvolu za ovu akciju.', user: null as Korisnik | null }
-  }
-
-  return { error: null, user: { ...user, stsstatus: effectiveStatus } }
-}
-
 async function requireReadAccess() {
   const user = await getCurrentUser()
   if (!user) {
@@ -47,19 +33,6 @@ async function requireReadAccess() {
   }
 
   return { error: null, user: { ...user, stsstatus: effectiveStatus } }
-}
-
-async function getVapiUserProfesorId(user: Korisnik): Promise<number | null> {
-  if (user.profesorid) return user.profesorid
-
-  const supabase = createAdminClient()
-  const { data } = await supabase
-    .from('korisnici')
-    .select('profesorid')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  return data?.profesorid ?? null
 }
 
 function parseProfesorFormData(formData: FormData) {
@@ -116,7 +89,7 @@ export async function getVapiProfesorById(id: number) {
 }
 
 export async function createVapiProfesor(formData: FormData) {
-  const access = await requireAdminAccess()
+  const access = await requireReadAccess()
   if (access.error) return { data: null, error: access.error }
 
   const rawData = parseProfesorFormData(formData)
@@ -147,49 +120,13 @@ export async function updateVapiProfesor(id: number, formData: FormData) {
   const access = await requireReadAccess()
   if (access.error) return { data: null, error: access.error }
 
-  const user = access.user!
-  const supabase = createAdminClient()
   const rawData = parseProfesorFormData(formData)
-
-  if (user.stsstatus === 'vapi') {
-    const profesorId = await getVapiUserProfesorId(user)
-    if (!profesorId || profesorId !== id) {
-      return { data: null, error: 'Nemate dozvolu da menjate ovog profesora.' }
-    }
-
-    const result = vapiProfesorSchema
-      .omit({ stsaktivan: true })
-      .safeParse(rawData)
-    if (!result.success) {
-      return { data: null, error: result.error.errors[0].message }
-    }
-
-    const { data, error } = await supabase
-      .from('vapi_profesor')
-      .update({
-        ime: result.data.ime,
-        prezime: result.data.prezime,
-        email: result.data.email,
-        pasword: result.data.pasword,
-        predmet: result.data.predmet,
-      })
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error updating vapi profesor:', error)
-      return { data: null, error: error.message }
-    }
-
-    revalidatePath('/dashboard/vapi/profesori')
-    return { data: data as VapiProfesor, error: null }
-  }
-
   const result = vapiProfesorSchema.safeParse(rawData)
   if (!result.success) {
     return { data: null, error: result.error.errors[0].message }
   }
+
+  const supabase = createAdminClient()
 
   const { data, error } = await supabase
     .from('vapi_profesor')
@@ -208,7 +145,7 @@ export async function updateVapiProfesor(id: number, formData: FormData) {
 }
 
 export async function deleteVapiProfesor(id: number) {
-  const access = await requireAdminAccess()
+  const access = await requireReadAccess()
   if (access.error) return { error: access.error }
 
   const supabase = createAdminClient()
@@ -239,7 +176,7 @@ export async function deleteVapiProfesor(id: number) {
 }
 
 export async function getProfesorAssistants(profesorId: number) {
-  const access = await requireAdminAccess()
+  const access = await requireReadAccess()
   if (access.error) return { data: null, error: access.error }
 
   const supabase = createAdminClient()
@@ -261,7 +198,7 @@ export async function setProfesorAssistants(
   profesorId: number,
   assistantIds: number[]
 ) {
-  const access = await requireAdminAccess()
+  const access = await requireReadAccess()
   if (access.error) return { error: access.error }
 
   const supabase = createAdminClient()
