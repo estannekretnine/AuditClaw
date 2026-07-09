@@ -604,30 +604,30 @@ export default function VapiAssistantsPage() {
   const renderActions = (assistant: VapiAssistant, compact = false, canStart = false) => {
     if (compact) {
       const compactBtn =
-        'inline-flex items-center justify-center gap-0.5 px-1.5 py-0.5 text-[10px] leading-tight rounded-md whitespace-nowrap transition-colors'
+        'inline-flex items-center justify-center gap-2 min-h-[44px] w-full px-3 py-2.5 text-sm font-medium rounded-xl transition-all shadow-sm'
 
       if (!canStart) {
         return (
-          <div className="flex flex-wrap gap-1">
+          <div className="grid grid-cols-2 gap-2 w-full">
             <button
               onClick={() => handleEdit(assistant)}
               className={`${compactBtn} bg-amber-600 text-white hover:bg-amber-700`}
             >
-              <Edit className="w-3 h-3 shrink-0" />
+              <Edit className="w-4 h-4 shrink-0" />
               Izmeni
             </button>
             <button
               onClick={() => handleCopy(assistant)}
               className={`${compactBtn} bg-slate-600 text-white hover:bg-slate-700`}
             >
-              <Copy className="w-3 h-3 shrink-0" />
+              <Copy className="w-4 h-4 shrink-0" />
               Kopiraj
             </button>
             <button
               onClick={() => handleDelete(assistant)}
-              className={`${compactBtn} bg-red-600 text-white hover:bg-red-700`}
+              className={`${compactBtn} col-span-2 bg-red-600 text-white hover:bg-red-700`}
             >
-              <Trash2 className="w-3 h-3 shrink-0" />
+              <Trash2 className="w-4 h-4 shrink-0" />
               Obriši
             </button>
           </div>
@@ -635,53 +635,49 @@ export default function VapiAssistantsPage() {
       }
 
       return (
-        <div className="flex flex-col gap-1">
-          <div className="flex flex-wrap gap-1">
-            <button
-              onClick={() => handleStart(assistant)}
-              className={`${compactBtn} bg-green-600 text-white hover:bg-green-700`}
-            >
-              <Play className="w-3 h-3 shrink-0" />
-              Započni
-            </button>
-            <button
-              onClick={() => handleEdit(assistant)}
-              className={`${compactBtn} bg-amber-600 text-white hover:bg-amber-700`}
-            >
-              <Edit className="w-3 h-3 shrink-0" />
-              Izmeni
-            </button>
-            <button
-              onClick={() => handleCopy(assistant)}
-              className={`${compactBtn} bg-slate-600 text-white hover:bg-slate-700`}
-            >
-              <Copy className="w-3 h-3 shrink-0" />
-              Kopiraj
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-1">
-            <button
-              onClick={() => handleManageOprema(assistant)}
-              className={`${compactBtn} bg-indigo-600 text-white hover:bg-indigo-700`}
-            >
-              <Stethoscope className="w-3 h-3 shrink-0" />
-              Oprema
-            </button>
-            <button
-              onClick={() => handleManageSysPrompt(assistant)}
-              className={`${compactBtn} bg-violet-600 text-white hover:bg-violet-700`}
-            >
-              <MessageSquare className="w-3 h-3 shrink-0" />
-              Prompt
-            </button>
-            <button
-              onClick={() => handleDelete(assistant)}
-              className={`${compactBtn} bg-red-600 text-white hover:bg-red-700`}
-            >
-              <Trash2 className="w-3 h-3 shrink-0" />
-              Obriši
-            </button>
-          </div>
+        <div className="grid grid-cols-2 gap-2 w-full">
+          <button
+            onClick={() => handleStart(assistant)}
+            className={`${compactBtn} bg-green-600 text-white hover:bg-green-700`}
+          >
+            <Play className="w-4 h-4 shrink-0" />
+            Započni
+          </button>
+          <button
+            onClick={() => handleEdit(assistant)}
+            className={`${compactBtn} bg-amber-600 text-white hover:bg-amber-700`}
+          >
+            <Edit className="w-4 h-4 shrink-0" />
+            Izmeni
+          </button>
+          <button
+            onClick={() => handleCopy(assistant)}
+            className={`${compactBtn} bg-slate-600 text-white hover:bg-slate-700`}
+          >
+            <Copy className="w-4 h-4 shrink-0" />
+            Kopiraj
+          </button>
+          <button
+            onClick={() => handleManageOprema(assistant)}
+            className={`${compactBtn} bg-indigo-600 text-white hover:bg-indigo-700`}
+          >
+            <Stethoscope className="w-4 h-4 shrink-0" />
+            Oprema
+          </button>
+          <button
+            onClick={() => handleManageSysPrompt(assistant)}
+            className={`${compactBtn} bg-violet-600 text-white hover:bg-violet-700`}
+          >
+            <MessageSquare className="w-4 h-4 shrink-0" />
+            Prompt
+          </button>
+          <button
+            onClick={() => handleDelete(assistant)}
+            className={`${compactBtn} bg-red-600 text-white hover:bg-red-700`}
+          >
+            <Trash2 className="w-4 h-4 shrink-0" />
+            Obriši
+          </button>
         </div>
       )
     }
@@ -819,13 +815,14 @@ export default function VapiAssistantsPage() {
                   </div>
                   <div className="hidden sm:block">{renderActions(parent, false, false)}</div>
                 </div>
-                <div className="sm:hidden px-3 pb-2.5">{renderActions(parent, true, false)}</div>
+                <div className="sm:hidden px-3 pb-3 pt-1 border-t border-gray-100 mt-1">{renderActions(parent, true, false)}</div>
 
                 {isExpanded && kids.length > 0 && (
                   <div className="border-t border-gray-100 bg-gray-50/50 divide-y divide-gray-100">
                     {kids.map((child) => (
-                      <div key={child.id} className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-4 p-3 sm:p-4 pl-6 sm:pl-14 hover:bg-amber-50 transition-all duration-200">
-                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white border border-gray-200 flex items-center justify-center shrink-0">
+                      <div key={child.id} className="flex flex-col gap-3 p-3 pl-4 sm:flex-row sm:flex-nowrap sm:items-center sm:gap-4 sm:p-4 sm:pl-14 hover:bg-amber-50 transition-all duration-200">
+                        <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+                        <div className="w-9 h-9 sm:w-9 sm:h-9 rounded-xl bg-white border border-gray-200 flex items-center justify-center shrink-0">
                           <Bot className="w-4 h-4 text-gray-500" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -840,8 +837,9 @@ export default function VapiAssistantsPage() {
                           )}
                           <p className="text-xs text-gray-500 truncate mt-0.5">{truncateText(child.System_Prompt, 90)}</p>
                         </div>
+                        </div>
                         <div className="hidden sm:block">{renderActions(child, false, true)}</div>
-                        <div className="sm:hidden w-full">{renderActions(child, true, true)}</div>
+                        <div className="sm:hidden w-full pt-1 border-t border-gray-200">{renderActions(child, true, true)}</div>
                       </div>
                     ))}
                   </div>
