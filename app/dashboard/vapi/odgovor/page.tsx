@@ -56,13 +56,6 @@ function getProfesorLabel(odgovor: VapiOdgovor): string {
   return `${profesor.ime}${profesor.prezime ? ` ${profesor.prezime}` : ''}`.trim()
 }
 
-function getAssistantShortLabel(odgovor: VapiOdgovor): string {
-  const opis = odgovor.vapi_assistants?.opis_servisa
-  if (opis) return opis.length > 24 ? `${opis.slice(0, 24)}…` : opis
-  if (odgovor.assistant_id) return `#${odgovor.assistant_id}`
-  return '-'
-}
-
 export default function VapiOdgovorPage() {
   const [loading, setLoading] = useState(true)
   const [odgovori, setOdgovori] = useState<VapiOdgovor[]>([])
@@ -281,72 +274,61 @@ export default function VapiOdgovorPage() {
           </button>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
           <div className="hidden md:block overflow-x-auto">
-            <table className="w-full table-fixed text-sm">
+            <table className="min-w-full">
               <thead className="bg-gradient-to-r from-gray-900 to-black">
                 <tr>
-                  <th className="w-12 px-2 py-2.5 text-left text-[10px] font-semibold text-white uppercase">ID</th>
-                  <th className="w-[88px] px-2 py-2.5 text-left text-[10px] font-semibold text-white uppercase">Datum</th>
-                  <th className="w-[130px] px-2 py-2.5 text-left text-[10px] font-semibold text-white uppercase">Učenik</th>
-                  {!isVapiUser && (
-                    <th className="w-[110px] px-2 py-2.5 text-left text-[10px] font-semibold text-white uppercase hidden lg:table-cell">Profesor</th>
-                  )}
-                  <th className="w-[72px] px-2 py-2.5 text-left text-[10px] font-semibold text-white uppercase">Ocene</th>
-                  <th className="w-[100px] px-2 py-2.5 text-left text-[10px] font-semibold text-white uppercase hidden xl:table-cell">Asistent</th>
-                  <th className="w-[88px] px-2 py-2.5 text-right text-[10px] font-semibold text-white uppercase sticky right-0 bg-gray-900 z-10">Akcije</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider w-14">ID</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider w-36">Datum</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Učenik</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider w-40">Profesor</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider w-20">Ocena AI</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider w-24">Ocena prof.</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-white uppercase tracking-wider w-36 sticky right-0 bg-gray-900 z-10">Akcije</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredOdgovori.map((odgovor) => (
                   <tr key={odgovor.id} className="hover:bg-amber-50 border-l-4 border-l-transparent hover:border-l-amber-500 transition-all duration-200 group">
-                    <td className="px-2 py-2 whitespace-nowrap">
-                      <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-white bg-gradient-to-r from-gray-900 to-black rounded">{odgovor.id}</span>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className="inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold text-white bg-gradient-to-r from-gray-900 to-black rounded-lg">{odgovor.id}</span>
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap">
-                      <p className="text-xs text-gray-600">{formatDatumVreme(odgovor.datumvreme, true)}</p>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <p className="text-sm text-gray-700">{formatDatumVreme(odgovor.datumvreme, true)}</p>
                     </td>
-                    <td className="px-2 py-2">
-                      <div className="flex items-center gap-1 text-xs text-gray-700 min-w-0">
-                        <User className="w-3 h-3 text-gray-400 shrink-0" />
-                        <span className="truncate" title={getUcenikLabel(odgovor)}>{getUcenikLabel(odgovor)}</span>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5 text-sm text-gray-700 min-w-0">
+                        <User className="w-4 h-4 text-gray-400 shrink-0" />
+                        <span className="truncate max-w-[180px]" title={getUcenikLabel(odgovor)}>{getUcenikLabel(odgovor)}</span>
                       </div>
                     </td>
-                    {!isVapiUser && (
-                      <td className="px-2 py-2 hidden lg:table-cell">
-                        <div className="flex items-center gap-1 text-xs text-gray-700 min-w-0">
-                          <GraduationCap className="w-3 h-3 text-gray-400 shrink-0" />
-                          <span className="truncate" title={getProfesorLabel(odgovor)}>{getProfesorLabel(odgovor)}</span>
-                        </div>
-                      </td>
-                    )}
-                    <td className="px-2 py-2">
-                      <div className="text-xs text-gray-600 leading-tight">
-                        <p>AI: {odgovor.ocena_ai || '-'}</p>
-                        <p className="text-gray-500">Pr: {odgovor.ocena_profesor || '-'}</p>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5 text-sm text-gray-700 min-w-0">
+                        <GraduationCap className="w-4 h-4 text-gray-400 shrink-0" />
+                        <span className="truncate max-w-[150px]" title={getProfesorLabel(odgovor)}>{getProfesorLabel(odgovor)}</span>
                       </div>
                     </td>
-                    <td className="px-2 py-2 hidden xl:table-cell">
-                      <p className="text-xs text-gray-500 truncate" title={getAssistantLabel(odgovor)}>
-                        {getAssistantShortLabel(odgovor)}
-                      </p>
+                    <td className="px-4 py-3">
+                      <p className="text-sm text-gray-600">{odgovor.ocena_ai || '-'}</p>
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap sticky right-0 z-10 bg-white group-hover:bg-amber-50 shadow-[-6px_0_10px_-8px_rgba(0,0,0,0.25)]">
-                      <div className="flex justify-end gap-1">
+                    <td className="px-4 py-3">
+                      <p className="text-sm text-gray-600">{odgovor.ocena_profesor || '-'}</p>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap sticky right-0 z-10 bg-white group-hover:bg-amber-50 shadow-[-8px_0_12px_-8px_rgba(0,0,0,0.2)]">
+                      <div className="flex justify-end gap-2">
                         <button
                           onClick={() => handleEdit(odgovor)}
-                          className="inline-flex items-center justify-center p-2 text-white bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all"
-                          title="Izmeni"
+                          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all shadow-md shadow-amber-500/20"
                         >
-                          <Edit className="w-3.5 h-3.5" />
+                          <Edit className="w-4 h-4" /><span className="hidden lg:inline">Izmeni</span>
                         </button>
                         {!isVapiUser && (
                           <button
                             onClick={() => handleDelete(odgovor)}
-                            className="inline-flex items-center justify-center p-2 text-white bg-gradient-to-r from-red-500 to-red-600 rounded-lg hover:from-red-600 hover:to-red-700 transition-all"
-                            title="Obriši"
+                            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all shadow-md shadow-red-500/20"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" /><span className="hidden lg:inline">Obriši</span>
                           </button>
                         )}
                       </div>
