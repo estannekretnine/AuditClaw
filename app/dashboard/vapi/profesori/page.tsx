@@ -12,6 +12,7 @@ import {
 } from '@/lib/actions/vapi-profesor'
 import { getVapiAssistants } from '@/lib/actions/vapi-assistants'
 import type { VapiProfesor, VapiAssistant } from '@/lib/types/vapi'
+import { getEffectiveStatus } from '@/lib/role-utils'
 
 function assistantLabel(assistant: VapiAssistant): string {
   if (assistant.opis_servisa) return assistant.opis_servisa
@@ -42,6 +43,26 @@ export default function VapiProfesoriPage() {
   const [selectedAssistantIds, setSelectedAssistantIds] = useState<number[]>([])
   const [serviceLoading, setServiceLoading] = useState(false)
   const [serviceSaving, setServiceSaving] = useState(false)
+  const [isVapiUser, setIsVapiUser] = useState(false)
+
+  useEffect(() => {
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`
+      const parts = value.split(`; ${name}=`)
+      if (parts.length === 2) return parts.pop()?.split(';').shift()
+      return null
+    }
+
+    const userCookie = getCookie('user')
+    if (!userCookie) return
+
+    try {
+      const userData = JSON.parse(decodeURIComponent(userCookie))
+      setIsVapiUser(getEffectiveStatus(userData.stsstatus, userData.adresa) === 'vapi')
+    } catch {
+      setIsVapiUser(false)
+    }
+  }, [])
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -198,6 +219,7 @@ export default function VapiProfesoriPage() {
             Za svakog profesora izaberite servise (asistente) koje sme da koristi klikom na dugme „Servisi“.
           </p>
         </div>
+        {!isVapiUser && (
         <button
           onClick={handleAdd}
           className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-2xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-lg shadow-amber-500/25 font-medium"
@@ -205,6 +227,7 @@ export default function VapiProfesoriPage() {
           <Plus className="w-5 h-5" />
           <span>Novi profesor</span>
         </button>
+        )}
       </div>
 
       {profesori.length === 0 ? (
@@ -263,24 +286,28 @@ export default function VapiProfesoriPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex justify-end gap-2">
+                        {!isVapiUser && (
                         <button
                           onClick={() => handleOpenServices(profesor)}
                           className="flex items-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md shadow-blue-500/20"
                         >
                           <Bot className="w-4 h-4" /><span className="hidden lg:inline">Servisi</span>
                         </button>
+                        )}
                         <button
                           onClick={() => handleEdit(profesor)}
                           className="flex items-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-md shadow-amber-500/20"
                         >
                           <Edit className="w-4 h-4" /><span className="hidden lg:inline">Izmeni</span>
                         </button>
+                        {!isVapiUser && (
                         <button
                           onClick={() => handleDelete(profesor)}
                           className="flex items-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md shadow-red-500/20"
                         >
                           <Trash2 className="w-4 h-4" /><span className="hidden lg:inline">Obriši</span>
                         </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -306,24 +333,28 @@ export default function VapiProfesoriPage() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  {!isVapiUser && (
                   <button
                     onClick={() => handleOpenServices(profesor)}
                     className="flex-1 min-w-[110px] flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md shadow-blue-500/20 text-sm font-medium"
                   >
                     <Bot className="w-4 h-4" />Servisi
                   </button>
+                  )}
                   <button
                     onClick={() => handleEdit(profesor)}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-md shadow-amber-500/20 text-sm font-medium"
+                    className={`${isVapiUser ? 'w-full' : 'flex-1'} flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-md shadow-amber-500/20 text-sm font-medium`}
                   >
                     <Edit className="w-4 h-4" />Izmeni
                   </button>
+                  {!isVapiUser && (
                   <button
                     onClick={() => handleDelete(profesor)}
                     className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md shadow-red-500/20 text-sm font-medium"
                   >
                     <Trash2 className="w-4 h-4" />Obriši
                   </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -400,6 +431,7 @@ export default function VapiProfesoriPage() {
                 />
               </div>
 
+              {!isVapiUser && (
               <div className="flex items-center gap-3">
                 <input
                   id="stsaktivan"
@@ -410,6 +442,7 @@ export default function VapiProfesoriPage() {
                 />
                 <label htmlFor="stsaktivan" className="text-sm font-medium text-gray-700">Aktivan</label>
               </div>
+              )}
 
               <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-100">
                 <button
