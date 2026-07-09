@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, Users, Shield, ChevronDown, ChevronRight, LogOut, Menu, X, Home, BarChart3, Upload, TrendingUp, Target, FileText, MessageSquare, UserCheck, Newspaper, Bot, Mic, MessageCircle, GraduationCap, Stethoscope, ScrollText } from 'lucide-react'
+import { Building2, Users, Shield, ChevronDown, ChevronRight, LogOut, Menu, X, Home, BarChart3, Upload, TrendingUp, Target, FileText, MessageSquare, UserCheck, Newspaper, Bot, Mic, MessageCircle, GraduationCap, Stethoscope, ScrollText, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -122,15 +122,37 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
               <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20">
                 <Building2 className="w-6 h-6 text-white" />
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <h2 className="text-white font-bold text-xl tracking-tight">AuditClaw</h2>
                 <p className="text-amber-400/80 text-xs font-medium">{panelLabel}</p>
               </div>
+              {onToggle && (
+                <button
+                  type="button"
+                  onClick={onToggle}
+                  className="hidden lg:flex p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                  title="Smanji navigaciju"
+                >
+                  <PanelLeftClose className="w-4 h-4" />
+                </button>
+              )}
             </div>
           )}
           {collapsed && (
-            <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20">
-              <Building2 className="w-6 h-6 text-white" />
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+                <Building2 className="w-6 h-6 text-white" />
+              </div>
+              {onToggle && (
+                <button
+                  type="button"
+                  onClick={onToggle}
+                  className="hidden lg:flex p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                  title="Proširi navigaciju"
+                >
+                  <PanelLeftOpen className="w-4 h-4" />
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -276,6 +298,31 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
                             >
                               <SubIcon className="w-4 h-4" />
                               <span className="text-sm font-medium">{subItem.label}</span>
+                            </Link>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+
+                  {collapsed && (
+                    <ul className="mt-2 space-y-1">
+                      {vapiSubItems.map((subItem) => {
+                        const SubIcon = subItem.icon
+                        const isSubItemActive = pathname === subItem.href
+                        return (
+                          <li key={subItem.id}>
+                            <Link
+                              href={subItem.href}
+                              onClick={() => setIsMobileMenuOpen(false)}
+                              className={`w-full flex items-center justify-center p-2.5 rounded-xl transition-all duration-200 ${
+                                isSubItemActive
+                                  ? 'bg-white/10 text-amber-400'
+                                  : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'
+                              }`}
+                              title={subItem.label}
+                            >
+                              <SubIcon className="w-4 h-4" />
                             </Link>
                           </li>
                         )

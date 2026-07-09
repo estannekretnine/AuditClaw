@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/lib/actions/auth'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import type { VapiOdgovor, VapiOdgovorInsert } from '@/lib/types/vapi'
+import type { Korisnik } from '@/lib/types/database'
 
 const vapiOdgovorSchema = z.object({
   dijalog: z.string().min(1, 'Dijalog je obavezan'),
@@ -23,9 +24,30 @@ const ODGOVOR_SELECT =
 async function requireAdminAccess() {
   const user = await getCurrentUser()
   if (!user || (user.stsstatus !== 'admin' && user.stsstatus !== 'manager')) {
-    return { error: 'Nemate dozvolu za ovu akciju.' }
+    return { error: 'Nemate dozvolu za ovu akciju.', user: null as Korisnik | null }
   }
-  return { error: null }
+  return { error: null, user: user as Korisnik }
+}
+
+async function requireReadAccess() {
+  const user = await getCurrentUser()
+  if (!user || (user.stsstatus !== 'admin' && user.stsstatus !== 'manager' && user.stsstatus !== 'vapi')) {
+    return { error: 'Nemate dozvolu za ovu akciju.', user: null as Korisnik | null }
+  }
+  return { error: null, user: user as Korisnik }
+}
+
+async function getVapiUserProfesorId(user: Korisnik): Promise<number | null> {
+  if (user.profesorid) return user.profesorid
+
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from('korisnici')
+    .select('profesorid')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  return data?.profesorid ?? null
 }
 
 function parseOdgovorFormData(formData: FormData) {
@@ -48,14 +70,26 @@ export async function getVapiOdgovori(
   limit: number = 50,
   offset: number = 0
 ) {
-  const supabase = createAdminClient()
+  const access = await requireReadAccess()
+  if (access.error) return { data: null, error: access.error, count: 0 }
 
-  const { data, error, count } = await supabase
+  const supabase = createAdminClient()
+  let query = supabase
     .from('vapi_odgovor')
     .select(ODGOVOR_SELECT, { count: 'exact' })
     .order('datumvreme', { ascending: false, nullsFirst: false })
     .order('id', { ascending: false })
     .range(offset, offset + limit - 1)
+
+  if (access.user?.stsstatus === 'vapi') {
+    const profesorId = await getVapiUserProfesorId(access.user)
+    if (!profesorId) {
+      return { data: [], error: null, count: 0 }
+    }
+    query = query.or(`profesorid.eq.${profesorId},profesorid.is.null`)
+  }
+
+  const { data, error, count } = await query
 
   if (error) {
     console.error('Error fetching vapi odgovori:', error)
@@ -114,8 +148,51 @@ export async function createVapiOdgovor(formData: FormData) {
 }
 
 export async function updateVapiOdgovor(id: number, formData: FormData) {
-  const access = await requireAdminAccess()
+  const access = await requireReadAccess()
   if (access.error) return { data: null, error: access.error }
+
+  const supabase = createAdminClient()
+  const user = access.user!
+
+  if (user.stsstatus === 'vapi') {
+    const profesorId = await getVapiUserProfesorId(user)
+    if (!profesorId) {
+      return { data: null, error: 'Vaš nalog nije povezan sa profesorom.' }
+    }
+
+    const { data: existing, error: fetchError } = await supabase
+      .from('vapi_odgovor')
+      .select('id, profesorid')
+      .eq('id', id)
+      .single()
+
+    if (fetchError || !existing) {
+      return { data: null, error: 'Odgovor nije pronađen.' }
+    }
+
+    if (existing.profesorid !== null && existing.profesorid !== profesorId) {
+      return { data: null, error: 'Nemate dozvolu da menjate ovaj odgovor.' }
+    }
+
+    const { data, error } = await supabase
+      .from('vapi_odgovor')
+      .update({
+        ocena_profesor: (formData.get('ocena_profesor') as string) || null,
+        komentar_profesor: (formData.get('komentar_profesor') as string) || null,
+        profesorid: existing.profesorid ?? profesorId,
+      })
+      .eq('id', id)
+      .select(ODGOVOR_SELECT)
+      .single()
+
+    if (error) {
+      console.error('Error updating vapi odgovor:', error)
+      return { data: null, error: error.message }
+    }
+
+    revalidatePath('/dashboard/vapi/odgovor')
+    return { data: data as VapiOdgovor, error: null }
+  }
 
   const rawData = parseOdgovorFormData(formData)
   const result = vapiOdgovorSchema.safeParse(rawData)
