@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { MessageCircle, Plus, Edit, Trash2, Bot, User, Search, GraduationCap } from 'lucide-react'
+import { MessageCircle, Plus, Edit, Trash2, Bot, User, GraduationCap } from 'lucide-react'
 import {
   getVapiOdgovori,
   createVapiOdgovor,
@@ -66,7 +66,8 @@ export default function VapiOdgovorPage() {
   const [showForm, setShowForm] = useState(false)
   const [editingOdgovor, setEditingOdgovor] = useState<VapiOdgovor | null>(null)
   const [saving, setSaving] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [filterUcenikId, setFilterUcenikId] = useState('')
+  const [filterProfesorId, setFilterProfesorId] = useState('')
   const [isVapiUser, setIsVapiUser] = useState(false)
 
   useEffect(() => {
@@ -210,15 +211,17 @@ export default function VapiOdgovorPage() {
     }
   }
 
-  const filteredOdgovori = (() => {
-    const q = searchQuery.trim().toLowerCase()
-    if (!q) return odgovori
-    return odgovori.filter(
-      (odgovor) =>
-        getUcenikLabel(odgovor).toLowerCase().includes(q) ||
-        getProfesorLabel(odgovor).toLowerCase().includes(q)
-    )
-  })()
+  const filteredOdgovori = odgovori.filter((odgovor) => {
+    if (filterUcenikId && String(odgovor.ucenikid ?? '') !== filterUcenikId) {
+      return false
+    }
+    if (filterProfesorId && String(odgovor.profesorid ?? '') !== filterProfesorId) {
+      return false
+    }
+    return true
+  })
+
+  const hasActiveFilters = Boolean(filterUcenikId || filterProfesorId)
 
   if (loading) {
     return (
@@ -247,15 +250,49 @@ export default function VapiOdgovorPage() {
       </div>
 
       {odgovori.length > 0 && (
-        <div className="relative max-w-sm">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Pretraga po učeniku ili profesoru..."
-            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-          />
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+          <div className="flex-1 min-w-0">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Pretraga učenika</label>
+            <select
+              value={filterUcenikId}
+              onChange={(e) => setFilterUcenikId(e.target.value)}
+              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+            >
+              <option value="">Svi učenici</option>
+              {ucenici.map((ucenik) => (
+                <option key={ucenik.id} value={ucenik.id}>
+                  {ucenik.ime} {ucenik.prezime || ''}{ucenik.razred ? ` — ${ucenik.razred}` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex-1 min-w-0">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Pretraga profesora</label>
+            <select
+              value={filterProfesorId}
+              onChange={(e) => setFilterProfesorId(e.target.value)}
+              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+            >
+              <option value="">Svi profesori</option>
+              {profesori.map((profesor) => (
+                <option key={profesor.id} value={profesor.id}>
+                  {profesor.ime}{profesor.prezime ? ` ${profesor.prezime}` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={() => {
+                setFilterUcenikId('')
+                setFilterProfesorId('')
+              }}
+              className="px-4 py-3 text-sm font-medium text-gray-600 border border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors whitespace-nowrap"
+            >
+              Poništi filtere
+            </button>
+          )}
         </div>
       )}
 
@@ -382,7 +419,7 @@ export default function VapiOdgovorPage() {
 
           {filteredOdgovori.length === 0 && (
             <div className="p-12 text-center">
-              <p className="text-gray-500">Nema rezultata za „{searchQuery}“</p>
+              <p className="text-gray-500">Nema rezultata za izabrane filtere</p>
             </div>
           )}
         </div>

@@ -896,7 +896,7 @@ export function VapiCallModal({
                 <p className="text-xs text-gray-500 mt-1">
                   {(config?.systemPrompts?.length || 0) > 0
                     ? 'Promena važi pre pokretanja poziva.'
-                    : 'Nema promptova za izbor. Dodajte ih kroz dugme SysPrompt ili modul System Prompt.'}
+                    : 'Nema promptova za izbor. Dodajte ih kroz dugme SysPrompt na asistentu.'}
                 </p>
               </div>
 
