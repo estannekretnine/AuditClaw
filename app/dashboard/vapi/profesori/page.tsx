@@ -44,6 +44,7 @@ export default function VapiProfesoriPage() {
   const [serviceLoading, setServiceLoading] = useState(false)
   const [serviceSaving, setServiceSaving] = useState(false)
   const [isVapiUser, setIsVapiUser] = useState(false)
+  const [linkedProfesorId, setLinkedProfesorId] = useState<number | null>(null)
 
   useEffect(() => {
     const getCookie = (name: string) => {
@@ -59,10 +60,15 @@ export default function VapiProfesoriPage() {
     try {
       const userData = JSON.parse(decodeURIComponent(userCookie))
       setIsVapiUser(getEffectiveStatus(userData.stsstatus, userData.adresa) === 'vapi')
+      setLinkedProfesorId(userData.profesorid ? Number(userData.profesorid) : null)
     } catch {
       setIsVapiUser(false)
+      setLinkedProfesorId(null)
     }
   }, [])
+
+  const canEditProfesor = (profesor: VapiProfesor) =>
+    !isVapiUser || (linkedProfesorId !== null && profesor.id === linkedProfesorId)
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -294,12 +300,14 @@ export default function VapiProfesoriPage() {
                           <Bot className="w-4 h-4" /><span className="hidden lg:inline">Servisi</span>
                         </button>
                         )}
+                        {canEditProfesor(profesor) && (
                         <button
                           onClick={() => handleEdit(profesor)}
                           className="flex items-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-md shadow-amber-500/20"
                         >
                           <Edit className="w-4 h-4" /><span className="hidden lg:inline">Izmeni</span>
                         </button>
+                        )}
                         {!isVapiUser && (
                         <button
                           onClick={() => handleDelete(profesor)}
@@ -341,12 +349,14 @@ export default function VapiProfesoriPage() {
                     <Bot className="w-4 h-4" />Servisi
                   </button>
                   )}
+                  {canEditProfesor(profesor) && (
                   <button
                     onClick={() => handleEdit(profesor)}
                     className={`${isVapiUser ? 'w-full' : 'flex-1'} flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-md shadow-amber-500/20 text-sm font-medium`}
                   >
                     <Edit className="w-4 h-4" />Izmeni
                   </button>
+                  )}
                   {!isVapiUser && (
                   <button
                     onClick={() => handleDelete(profesor)}

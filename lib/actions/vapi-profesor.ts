@@ -84,21 +84,11 @@ export async function getVapiProfesori(limit: number = 100, offset: number = 0) 
 
   const supabase = createAdminClient()
 
-  let query = supabase
+  const { data, error, count } = await supabase
     .from('vapi_profesor')
     .select('*', { count: 'exact' })
     .order('id', { ascending: false })
     .range(offset, offset + limit - 1)
-
-  if (access.user?.stsstatus === 'vapi') {
-    const profesorId = await getVapiUserProfesorId(access.user)
-    if (!profesorId) {
-      return { data: [], error: null, count: 0 }
-    }
-    query = query.eq('id', profesorId)
-  }
-
-  const { data, error, count } = await query
 
   if (error) {
     console.error('Error fetching vapi profesori:', error)
