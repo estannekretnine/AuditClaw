@@ -201,8 +201,6 @@ export async function updateVapiProfesor(id: number, formData: FormData) {
     return { data: null, error: result.error.errors[0].message }
   }
 
-  const supabase = createAdminClient()
-
   const { data, error } = await supabase
     .from('vapi_profesor')
     .update(result.data)
