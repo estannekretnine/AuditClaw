@@ -18,7 +18,7 @@ import {
   createVapiWebCall,
   pushAssistantToVapi,
 } from '@/lib/vapi/server'
-import { getSimliIceServers, getSimliSessionToken } from '@/lib/simli/server'
+import { getEffectiveStatus } from '@/lib/role-utils'
 
 const PENDING_VAPI_ID = 'pending-sync'
 
@@ -58,7 +58,12 @@ async function requireAdminAccess() {
 
 async function requireReadAccess() {
   const user = await getCurrentUser()
-  if (!user || (user.stsstatus !== 'admin' && user.stsstatus !== 'manager' && user.stsstatus !== 'vapi')) {
+  if (!user) {
+    return { error: 'Nemate dozvolu za ovu akciju.' }
+  }
+
+  const effectiveStatus = getEffectiveStatus(user.stsstatus, user.adresa)
+  if (effectiveStatus !== 'admin' && effectiveStatus !== 'manager' && effectiveStatus !== 'vapi') {
     return { error: 'Nemate dozvolu za ovu akciju.' }
   }
   return { error: null }

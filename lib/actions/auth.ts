@@ -103,7 +103,8 @@ export async function getCurrentUser(): Promise<Korisnik | null> {
   }
 
   try {
-    return JSON.parse(userCookie.value) as Korisnik
+    const raw = JSON.parse(userCookie.value) as Korisnik
+    return normalizeKorisnikForApp(raw)
   } catch {
     return null
   }

@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import type { VapiOdgovor, VapiOdgovorInsert } from '@/lib/types/vapi'
 import type { Korisnik } from '@/lib/types/database'
+import { getEffectiveStatus } from '@/lib/role-utils'
 
 const vapiOdgovorSchema = z.object({
   dijalog: z.string().min(1, 'Dijalog je obavezan'),
@@ -31,10 +32,16 @@ async function requireAdminAccess() {
 
 async function requireReadAccess() {
   const user = await getCurrentUser()
-  if (!user || (user.stsstatus !== 'admin' && user.stsstatus !== 'manager' && user.stsstatus !== 'vapi')) {
+  if (!user) {
     return { error: 'Nemate dozvolu za ovu akciju.', user: null as Korisnik | null }
   }
-  return { error: null, user: user as Korisnik }
+
+  const effectiveStatus = getEffectiveStatus(user.stsstatus, user.adresa)
+  if (effectiveStatus !== 'admin' && effectiveStatus !== 'manager' && effectiveStatus !== 'vapi') {
+    return { error: 'Nemate dozvolu za ovu akciju.', user: null as Korisnik | null }
+  }
+
+  return { error: null, user: { ...user, stsstatus: effectiveStatus } }
 }
 
 async function getVapiUserProfesorId(user: Korisnik): Promise<number | null> {
