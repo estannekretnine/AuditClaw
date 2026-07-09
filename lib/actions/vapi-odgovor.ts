@@ -207,8 +207,6 @@ export async function updateVapiOdgovor(id: number, formData: FormData) {
     return { data: null, error: result.error.errors[0].message }
   }
 
-  const supabase = createAdminClient()
-
   const { data, error } = await supabase
     .from('vapi_odgovor')
     .update(result.data)
