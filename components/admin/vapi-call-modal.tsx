@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Vapi from '@vapi-ai/web'
 import DailyIframe, { type DailyCall } from '@daily-co/daily-js'
-import { Bot, Mic, PhoneOff, X } from 'lucide-react'
+import { Bot, GraduationCap, Mic, PhoneOff, X } from 'lucide-react'
 import { setAssistantActiveSystemPrompt } from '@/lib/actions/vapi-assistants'
 import type { VapiUcenik } from '@/lib/types/vapi'
 import { VapiSimliAvatar } from '@/components/admin/vapi-simli-avatar'
@@ -35,6 +35,9 @@ export interface VapiStartConfig {
   medicinskaOprema?: Array<{ id: number; naziv: string; namena?: string | null }>
   systemPrompts?: Array<{ id: number; assistantid: number | null; 'SystemPrompt Vapi': string }>
   selectedSystemPromptId?: number | null
+  korisnikid?: number | null
+  profesorid?: number | null
+  profesorNaziv?: string | null
 }
 
 interface TranscriptLine {
@@ -669,6 +672,8 @@ export function VapiCallModal({
           assistantDbId: String(config.assistantDbId),
           ucenikid: selectedUcenikId,
           selectedSystemPromptId: selectedSystemPromptId || null,
+          korisnikid: config.korisnikid ? String(config.korisnikid) : null,
+          profesorid: config.profesorid ? String(config.profesorid) : null,
         },
         clientMessages: [
           'transcript',
@@ -856,6 +861,18 @@ export function VapiCallModal({
                       visibleKeys={visibleVitalKeys}
                     />
                   </div>
+                </div>
+              )}
+
+              {config.profesorNaziv && (
+                <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-indigo-900">
+                    <GraduationCap className="w-4 h-4" />
+                    Profesor: {config.profesorNaziv}
+                  </div>
+                  <p className="text-xs text-indigo-700 mt-1">
+                    Ovaj profesor će biti automatski upisan u Vapi Odgovor posle završetka poziva.
+                  </p>
                 </div>
               )}
 

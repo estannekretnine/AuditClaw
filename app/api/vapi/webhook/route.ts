@@ -86,6 +86,29 @@ function resolveUcenikId(payload: Record<string, unknown>): number | null {
   return readMetadataNumber(payload, 'ucenikid')
 }
 
+function resolveProfesorId(payload: Record<string, unknown>): number | null {
+  return readMetadataNumber(payload, 'profesorid')
+}
+
+async function resolveProfesorIdFromDb(
+  supabase: NonNullable<ReturnType<typeof getSupabase>>,
+  payload: Record<string, unknown>
+): Promise<number | null> {
+  const direct = resolveProfesorId(payload)
+  if (direct !== null) return direct
+
+  const korisnikId = readMetadataNumber(payload, 'korisnikid')
+  if (korisnikId === null) return null
+
+  const { data } = await supabase
+    .from('korisnici')
+    .select('profesorid')
+    .eq('id', korisnikId)
+    .maybeSingle()
+
+  return data?.profesorid ?? null
+}
+
 export async function POST(request: NextRequest) {
   try {
     const webhookSecret = getVapiWebhookSecret()
@@ -143,6 +166,7 @@ export async function POST(request: NextRequest) {
     })
 
     const ucenikId = resolveUcenikId(report)
+    const profesorId = await resolveProfesorIdFromDb(supabase, report)
     if (ucenikId === null) {
       const call = asRecord(report.call)
       console.warn('Vapi webhook: ucenikid nije pronađen u metadata.', {
@@ -160,6 +184,7 @@ export async function POST(request: NextRequest) {
         ocena_ai: analysis?.ocena_ai || null,
         assistant_id: assistantDbId,
         ucenikid: ucenikId,
+        profesorid: profesorId,
         datumvreme: new Date().toISOString(),
       },
     ])

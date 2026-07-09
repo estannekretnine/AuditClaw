@@ -11,9 +11,17 @@ const korisnikSchema = z.object({
   password: z.string().optional().nullable(),
   brojmob: z.string().optional().nullable(),
   adresa: z.string().optional().nullable(),
+  profesorid: z.number().optional().nullable(),
   stsstatus: z.enum(['kupac', 'prodavac', 'agent', 'admin', 'manager', 'vapi']).default('admin'),
   stsaktivan: z.enum(['da', 'ne']).default('da'),
 })
+
+function parseProfesorId(formData: FormData): number | null {
+  const raw = formData.get('profesorid') as string
+  if (!raw || raw === '') return null
+  const parsed = Number(raw)
+  return Number.isFinite(parsed) ? parsed : null
+}
 
 export async function getKorisnici() {
   const supabase = await createClient()
@@ -40,7 +48,13 @@ export async function createKorisnik(formData: FormData) {
   const adresa = formData.get('adresa') as string
   const stsstatus = formData.get('stsstatus') as string
   const stsaktivan = formData.get('stsaktivan') as string
+  const profesorid = parseProfesorId(formData)
   const normalizedRole = normalizeStoredRoleInput(stsstatus, adresa || null)
+  const storedProfesorId = stsstatus === 'vapi' ? profesorid : null
+
+  if (stsstatus === 'vapi' && !storedProfesorId) {
+    return { error: 'Profesor je obavezan za Vapi korisnika' }
+  }
 
   // Validacija
   const result = korisnikSchema.safeParse({
@@ -49,6 +63,7 @@ export async function createKorisnik(formData: FormData) {
     password,
     brojmob: brojmob || null,
     adresa: normalizedRole.adresa,
+    profesorid: storedProfesorId,
     stsstatus: normalizedRole.stsstatus,
     stsaktivan,
   })
@@ -71,6 +86,7 @@ export async function createKorisnik(formData: FormData) {
       password,
       brojmob: brojmob || null,
       adresa: normalizedRole.adresa,
+      profesorid: storedProfesorId,
       stsstatus: normalizedRole.stsstatus,
       stsaktivan,
     }])
@@ -92,7 +108,13 @@ export async function updateKorisnik(id: number, formData: FormData) {
   const adresa = formData.get('adresa') as string
   const stsstatus = formData.get('stsstatus') as string
   const stsaktivan = formData.get('stsaktivan') as string
+  const profesorid = parseProfesorId(formData)
   const normalizedRole = normalizeStoredRoleInput(stsstatus, adresa || null)
+  const storedProfesorId = stsstatus === 'vapi' ? profesorid : null
+
+  if (stsstatus === 'vapi' && !storedProfesorId) {
+    return { error: 'Profesor je obavezan za Vapi korisnika' }
+  }
 
   // Validacija
   const result = korisnikSchema.safeParse({
@@ -100,6 +122,7 @@ export async function updateKorisnik(id: number, formData: FormData) {
     email,
     brojmob: brojmob || null,
     adresa: normalizedRole.adresa,
+    profesorid: storedProfesorId,
     stsstatus: normalizedRole.stsstatus,
     stsaktivan,
   })
@@ -115,6 +138,7 @@ export async function updateKorisnik(id: number, formData: FormData) {
     email,
     brojmob: brojmob || null,
     adresa: normalizedRole.adresa,
+    profesorid: storedProfesorId,
     stsstatus: normalizedRole.stsstatus,
     stsaktivan,
     datumpt: new Date().toISOString(),

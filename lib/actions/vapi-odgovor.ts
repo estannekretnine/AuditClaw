@@ -12,12 +12,13 @@ const vapiOdgovorSchema = z.object({
   ocena_ai: z.string().optional().nullable(),
   ocena_profesor: z.string().optional().nullable(),
   komentar_profesor: z.string().optional().nullable(),
+  profesorid: z.number().optional().nullable(),
   assistant_id: z.number().optional().nullable(),
   ucenikid: z.number().optional().nullable(),
 })
 
 const ODGOVOR_SELECT =
-  '*, vapi_assistants(assistant_id, opis_servisa), vapi_ucenik(ime, prezime, razred)'
+  '*, vapi_assistants(assistant_id, opis_servisa), vapi_ucenik(ime, prezime, razred), vapi_profesor(ime, prezime)'
 
 async function requireAdminAccess() {
   const user = await getCurrentUser()
@@ -30,12 +31,14 @@ async function requireAdminAccess() {
 function parseOdgovorFormData(formData: FormData) {
   const assistantIdRaw = formData.get('assistant_id') as string
   const ucenikIdRaw = formData.get('ucenikid') as string
+  const profesorIdRaw = formData.get('profesorid') as string
   return {
     dijalog: formData.get('dijalog') as string,
     obrazlozenjeocene_ai: (formData.get('obrazlozenjeocene_ai') as string) || null,
     ocena_ai: (formData.get('ocena_ai') as string) || null,
     ocena_profesor: (formData.get('ocena_profesor') as string) || null,
     komentar_profesor: (formData.get('komentar_profesor') as string) || null,
+    profesorid: profesorIdRaw && profesorIdRaw !== '' ? Number(profesorIdRaw) : null,
     assistant_id: assistantIdRaw && assistantIdRaw !== '' ? Number(assistantIdRaw) : null,
     ucenikid: ucenikIdRaw && ucenikIdRaw !== '' ? Number(ucenikIdRaw) : null,
   }

@@ -72,6 +72,7 @@ export interface VapiOdgovor {
   ocena_ai: string | null
   ocena_profesor: string | null
   komentar_profesor: string | null
+  profesorid: number | null
   assistant_id: number | null
   datumvreme: string | null
   ucenikid: number | null
@@ -84,6 +85,10 @@ export interface VapiOdgovor {
     prezime: string | null
     razred: string | null
   } | null
+  vapi_profesor?: {
+    ime: string
+    prezime: string | null
+  } | null
 }
 
 export interface VapiOdgovorInsert {
@@ -92,6 +97,7 @@ export interface VapiOdgovorInsert {
   ocena_ai?: string | null
   ocena_profesor?: string | null
   komentar_profesor?: string | null
+  profesorid?: number | null
   assistant_id?: number | null
   datumvreme?: string | null
   ucenikid?: number | null

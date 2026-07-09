@@ -1,12 +1,15 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Edit, Trash2, Plus, User, Phone, ToggleLeft, ToggleRight, ArrowUp, ArrowDown, Search, X, MapPin, Mail } from 'lucide-react'
+import { Edit, Trash2, Plus, User, Phone, ToggleLeft, ToggleRight, ArrowUp, ArrowDown, Search, X, MapPin, Mail, GraduationCap } from 'lucide-react'
 import { getKorisnici, createKorisnik, updateKorisnik, deleteKorisnik, toggleKorisnikStatus } from '@/lib/actions/korisnici'
+import { getVapiProfesori } from '@/lib/actions/vapi-profesor'
 import type { Korisnik } from '@/lib/types/database'
+import type { VapiProfesor } from '@/lib/types/vapi'
 
 export default function KorisniciPage() {
   const [korisnici, setKorisnici] = useState<Korisnik[]>([])
+  const [profesori, setProfesori] = useState<VapiProfesor[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingKorisnik, setEditingKorisnik] = useState<Korisnik | null>(null)
@@ -20,28 +23,40 @@ export default function KorisniciPage() {
     brojmob: '',
     adresa: '',
     stsstatus: 'admin',
-    stsaktivan: 'da'
+    stsaktivan: 'da',
+    profesorid: '',
   })
 
   useEffect(() => {
-    loadKorisnici()
+    loadData()
   }, [])
 
-  const loadKorisnici = async () => {
+  const loadData = async () => {
     try {
       setLoading(true)
-      const { data, error } = await getKorisnici()
+      const [korisniciResult, profesoriResult] = await Promise.all([
+        getKorisnici(),
+        getVapiProfesori(500, 0),
+      ])
 
-      if (error) {
-        alert('Greška pri učitavanju korisnika: ' + error)
+      if (korisniciResult.error) {
+        alert('Greška pri učitavanju korisnika: ' + korisniciResult.error)
         return
       }
 
-      setKorisnici(data || [])
+      if (profesoriResult.error) {
+        alert('Greška pri učitavanju profesora: ' + profesoriResult.error)
+        return
+      }
+
+      setKorisnici(korisniciResult.data || [])
+      setProfesori(profesoriResult.data || [])
     } finally {
       setLoading(false)
     }
   }
+
+  const loadKorisnici = loadData
 
   const handleDelete = async (id: number) => {
     if (!window.confirm('Da li ste sigurni da želite da obrišete ovog korisnika?')) {
@@ -147,6 +162,21 @@ export default function KorisniciPage() {
     return data
   }, [korisnici, sortColumn, sortDirection, filterValue])
 
+  const getProfesorLabel = (profesorId: number | null | undefined) => {
+    if (!profesorId) return '-'
+    const profesor = profesori.find((item) => item.id === profesorId)
+    if (!profesor) return `ID ${profesorId}`
+    return `${profesor.ime}${profesor.prezime ? ` ${profesor.prezime}` : ''}`
+  }
+
+  const handleStatusChange = (status: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      stsstatus: status,
+      profesorid: status === 'vapi' ? prev.profesorid : '',
+    }))
+  }
+
   const getStatusBadgeColor = (status: string) => {
     const colors: Record<string, string> = {
       'kupac': 'bg-blue-100 text-blue-700 border-blue-200',
@@ -168,7 +198,8 @@ export default function KorisniciPage() {
       brojmob: korisnik.brojmob || '',
       adresa: korisnik.adresa || '',
       stsstatus: korisnik.stsstatus || 'admin',
-      stsaktivan: korisnik.stsaktivan || 'da'
+      stsaktivan: korisnik.stsaktivan || 'da',
+      profesorid: korisnik.profesorid ? String(korisnik.profesorid) : '',
     })
     setShowForm(true)
   }
@@ -182,7 +213,8 @@ export default function KorisniciPage() {
       brojmob: '',
       adresa: '',
       stsstatus: 'admin',
-      stsaktivan: 'da'
+      stsaktivan: 'da',
+      profesorid: '',
     })
     setShowForm(true)
   }
@@ -198,6 +230,9 @@ export default function KorisniciPage() {
     formDataObj.append('adresa', formData.adresa)
     formDataObj.append('stsstatus', formData.stsstatus)
     formDataObj.append('stsaktivan', formData.stsaktivan)
+    if (formData.stsstatus === 'vapi') {
+      formDataObj.append('profesorid', formData.profesorid)
+    }
 
     let result
     if (editingKorisnik) {
@@ -295,6 +330,7 @@ export default function KorisniciPage() {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider cursor-pointer hover:bg-white/10 select-none transition-colors" onClick={() => handleSort('stsstatus')}>
                     <div className="flex items-center">Status{getSortIcon('stsstatus')}</div>
                   </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Profesor</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider cursor-pointer hover:bg-white/10 select-none transition-colors" onClick={() => handleSort('stsaktivan')}>
                     <div className="flex items-center">Aktivan{getSortIcon('stsaktivan')}</div>
                   </th>
@@ -317,6 +353,14 @@ export default function KorisniciPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {korisnik.stsstatus ? (
                         <span className={`px-3 py-1 rounded-lg text-xs font-semibold border ${getStatusBadgeColor(korisnik.stsstatus)}`}>{korisnik.stsstatus}</span>
+                      ) : '-'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {korisnik.stsstatus === 'vapi' ? (
+                        <div className="flex items-center gap-1.5">
+                          <GraduationCap className="w-4 h-4" />
+                          {getProfesorLabel(korisnik.profesorid)}
+                        </div>
                       ) : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -365,6 +409,12 @@ export default function KorisniciPage() {
                   <div className="flex flex-wrap gap-2 mt-2">
                     {korisnik.stsstatus && (
                       <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${getStatusBadgeColor(korisnik.stsstatus)}`}>{korisnik.stsstatus}</span>
+                    )}
+                    {korisnik.stsstatus === 'vapi' && (
+                      <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                        <GraduationCap className="w-3.5 h-3.5" />
+                        {getProfesorLabel(korisnik.profesorid)}
+                      </div>
                     )}
                     <button onClick={() => handleToggleStatus(korisnik)} className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${korisnik.stsaktivan === 'da' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}>
                       {korisnik.stsaktivan === 'da' ? (<><ToggleRight className="w-3.5 h-3.5" />Aktivan</>) : (<><ToggleLeft className="w-3.5 h-3.5" />Neaktivan</>)}
@@ -416,7 +466,7 @@ export default function KorisniciPage() {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Status *</label>
-                <select value={formData.stsstatus} onChange={(e) => setFormData({ ...formData, stsstatus: e.target.value })} required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all">
+                <select value={formData.stsstatus} onChange={(e) => handleStatusChange(e.target.value)} required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all">
                   <option value="admin">Admin</option>
                   <option value="manager">Manager</option>
                   <option value="agent">Agent</option>
@@ -425,6 +475,25 @@ export default function KorisniciPage() {
                   <option value="kupac">Kupac</option>
                 </select>
               </div>
+              {formData.stsstatus === 'vapi' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Profesor *</label>
+                  <select
+                    value={formData.profesorid}
+                    onChange={(e) => setFormData({ ...formData, profesorid: e.target.value })}
+                    required
+                    className="w-full px-4 py-3 bg-indigo-50 border border-indigo-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  >
+                    <option value="">Izaberite profesora</option>
+                    {profesori.map((profesor) => (
+                      <option key={profesor.id} value={profesor.id}>
+                        {profesor.ime}{profesor.prezime ? ` ${profesor.prezime}` : ''}
+                        {profesor.email ? ` — ${profesor.email}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Aktivan *</label>
                 <select value={formData.stsaktivan} onChange={(e) => setFormData({ ...formData, stsaktivan: e.target.value })} required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all">

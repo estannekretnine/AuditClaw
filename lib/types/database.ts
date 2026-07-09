@@ -5,6 +5,7 @@ export interface Korisnik {
   password: string | null
   brojmob: string | null
   adresa: string | null
+  profesorid: number | null
   stsstatus: 'kupac' | 'prodavac' | 'agent' | 'admin' | 'manager' | 'vapi' | null
   stsaktivan: 'da' | 'ne' | null
   datumk: string | null
@@ -18,6 +19,7 @@ export interface KorisnikInsert {
   password?: string | null
   brojmob?: string | null
   adresa?: string | null
+  profesorid?: number | null
   stsstatus?: 'kupac' | 'prodavac' | 'agent' | 'admin' | 'manager' | 'vapi' | null
   stsaktivan?: 'da' | 'ne' | null
 }
@@ -28,6 +30,7 @@ export interface KorisnikUpdate {
   password?: string | null
   brojmob?: string | null
   adresa?: string | null
+  profesorid?: number | null
   stsstatus?: 'kupac' | 'prodavac' | 'agent' | 'admin' | 'manager' | 'vapi' | null
   stsaktivan?: 'da' | 'ne' | null
   datumpt?: string | null

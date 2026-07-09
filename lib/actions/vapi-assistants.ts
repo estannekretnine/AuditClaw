@@ -499,8 +499,57 @@ export async function getVapiStartConfig(assistantDbId: number) {
       medicinskaOprema: linkedOprema,
       systemPrompts,
       selectedSystemPromptId: selectedPrompt?.id ?? null,
+      ...(await resolveVapiCallerContext()),
     },
     error: null,
+  }
+}
+
+async function resolveVapiCallerContext(): Promise<{
+  korisnikid: number | null
+  profesorid: number | null
+  profesorNaziv: string | null
+}> {
+  const user = await getCurrentUser()
+  if (!user?.id) {
+    return { korisnikid: null, profesorid: null, profesorNaziv: null }
+  }
+
+  const supabase = createAdminClient()
+  const { data: korisnik } = await supabase
+    .from('korisnici')
+    .select('id, profesorid, stsstatus, adresa, vapi_profesor(ime, prezime)')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (!korisnik) {
+    return {
+      korisnikid: user.id,
+      profesorid: typeof user.profesorid === 'number' ? user.profesorid : null,
+      profesorNaziv: null,
+    }
+  }
+
+  const effectiveStatus =
+    korisnik.stsstatus === 'agent' &&
+    typeof korisnik.adresa === 'string' &&
+    korisnik.adresa.includes('[role:vapi]')
+      ? 'vapi'
+      : korisnik.stsstatus
+
+  const profesor = korisnik.vapi_profesor as { ime: string; prezime: string | null } | null
+  const profesorNaziv = profesor
+    ? `${profesor.ime}${profesor.prezime ? ` ${profesor.prezime}` : ''}`.trim()
+    : null
+
+  if (effectiveStatus !== 'vapi') {
+    return { korisnikid: user.id, profesorid: null, profesorNaziv: null }
+  }
+
+  return {
+    korisnikid: user.id,
+    profesorid: korisnik.profesorid ?? null,
+    profesorNaziv,
   }
 }
 

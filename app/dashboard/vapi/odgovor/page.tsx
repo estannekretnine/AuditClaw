@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { MessageCircle, Plus, Edit, Trash2, Bot, User, Search } from 'lucide-react'
+import { MessageCircle, Plus, Edit, Trash2, Bot, User, Search, GraduationCap } from 'lucide-react'
 import {
   getVapiOdgovori,
   createVapiOdgovor,
@@ -10,7 +10,8 @@ import {
 } from '@/lib/actions/vapi-odgovor'
 import { getVapiAssistants } from '@/lib/actions/vapi-assistants'
 import { getVapiUcenici } from '@/lib/actions/vapi-ucenik'
-import type { VapiOdgovor, VapiAssistant, VapiUcenik } from '@/lib/types/vapi'
+import { getVapiProfesori } from '@/lib/actions/vapi-profesor'
+import type { VapiOdgovor, VapiAssistant, VapiUcenik, VapiProfesor } from '@/lib/types/vapi'
 
 function formatDatumVreme(value: string | null): string {
   if (!value) return '-'
@@ -40,11 +41,18 @@ function getUcenikLabel(odgovor: VapiOdgovor): string {
   return ucenik.razred ? `${puno} (${ucenik.razred})` : puno
 }
 
+function getProfesorLabel(odgovor: VapiOdgovor): string {
+  const profesor = odgovor.vapi_profesor
+  if (!profesor) return '-'
+  return `${profesor.ime}${profesor.prezime ? ` ${profesor.prezime}` : ''}`.trim()
+}
+
 export default function VapiOdgovorPage() {
   const [loading, setLoading] = useState(true)
   const [odgovori, setOdgovori] = useState<VapiOdgovor[]>([])
   const [assistants, setAssistants] = useState<VapiAssistant[]>([])
   const [ucenici, setUcenici] = useState<VapiUcenik[]>([])
+  const [profesori, setProfesori] = useState<VapiProfesor[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [showForm, setShowForm] = useState(false)
   const [editingOdgovor, setEditingOdgovor] = useState<VapiOdgovor | null>(null)
@@ -57,6 +65,7 @@ export default function VapiOdgovorPage() {
     ocena_ai: '',
     ocena_profesor: '',
     komentar_profesor: '',
+    profesorid: '',
     assistant_id: '',
     ucenikid: '',
   })
@@ -64,10 +73,11 @@ export default function VapiOdgovorPage() {
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const [odgovoriResult, assistantsResult, uceniciResult] = await Promise.all([
+      const [odgovoriResult, assistantsResult, uceniciResult, profesoriResult] = await Promise.all([
         getVapiOdgovori(50, 0),
         getVapiAssistants(100, 0),
         getVapiUcenici(200, 0),
+        getVapiProfesori(200, 0),
       ])
       if (odgovoriResult.data) {
         setOdgovori(odgovoriResult.data)
@@ -78,6 +88,9 @@ export default function VapiOdgovorPage() {
       }
       if (uceniciResult.data) {
         setUcenici(uceniciResult.data)
+      }
+      if (profesoriResult.data) {
+        setProfesori(profesoriResult.data)
       }
     } finally {
       setLoading(false)
@@ -95,6 +108,7 @@ export default function VapiOdgovorPage() {
       ocena_ai: '',
       ocena_profesor: '',
       komentar_profesor: '',
+      profesorid: '',
       assistant_id: '',
       ucenikid: '',
     })
@@ -114,6 +128,7 @@ export default function VapiOdgovorPage() {
       ocena_ai: odgovor.ocena_ai || '',
       ocena_profesor: odgovor.ocena_profesor || '',
       komentar_profesor: odgovor.komentar_profesor || '',
+      profesorid: odgovor.profesorid ? String(odgovor.profesorid) : '',
       assistant_id: odgovor.assistant_id ? String(odgovor.assistant_id) : '',
       ucenikid: odgovor.ucenikid ? String(odgovor.ucenikid) : '',
     })
@@ -131,6 +146,7 @@ export default function VapiOdgovorPage() {
       fd.append('ocena_ai', formData.ocena_ai)
       fd.append('ocena_profesor', formData.ocena_profesor)
       fd.append('komentar_profesor', formData.komentar_profesor)
+      fd.append('profesorid', formData.profesorid)
       fd.append('assistant_id', formData.assistant_id)
       fd.append('ucenikid', formData.ucenikid)
 
@@ -168,7 +184,11 @@ export default function VapiOdgovorPage() {
   const filteredOdgovori = (() => {
     const q = searchQuery.trim().toLowerCase()
     if (!q) return odgovori
-    return odgovori.filter((odgovor) => getUcenikLabel(odgovor).toLowerCase().includes(q))
+    return odgovori.filter(
+      (odgovor) =>
+        getUcenikLabel(odgovor).toLowerCase().includes(q) ||
+        getProfesorLabel(odgovor).toLowerCase().includes(q)
+    )
   })()
 
   if (loading) {
@@ -202,7 +222,7 @@ export default function VapiOdgovorPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Pretraga po učeniku..."
+            placeholder="Pretraga po učeniku ili profesoru..."
             className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
           />
         </div>
@@ -231,6 +251,7 @@ export default function VapiOdgovorPage() {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">ID</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Datum i vreme</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Učenik</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Profesor</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Ocena AI</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Ocena profesor</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Assistant</th>
@@ -250,6 +271,12 @@ export default function VapiOdgovorPage() {
                       <div className="flex items-center gap-1.5 text-sm text-gray-700">
                         <User className="w-4 h-4 text-gray-400" />
                         <span className="truncate max-w-[160px]">{getUcenikLabel(odgovor)}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1.5 text-sm text-gray-700">
+                        <GraduationCap className="w-4 h-4 text-gray-400" />
+                        <span className="truncate max-w-[160px]">{getProfesorLabel(odgovor)}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -295,6 +322,10 @@ export default function VapiOdgovorPage() {
                   <div className="flex items-center gap-1.5 text-sm text-gray-700 mt-1">
                     <User className="w-3.5 h-3.5 text-gray-400" />
                     {getUcenikLabel(odgovor)}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-1">
+                    <GraduationCap className="w-3.5 h-3.5" />
+                    {getProfesorLabel(odgovor)}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Ocena AI: {odgovor.ocena_ai || '-'}</p>
                   <p className="text-xs text-gray-500 mt-0.5">Ocena profesor: {odgovor.ocena_profesor || '-'}</p>
@@ -404,6 +435,23 @@ export default function VapiOdgovorPage() {
                   {ucenici.map((ucenik) => (
                     <option key={ucenik.id} value={ucenik.id}>
                       {ucenik.ime} {ucenik.prezime || ''}{ucenik.razred ? ` — ${ucenik.razred}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Profesor</label>
+                <select
+                  value={formData.profesorid}
+                  onChange={(e) => setFormData({ ...formData, profesorid: e.target.value })}
+                  className="w-full px-4 py-3 bg-indigo-50 border border-indigo-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                >
+                  <option value="">-- Bez profesora --</option>
+                  {profesori.map((profesor) => (
+                    <option key={profesor.id} value={profesor.id}>
+                      {profesor.ime}{profesor.prezime ? ` ${profesor.prezime}` : ''}
+                      {profesor.email ? ` — ${profesor.email}` : ''}
                     </option>
                   ))}
                 </select>

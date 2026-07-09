@@ -43,5 +43,6 @@ export function normalizeKorisnikForApp(user: Korisnik): Korisnik {
     ...user,
     stsstatus: getEffectiveStatus(user.stsstatus, user.adresa),
     adresa: stripVapiMarker(user.adresa),
+    profesorid: user.profesorid ?? null,
   }
 }
