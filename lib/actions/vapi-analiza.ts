@@ -6,6 +6,7 @@ import { getEffectiveStatus } from '@/lib/role-utils'
 import type { Korisnik } from '@/lib/types/database'
 import type {
   VapiAnalizaFilter,
+  VapiAnalizaFilterOptions,
   VapiAnalizaReport,
   VapiAnalizaCountItem,
   VapiAnalizaDailyItem,
@@ -18,7 +19,13 @@ const ODGOVOR_SELECT =
 
 function emptyReport(filter: VapiAnalizaFilter): VapiAnalizaReport {
   return {
-    period: { dateFrom: filter.dateFrom || null, dateTo: filter.dateTo || null },
+    period: {
+      dateFrom: filter.dateFrom || null,
+      dateTo: filter.dateTo || null,
+      profesorId: filter.profesorId ?? null,
+      ucenikId: filter.ucenikId ?? null,
+      odeljenje: filter.odeljenje || null,
+    },
     summary: {
       totalOdgovori: 0,
       uniqueUcenici: 0,
@@ -128,6 +135,67 @@ function getProfesorLabel(odgovor: VapiOdgovor): string {
   return `${profesor.ime}${profesor.prezime ? ` ${profesor.prezime}` : ''}`.trim()
 }
 
+export async function getVapiAnalizaFilterOptions(): Promise<{
+  data: VapiAnalizaFilterOptions | null
+  error: string | null
+}> {
+  const access = await requireReadAccess()
+  if (access.error) return { data: null, error: access.error }
+
+  const supabase = createAdminClient()
+
+  let profesoriQuery = supabase
+    .from('vapi_profesor')
+    .select('id, ime, prezime')
+    .order('ime', { ascending: true })
+
+  let uceniciQuery = supabase
+    .from('vapi_ucenik')
+    .select('id, ime, prezime, razred')
+    .order('ime', { ascending: true })
+
+  if (access.user?.stsstatus === 'vapi') {
+    const profesorId = await getVapiUserProfesorId(access.user)
+    if (!profesorId) {
+      return {
+        data: { profesori: [], ucenici: [], odeljenja: [] },
+        error: null,
+      }
+    }
+    profesoriQuery = profesoriQuery.eq('id', profesorId)
+  }
+
+  const [profesoriResult, uceniciResult] = await Promise.all([profesoriQuery, uceniciQuery])
+
+  if (profesoriResult.error) return { data: null, error: profesoriResult.error.message }
+  if (uceniciResult.error) return { data: null, error: uceniciResult.error.message }
+
+  const odeljenjaSet = new Set<string>()
+  const ucenici = (uceniciResult.data || []).map((ucenik) => {
+    const odeljenje = (ucenik.razred as string | null)?.trim() || null
+    if (odeljenje) odeljenjaSet.add(odeljenje)
+    return {
+      id: ucenik.id as number,
+      label: `${ucenik.ime}${ucenik.prezime ? ` ${ucenik.prezime}` : ''}${odeljenje ? ` — ${odeljenje}` : ''}`.trim(),
+      odeljenje,
+    }
+  })
+
+  const profesori = (profesoriResult.data || []).map((profesor) => ({
+    id: profesor.id as number,
+    label: `${profesor.ime}${profesor.prezime ? ` ${profesor.prezime}` : ''}`.trim(),
+  }))
+
+  return {
+    data: {
+      profesori,
+      ucenici,
+      odeljenja: [...odeljenjaSet].sort((a, b) => a.localeCompare(b, 'sr')),
+    },
+    error: null,
+  }
+}
+
 export async function getVapiAnalizaReport(
   filter: VapiAnalizaFilter = {}
 ): Promise<{ data: VapiAnalizaReport | null; error: string | null }> {
@@ -146,6 +214,28 @@ export async function getVapiAnalizaReport(
   }
   if (filter.dateTo) {
     odgovorQuery = odgovorQuery.lte('datumvreme', `${filter.dateTo}T23:59:59.999`)
+  }
+  if (filter.profesorId) {
+    odgovorQuery = odgovorQuery.eq('profesorid', filter.profesorId)
+  }
+  if (filter.ucenikId) {
+    odgovorQuery = odgovorQuery.eq('ucenikid', filter.ucenikId)
+  }
+  if (filter.odeljenje) {
+    const { data: uceniciZaOdeljenje, error: uceniciError } = await supabase
+      .from('vapi_ucenik')
+      .select('id')
+      .eq('razred', filter.odeljenje)
+
+    if (uceniciError) {
+      return { data: null, error: uceniciError.message }
+    }
+
+    const ucenikIds = (uceniciZaOdeljenje || []).map((item) => item.id as number)
+    if (ucenikIds.length === 0) {
+      return { data: emptyReport(filter), error: null }
+    }
+    odgovorQuery = odgovorQuery.in('ucenikid', ucenikIds)
   }
 
   if (access.user?.stsstatus === 'vapi') {
@@ -304,7 +394,13 @@ export async function getVapiAnalizaReport(
     .sort((a, b) => a.date.localeCompare(b.date))
 
   const report: VapiAnalizaReport = {
-    period: { dateFrom: filter.dateFrom || null, dateTo: filter.dateTo || null },
+    period: {
+      dateFrom: filter.dateFrom || null,
+      dateTo: filter.dateTo || null,
+      profesorId: filter.profesorId ?? null,
+      ucenikId: filter.ucenikId ?? null,
+      odeljenje: filter.odeljenje || null,
+    },
     summary: {
       totalOdgovori: odgovori.length,
       uniqueUcenici: uniqueUcenici.size,

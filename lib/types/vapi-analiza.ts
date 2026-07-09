@@ -1,6 +1,15 @@
 export interface VapiAnalizaFilter {
   dateFrom?: string
   dateTo?: string
+  profesorId?: number
+  ucenikId?: number
+  odeljenje?: string
+}
+
+export interface VapiAnalizaFilterOptions {
+  profesori: Array<{ id: number; label: string }>
+  ucenici: Array<{ id: number; label: string; odeljenje: string | null }>
+  odeljenja: string[]
 }
 
 export interface VapiAnalizaCountItem {
@@ -26,6 +35,9 @@ export interface VapiAnalizaReport {
   period: {
     dateFrom: string | null
     dateTo: string | null
+    profesorId: number | null
+    ucenikId: number | null
+    odeljenje: string | null
   }
   summary: {
     totalOdgovori: number
