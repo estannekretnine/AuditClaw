@@ -537,7 +537,12 @@ async function resolveVapiCallerContext(): Promise<{
       ? 'vapi'
       : korisnik.stsstatus
 
-  const profesor = korisnik.vapi_profesor as { ime: string; prezime: string | null } | null
+  const profesorRel = korisnik.vapi_profesor as
+    | { ime: string; prezime: string | null }
+    | Array<{ ime: string; prezime: string | null }>
+    | null
+    | undefined
+  const profesor = Array.isArray(profesorRel) ? (profesorRel[0] ?? null) : (profesorRel ?? null)
   const profesorNaziv = profesor
     ? `${profesor.ime}${profesor.prezime ? ` ${profesor.prezime}` : ''}`.trim()
     : null
