@@ -5,10 +5,10 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { logout } from '@/lib/actions/auth'
-import type { Korisnik } from '@/lib/types/database'
+import type { KorisnikProfile } from '@/lib/types/database'
 
 interface SidebarProps {
-  user: Korisnik | null
+  user: KorisnikProfile | null
   collapsed?: boolean
   onToggle?: () => void
 }
@@ -146,8 +146,30 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
                 <div className="flex-1 min-w-0">
                   <p className="text-white text-sm font-semibold truncate">{user.naziv || 'Korisnik'}</p>
                   <p className="text-gray-400 text-xs truncate">{user.email}</p>
+                  {user.stsstatus && (
+                    <span
+                      className={`inline-flex mt-1.5 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide ${
+                        user.stsstatus === 'vapi'
+                          ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30'
+                          : user.stsstatus === 'admin' || user.stsstatus === 'manager'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-400/30'
+                            : 'bg-white/10 text-gray-300 border border-white/10'
+                      }`}
+                    >
+                      {user.stsstatus}
+                    </span>
+                  )}
                 </div>
               </div>
+              {user.stsstatus === 'vapi' && (
+                <div className="mt-3 pt-3 border-t border-white/10">
+                  <div className="flex items-center gap-2 text-xs text-indigo-200">
+                    <GraduationCap className="w-3.5 h-3.5 shrink-0" />
+                    <span className="font-medium">Profesor:</span>
+                    <span className="truncate">{user.profesorNaziv || 'Nije povezan'}</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -35,3 +35,7 @@ export interface KorisnikUpdate {
   stsaktivan?: 'da' | 'ne' | null
   datumpt?: string | null
 }
+
+export interface KorisnikProfile extends Korisnik {
+  profesorNaziv?: string | null
+}

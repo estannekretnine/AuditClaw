@@ -352,7 +352,7 @@ export async function setAssistantActiveSystemPrompt(
   assistantId: number,
   systemPromptId: number | null
 ) {
-  const access = await requireAdminAccess()
+  const access = await requireReadAccess()
   if (access.error) return { error: access.error }
 
   const supabase = createAdminClient()

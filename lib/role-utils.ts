@@ -46,3 +46,27 @@ export function normalizeKorisnikForApp(user: Korisnik): Korisnik {
     profesorid: user.profesorid ?? null,
   }
 }
+
+export function resolveProfesorRelation(
+  rel: unknown
+): { ime: string; prezime: string | null } | null {
+  if (!rel) return null
+
+  const item = Array.isArray(rel) ? rel[0] : rel
+  if (!item || typeof item !== 'object') return null
+
+  const record = item as { ime?: unknown; prezime?: unknown }
+  if (typeof record.ime !== 'string') return null
+
+  return {
+    ime: record.ime,
+    prezime: typeof record.prezime === 'string' ? record.prezime : null,
+  }
+}
+
+export function formatProfesorLabel(
+  profesor: { ime: string; prezime: string | null } | null
+): string | null {
+  if (!profesor) return null
+  return `${profesor.ime}${profesor.prezime ? ` ${profesor.prezime}` : ''}`.trim()
+}

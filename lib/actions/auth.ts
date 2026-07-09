@@ -1,10 +1,12 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
-import { normalizeKorisnikForApp } from '@/lib/role-utils'
+import type { Korisnik, KorisnikProfile } from '@/lib/types/database'
+import { normalizeKorisnikForApp, resolveProfesorRelation, formatProfesorLabel } from '@/lib/role-utils'
 import { writeVapiUserLog } from '@/lib/vapi-user-log'
 
 const loginSchema = z.object({
@@ -92,7 +94,7 @@ export async function logout() {
   redirect('/login')
 }
 
-export async function getCurrentUser() {
+export async function getCurrentUser(): Promise<Korisnik | null> {
   const cookieStore = await cookies()
   const userCookie = cookieStore.get('user')
   
@@ -101,8 +103,54 @@ export async function getCurrentUser() {
   }
 
   try {
-    return JSON.parse(userCookie.value)
+    return JSON.parse(userCookie.value) as Korisnik
   } catch {
     return null
+  }
+}
+
+export async function getCurrentUserProfile(): Promise<{
+  data: KorisnikProfile | null
+  error: string | null
+}> {
+  const user = await getCurrentUser()
+  if (!user?.id) {
+    return { data: null, error: 'Nije prijavljen' }
+  }
+
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('korisnici')
+    .select('*, vapi_profesor(ime, prezime)')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Error fetching user profile:', error)
+    return { data: null, error: error.message }
+  }
+
+  if (!data) {
+    return {
+      data: {
+        ...user,
+        profesorNaziv: null,
+      },
+      error: null,
+    }
+  }
+
+  const normalized = normalizeKorisnikForApp(data as Korisnik)
+  const profesorNaziv =
+    normalized.stsstatus === 'vapi'
+      ? formatProfesorLabel(resolveProfesorRelation(data.vapi_profesor))
+      : null
+
+  return {
+    data: {
+      ...normalized,
+      profesorNaziv,
+    },
+    error: null,
   }
 }

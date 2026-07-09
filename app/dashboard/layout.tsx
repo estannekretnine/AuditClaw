@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Sidebar from '@/components/sidebar'
-import { Building2, Menu, LogOut } from 'lucide-react'
-import type { Korisnik } from '@/lib/types/database'
-import { logout } from '@/lib/actions/auth'
+import { Building2, Menu, LogOut, GraduationCap } from 'lucide-react'
+import type { KorisnikProfile } from '@/lib/types/database'
+import { logout, getCurrentUserProfile } from '@/lib/actions/auth'
 import { logCurrentVapiPageVisit } from '@/lib/actions/vapi-user-log'
 
 export default function DashboardLayout({
@@ -13,7 +13,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const [user, setUser] = useState<Korisnik | null>(null)
+  const [user, setUser] = useState<KorisnikProfile | null>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
@@ -33,6 +33,11 @@ export default function DashboardLayout({
       try {
         const userData = JSON.parse(decodeURIComponent(userCookie))
         setUser(userData)
+        void getCurrentUserProfile().then((result) => {
+          if (result.data) {
+            setUser(result.data)
+          }
+        })
       } catch {
         router.push('/login')
       }
@@ -119,9 +124,17 @@ export default function DashboardLayout({
                     Vapi
                   </span>
                 )}
-                <span className="text-sm text-gray-600 truncate font-medium">
-                  {user?.naziv || user?.email}
-                </span>
+                <div className="flex flex-col sm:items-end min-w-0">
+                  <span className="text-sm text-gray-600 truncate font-medium">
+                    {user?.naziv || user?.email}
+                  </span>
+                  {isVapi && user?.profesorNaziv && (
+                    <span className="flex items-center gap-1 text-xs text-indigo-600 truncate max-w-[220px]">
+                      <GraduationCap className="w-3.5 h-3.5 shrink-0" />
+                      {user.profesorNaziv}
+                    </span>
+                  )}
+                </div>
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all text-sm font-medium border border-transparent hover:border-red-200"
