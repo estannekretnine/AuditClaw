@@ -18,6 +18,7 @@ import {
   createVapiWebCall,
   pushAssistantToVapi,
 } from '@/lib/vapi/server'
+import { getSimliIceServers, getSimliSessionToken } from '@/lib/simli/server'
 import { getEffectiveStatus } from '@/lib/role-utils'
 
 const PENDING_VAPI_ID = 'pending-sync'
