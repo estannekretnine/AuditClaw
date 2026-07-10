@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { getCurrentUser } from '@/lib/actions/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getEffectiveStatus } from '@/lib/role-utils'
 import type { VapiSystemPrompt, VapiSystemPromptInsert } from '@/lib/types/vapi'
 
 const schema = z.object({
@@ -11,19 +12,17 @@ const schema = z.object({
   SystemPromptVapi: z.string().min(1, 'SystemPrompt je obavezan'),
 })
 
-async function requireAdminAccess() {
-  const user = await getCurrentUser()
-  if (!user || (user.stsstatus !== 'admin' && user.stsstatus !== 'manager')) {
-    return { error: 'Nemate dozvolu za ovu akciju.' }
-  }
-  return { error: null }
-}
-
 async function requireReadAccess() {
   const user = await getCurrentUser()
-  if (!user || (user.stsstatus !== 'admin' && user.stsstatus !== 'manager' && user.stsstatus !== 'vapi')) {
+  if (!user) {
     return { error: 'Nemate dozvolu za ovu akciju.' }
   }
+
+  const effectiveStatus = getEffectiveStatus(user.stsstatus, user.adresa)
+  if (effectiveStatus !== 'admin' && effectiveStatus !== 'manager' && effectiveStatus !== 'vapi') {
+    return { error: 'Nemate dozvolu za ovu akciju.' }
+  }
+
   return { error: null }
 }
 
@@ -54,7 +53,7 @@ export async function getVapiSystemPromptByAssistant(assistantid: number) {
 }
 
 export async function createVapiSystemPrompt(formData: FormData) {
-  const access = await requireAdminAccess()
+  const access = await requireReadAccess()
   if (access.error) return { data: null, error: access.error }
 
   const result = schema.safeParse(parseFormData(formData))
@@ -79,7 +78,7 @@ export async function createVapiSystemPrompt(formData: FormData) {
 }
 
 export async function updateVapiSystemPrompt(id: number, formData: FormData) {
-  const access = await requireAdminAccess()
+  const access = await requireReadAccess()
   if (access.error) return { data: null, error: access.error }
 
   const result = schema.safeParse(parseFormData(formData))
@@ -103,7 +102,7 @@ export async function updateVapiSystemPrompt(id: number, formData: FormData) {
 }
 
 export async function deleteVapiSystemPrompt(id: number) {
-  const access = await requireAdminAccess()
+  const access = await requireReadAccess()
   if (access.error) return { error: access.error }
 
   const supabase = createAdminClient()
