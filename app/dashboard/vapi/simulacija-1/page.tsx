@@ -26,6 +26,7 @@ import { getVapiProfesori } from '@/lib/actions/vapi-profesor'
 import { useSobaPusher } from '@/lib/hooks/use-soba-pusher'
 import { QrCodeCard } from '@/components/vapi/qr-code-card'
 import { VitalsWidget } from '@/components/vapi/vitals-widget'
+import { SearchableSelect, type SearchableOption } from '@/components/ui/searchable-select'
 import {
   DEFAULT_VITALNI,
   ULOGA_LABELI,
@@ -77,6 +78,24 @@ export default function VapiSimulacija1Page() {
   const [trenutnoStanje, setTrenutnoStanje] = useState('stabilan')
   const [alarm, setAlarm] = useState(false)
   const [alarmPoruka, setAlarmPoruka] = useState<string | null>(null)
+
+  const profesorOptions = useMemo<SearchableOption[]>(
+    () =>
+      profesori.map((p) => ({
+        value: String(p.id),
+        label: `${p.ime}${p.prezime ? ` ${p.prezime}` : ''}`,
+      })),
+    [profesori]
+  )
+
+  const ucenikOptions = useMemo<SearchableOption[]>(
+    () =>
+      ucenici.map((u) => ({
+        value: String(u.id),
+        label: `${u.ime}${u.prezime ? ` ${u.prezime}` : ''}${u.razred ? ` (${u.razred})` : ''}`,
+      })),
+    [ucenici]
+  )
 
   const generateNaziv = useCallback(() => {
     const rand = Math.floor(1000 + Math.random() * 9000)
@@ -369,22 +388,13 @@ export default function VapiSimulacija1Page() {
           </div>
           <div>
             <label className="mb-1 block text-xs font-semibold text-gray-600">Profesor</label>
-            <select
+            <SearchableSelect
               value={profesorId}
-              onChange={(e) => setProfesorId(e.target.value)}
+              onChange={setProfesorId}
+              options={[{ value: '', label: '— automatski —' }, ...profesorOptions]}
+              placeholder="Pretraži profesora…"
               disabled={Boolean(lockedProfesorId)}
-              className={`w-full rounded-xl border px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none ${
-                lockedProfesorId ? 'bg-gray-50 text-gray-500' : 'border-gray-200'
-              }`}
-            >
-              <option value="">— automatski —</option>
-              {profesori.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.ime}
-                  {p.prezime ? ` ${p.prezime}` : ''}
-                </option>
-              ))}
-            </select>
+            />
           </div>
         </div>
         <div>
@@ -399,51 +409,30 @@ export default function VapiSimulacija1Page() {
         <div className="grid gap-3 sm:grid-cols-3">
           <div>
             <label className="mb-1 block text-xs font-semibold text-gray-600">Trijaža učenik</label>
-            <select
+            <SearchableSelect
               value={ucesnikTrijaza}
-              onChange={(e) => setUcesnikTrijaza(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none"
-            >
-              <option value="">— izaberi učenika —</option>
-              {ucenici.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.ime}
-                  {u.prezime ? ` ${u.prezime}` : ''} {u.razred ? `(${u.razred})` : ''}
-                </option>
-              ))}
-            </select>
+              onChange={setUcesnikTrijaza}
+              options={[{ value: '', label: '— izaberi učenika —' }, ...ucenikOptions]}
+              placeholder="Pretraži učenika…"
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs font-semibold text-gray-600">Zapisnik učenik</label>
-            <select
+            <SearchableSelect
               value={ucesnikZapisnik}
-              onChange={(e) => setUcesnikZapisnik(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none"
-            >
-              <option value="">— izaberi učenika —</option>
-              {ucenici.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.ime}
-                  {u.prezime ? ` ${u.prezime}` : ''} {u.razred ? `(${u.razred})` : ''}
-                </option>
-              ))}
-            </select>
+              onChange={setUcesnikZapisnik}
+              options={[{ value: '', label: '— izaberi učenika —' }, ...ucenikOptions]}
+              placeholder="Pretraži učenika…"
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs font-semibold text-gray-600">Posmatrač učenik</label>
-            <select
+            <SearchableSelect
               value={ucesnikPosmatrac}
-              onChange={(e) => setUcesnikPosmatrac(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none"
-            >
-              <option value="">— izaberi učenika —</option>
-              {ucenici.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.ime}
-                  {u.prezime ? ` ${u.prezime}` : ''} {u.razred ? `(${u.razred})` : ''}
-                </option>
-              ))}
-            </select>
+              onChange={setUcesnikPosmatrac}
+              options={[{ value: '', label: '— izaberi učenika —' }, ...ucenikOptions]}
+              placeholder="Pretraži učenika…"
+            />
           </div>
         </div>
         <button

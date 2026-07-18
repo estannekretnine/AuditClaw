@@ -110,10 +110,35 @@ export function useSobaPusher({
         syncMembers(membersData)
       })
 
-      channel.bind('pusher:subscription_error', (status: number) => {
+      channel.bind('pusher:subscription_error', (status: number | unknown) => {
         if (cancelled) return
         setConnected(false)
-        setConnectionError(`Greška autentifikacije Pusher kanala (${status}).`)
+        const statusCode =
+          typeof status === 'number'
+            ? status
+            : typeof status === 'object' && status !== null && 'status' in (status as Record<string, unknown>)
+              ? Number((status as { status?: unknown }).status)
+              : null
+
+        if (statusCode === 401 || statusCode === 403) {
+          setConnectionError('Pusher autentifikacija odbijena (401/403). Proverite auth middleware.')
+          return
+        }
+        if (statusCode === 503) {
+          setConnectionError(
+            'Pusher nije konfigurisan na serveru (PUSHER_APP_ID/KEY/SECRET/CLUSTER).'
+          )
+          return
+        }
+
+        const fallback =
+          typeof status === 'number'
+            ? String(status)
+            : typeof status === 'string'
+              ? status
+              : 'nepoznato'
+
+        setConnectionError(`Greška autentifikacije Pusher kanala (${fallback}).`)
       })
 
       channel.bind('pusher:member_added', () => {

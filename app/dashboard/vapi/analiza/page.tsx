@@ -13,6 +13,7 @@ import {
   User,
   Users,
 } from 'lucide-react'
+import { SearchableSelect, type SearchableOption } from '@/components/ui/searchable-select'
 import { getVapiAnalizaFilterOptions, getVapiAnalizaReport } from '@/lib/actions/vapi-analiza'
 import type {
   VapiAnalizaCountItem,
@@ -248,6 +249,33 @@ export default function VapiAnalizaPage() {
     return filterOptions.ucenici.filter((ucenik) => ucenik.odeljenje === filterOdeljenje)
   }, [filterOptions, filterOdeljenje])
 
+  const profesorOptions = useMemo<SearchableOption[]>(
+    () => [
+      { value: '', label: 'Svi profesori' },
+      ...(filterOptions?.profesori || []).map((p) => ({
+        value: String(p.id),
+        label: p.label,
+      })),
+    ],
+    [filterOptions]
+  )
+
+  const odeljenjeOptions = useMemo<SearchableOption[]>(
+    () => [
+      { value: '', label: 'Sva odeljenja' },
+      ...(filterOptions?.odeljenja || []).map((o) => ({ value: o, label: o })),
+    ],
+    [filterOptions]
+  )
+
+  const ucenikOptions = useMemo<SearchableOption[]>(
+    () => [
+      { value: '', label: 'Svi učenici' },
+      ...filteredUcenici.map((u) => ({ value: String(u.id), label: u.label })),
+    ],
+    [filteredUcenici]
+  )
+
   const hasActiveFilters = Boolean(filterProfesorId || filterUcenikId || filterOdeljenje)
 
   const kpiCards = useMemo(() => {
@@ -320,51 +348,33 @@ export default function VapiAnalizaPage() {
           </div>
           <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Profesor</label>
-            <select
+            <SearchableSelect
               value={filterProfesorId}
-              onChange={(e) => setFilterProfesorId(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-            >
-              <option value="">Svi profesori</option>
-              {filterOptions?.profesori.map((profesor) => (
-                <option key={profesor.id} value={profesor.id}>
-                  {profesor.label}
-                </option>
-              ))}
-            </select>
+              onChange={setFilterProfesorId}
+              options={profesorOptions}
+              placeholder="Pretraži profesora…"
+            />
           </div>
           <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Odeljenje</label>
-            <select
+            <SearchableSelect
               value={filterOdeljenje}
-              onChange={(e) => {
-                setFilterOdeljenje(e.target.value)
+              onChange={(next) => {
+                setFilterOdeljenje(next)
                 setFilterUcenikId('')
               }}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-            >
-              <option value="">Sva odeljenja</option>
-              {filterOptions?.odeljenja.map((odeljenje) => (
-                <option key={odeljenje} value={odeljenje}>
-                  {odeljenje}
-                </option>
-              ))}
-            </select>
+              options={odeljenjeOptions}
+              placeholder="Pretraži odeljenje…"
+            />
           </div>
           <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Učenik</label>
-            <select
+            <SearchableSelect
               value={filterUcenikId}
-              onChange={(e) => setFilterUcenikId(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-            >
-              <option value="">Svi učenici</option>
-              {filteredUcenici.map((ucenik) => (
-                <option key={ucenik.id} value={ucenik.id}>
-                  {ucenik.label}
-                </option>
-              ))}
-            </select>
+              onChange={setFilterUcenikId}
+              options={ucenikOptions}
+              placeholder="Pretraži učenika ili odeljenje…"
+            />
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
