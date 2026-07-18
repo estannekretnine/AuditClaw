@@ -111,7 +111,11 @@ async function resolveProfesorId(user: Korisnik, requested?: number | null): Pro
   return data?.id ?? null
 }
 
-function buildJoinLinks(sobaId: string, origin?: string | null): SobaJoinLinkovi {
+function buildJoinLinks(
+  sobaId: string,
+  origin?: string | null,
+  assignments?: UcesnikAssignments
+): SobaJoinLinkovi {
   const base = (origin || process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '')
   const path = (uloga: VapiSimulacijaUloga, assignments?: UcesnikAssignments) => {
     const ucenikId = assignments?.[uloga]
