@@ -111,6 +111,19 @@ async function resolveProfesorId(user: Korisnik, requested?: number | null): Pro
   return data?.id ?? null
 }
 
+export async function getSimulacijaUserContext() {
+  const user = await getCurrentUser()
+  if (!user) return { role: null as string | null, profesorId: null as number | null }
+
+  const effectiveStatus = getEffectiveStatus(user.stsstatus, user.adresa)
+  let profesorId: number | null = null
+  if (effectiveStatus === 'vapi') {
+    profesorId = await resolveProfesorId({ ...user, stsstatus: effectiveStatus } as Korisnik)
+  }
+
+  return { role: effectiveStatus, profesorId }
+}
+
 function buildJoinLinks(
   sobaId: string,
   origin?: string | null,

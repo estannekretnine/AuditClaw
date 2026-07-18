@@ -19,6 +19,7 @@ import {
   kreirajSobu,
   zavrsiSobu,
   getVapiUceniciList,
+  getSimulacijaUserContext,
 } from '@/lib/actions/vapi-simulacija'
 import { getVapiAssistants } from '@/lib/actions/vapi-assistants'
 import { getVapiProfesori } from '@/lib/actions/vapi-profesor'
@@ -66,6 +67,7 @@ export default function VapiSimulacija1Page() {
   const [naziv, setNaziv] = useState('')
   const [assistantId, setAssistantId] = useState('')
   const [profesorId, setProfesorId] = useState('')
+  const [lockedProfesorId, setLockedProfesorId] = useState<number | null>(null)
   const [istorija, setIstorija] = useState('Pacijent sa bolom u grudima, 58 godina.')
   const [ucesnikTrijaza, setUcesnikTrijaza] = useState('')
   const [ucesnikZapisnik, setUcesnikZapisnik] = useState('')
@@ -86,17 +88,24 @@ export default function VapiSimulacija1Page() {
     setLoading(true)
     setError(null)
     try {
-      const [sobeRes, assRes, profRes, uceniciRes] = await Promise.all([
+      const [sobeRes, assRes, profRes, uceniciRes, userCtx] = await Promise.all([
         getSobeList(40),
         getVapiAssistants(200, 0),
         getVapiProfesori(200, 0),
         getVapiUceniciList(500),
+        getSimulacijaUserContext(),
       ])
       if (sobeRes.error) setError(sobeRes.error)
       setSobe(sobeRes.data || [])
       setAssistants(assRes.data || [])
       setProfesori(profRes.data || [])
       setUcenici((uceniciRes.data as typeof ucenici) || [])
+      if (userCtx.role === 'vapi' && userCtx.profesorId) {
+        setProfesorId(String(userCtx.profesorId))
+        setLockedProfesorId(userCtx.profesorId)
+      } else {
+        setLockedProfesorId(null)
+      }
     } finally {
       setLoading(false)
     }
@@ -177,7 +186,7 @@ export default function VapiSimulacija1Page() {
       const result = await kreirajSobu({
         naziv: finalNaziv,
         assistantId: assistantId ? Number(assistantId) : null,
-        profesorId: profesorId ? Number(profesorId) : null,
+        profesorId: profesorId ? Number(profesorId) : lockedProfesorId,
         istorijaBolesti: istorija.trim() || null,
         origin: window.location.origin,
         ucesnici: assignments,
@@ -363,7 +372,10 @@ export default function VapiSimulacija1Page() {
             <select
               value={profesorId}
               onChange={(e) => setProfesorId(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none"
+              disabled={Boolean(lockedProfesorId)}
+              className={`w-full rounded-xl border px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none ${
+                lockedProfesorId ? 'bg-gray-50 text-gray-500' : 'border-gray-200'
+              }`}
             >
               <option value="">— automatski —</option>
               {profesori.map((p) => (
