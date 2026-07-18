@@ -116,11 +116,14 @@ export default function SobaClientPage() {
         if (existing?.ucenik_id) {
           setSelectedUcenikId(String(existing.ucenik_id))
         }
+        if (forcedUcenikId) {
+          setSelectedUcenikId(String(forcedUcenikId))
+        }
       }
     } finally {
       setLoading(false)
     }
-  }, [sobaId, uloga])
+  }, [sobaId, uloga, forcedUcenikId])
 
   useEffect(() => {
     void loadContext()
@@ -203,6 +206,12 @@ export default function SobaClientPage() {
       void handleJoin()
     }
   }, [forcedUcenikId, joined, joining, selectedUcenikId])
+
+  useEffect(() => {
+    if (forcedUcenikId) {
+      setSelectedUcenikId(String(forcedUcenikId))
+    }
+  }, [forcedUcenikId])
 
   const handleSaveZapisnik = async () => {
     setSaving(true)
