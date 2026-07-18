@@ -175,13 +175,6 @@ export function TrijazaVoicePanel({
 
   return (
     <div className="space-y-4">
-      <VitalsWidget
-        vitalni={vitalni}
-        trenutnoStanje={trenutnoStanje}
-        alarm={alarm}
-        alarmPoruka={alarmPoruka}
-      />
-
       <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-lg">
         <div className="mb-4 flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-600">
@@ -266,6 +259,13 @@ export function TrijazaVoicePanel({
           )}
         </div>
       </div>
+
+      <VitalsWidget
+        vitalni={vitalni}
+        trenutnoStanje={trenutnoStanje}
+        alarm={alarm}
+        alarmPoruka={alarmPoruka}
+      />
     </div>
   )
 }

@@ -289,6 +289,23 @@ export default function VapiSimulacija1Page() {
     }
   }
 
+  // Auto sync svakog podešavanja profesora ka svim ulogama (lagani debounce)
+  useEffect(() => {
+    if (!activeSoba || activeSoba.status === 'zavrsena') return
+    const timeout = setTimeout(async () => {
+      try {
+        await azurirajStanjeSimulacije({
+          sobaId: activeSoba.id,
+          vitalniParametri: vitalni,
+          trenutnoStanje,
+        })
+      } catch (err) {
+        console.error('Auto sync stanja neuspešan:', err)
+      }
+    }, 700)
+    return () => clearTimeout(timeout)
+  }, [activeSoba, vitalni, trenutnoStanje])
+
   const handleZavrsi = async () => {
     if (!activeSoba) return
     if (!window.confirm('Završiti ovu simulaciju?')) return
