@@ -15,6 +15,7 @@ import {
   Stethoscope,
   Search,
   MessageSquare,
+  X,
 } from 'lucide-react'
 import {
   getVapiAssistants,
@@ -1294,10 +1295,16 @@ export default function VapiAssistantsPage() {
       )}
 
       {showSysPromptModal && sysPromptAssistant && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-100 w-full max-w-4xl max-h-[90vh] overflow-y-auto my-auto">
-            <div className="px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-violet-600 to-violet-800 rounded-t-2xl sm:rounded-t-3xl">
-              <div className="flex items-center gap-3">
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4"
+          onClick={handleCloseSysPromptModal}
+        >
+          <div
+            className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-100 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-violet-600 to-violet-800 rounded-t-2xl sm:rounded-t-3xl flex items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
                   <MessageSquare className="w-5 h-5 text-white" />
                 </div>
@@ -1306,9 +1313,17 @@ export default function VapiAssistantsPage() {
                   <p className="text-sm text-violet-100 truncate">{assistantName(sysPromptAssistant)}</p>
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={handleCloseSysPromptModal}
+                className="p-2 rounded-xl text-violet-100 hover:bg-white/10 hover:text-white transition-colors shrink-0"
+                aria-label="Zatvori"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="p-4 sm:p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
               <p className="text-sm text-gray-600">
                 Dodajte više promptova u tabelu za ovog asistenta i označite koji je aktivan.
               </p>
@@ -1437,7 +1452,10 @@ export default function VapiAssistantsPage() {
                 </div>
               )}
 
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-4 border-t border-gray-100">
+            </div>
+
+            <div className="shrink-0 border-t border-gray-100 bg-white px-4 sm:px-6 py-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <p className="text-xs text-gray-500">
                   Ukupno: {sysPromptOptions.length}
                   {sysPromptSearch.trim() ? ` · Prikazano: ${filteredSysPromptOptions.length}` : ''}
@@ -1449,7 +1467,7 @@ export default function VapiAssistantsPage() {
                     onClick={handleCloseSysPromptModal}
                     className="w-full sm:w-auto px-6 py-3 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors font-medium"
                   >
-                    Otkaži
+                    Zatvori
                   </button>
                   <button
                     type="button"

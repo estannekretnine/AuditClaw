@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, Users, Shield, ChevronDown, ChevronRight, LogOut, Menu, X, Home, BarChart3, Upload, TrendingUp, Target, FileText, MessageSquare, UserCheck, Newspaper, Bot, Mic, MessageCircle, GraduationCap, Stethoscope, ScrollText, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Building2, Users, Shield, ChevronDown, ChevronRight, LogOut, Menu, X, Home, BarChart3, Upload, TrendingUp, Target, FileText, MessageSquare, UserCheck, Newspaper, Bot, Mic, MessageCircle, GraduationCap, Stethoscope, ScrollText, PanelLeftClose, PanelLeftOpen, MonitorPlay } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -39,6 +39,7 @@ export default function Sidebar({ user, collapsed = false, onToggle }: SidebarPr
 
   const vapiSubItems: AnalyzaSubItem[] = [
     { id: 'vapi-assistants', label: 'Vapi Assistants', href: '/dashboard/vapi/assistants', icon: Bot },
+    { id: 'vapi-simulacija-1', label: 'Vapi Simulacija 1', href: '/dashboard/vapi/simulacija-1', icon: MonitorPlay },
     { id: 'vapi-oprema', label: 'Medicinska oprema', href: '/dashboard/vapi/oprema', icon: Stethoscope },
     { id: 'vapi-odgovor', label: 'Vapi Odgovor', href: '/dashboard/vapi/odgovor', icon: MessageCircle },
     { id: 'vapi-analiza', label: 'Analiza', href: '/dashboard/vapi/analiza', icon: BarChart3 },
