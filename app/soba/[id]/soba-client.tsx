@@ -56,6 +56,11 @@ export default function SobaClientPage() {
   const sobaId = params?.id || ''
   const ulogaParam = searchParams.get('uloga')
   const uloga = isValidUloga(ulogaParam) ? ulogaParam : null
+  const ucenikIdParam = searchParams.get('ucenikId')
+  const forcedUcenikId = useMemo(() => {
+    const parsed = ucenikIdParam ? Number(ucenikIdParam) : NaN
+    return Number.isFinite(parsed) ? parsed : null
+  }, [ucenikIdParam])
 
   const [loading, setLoading] = useState(true)
   const [joining, setJoining] = useState(false)
@@ -107,12 +112,9 @@ export default function SobaClientPage() {
       }
 
       if (uloga) {
-        const existing = result.data.soba.ucesnici.find(
-          (u) => u.uloga === uloga && u.ucenik_id && u.online_status
-        )
+        const existing = result.data.soba.ucesnici.find((u) => u.uloga === uloga && u.ucenik_id)
         if (existing?.ucenik_id) {
           setSelectedUcenikId(String(existing.ucenik_id))
-          setJoined(true)
         }
       }
     } finally {
@@ -169,7 +171,8 @@ export default function SobaClientPage() {
   })
 
   const handleJoin = async () => {
-    if (!uloga || !selectedUcenikId) {
+    const targetId = forcedUcenikId ?? Number(selectedUcenikId)
+    if (!uloga || !targetId) {
       setError('Izaberite sebe sa liste učenika.')
       return
     }
@@ -179,7 +182,7 @@ export default function SobaClientPage() {
       const result = await pridruziSeSobi({
         sobaId,
         uloga,
-        ucenikId: Number(selectedUcenikId),
+        ucenikId: targetId,
       })
       if (result.error || !result.data) {
         setError(result.error || 'Greška pri pridruživanju.')
@@ -194,6 +197,12 @@ export default function SobaClientPage() {
       setJoining(false)
     }
   }
+
+  useEffect(() => {
+    if (forcedUcenikId && !joined && !joining && selectedUcenikId === String(forcedUcenikId)) {
+      void handleJoin()
+    }
+  }, [forcedUcenikId, joined, joining, selectedUcenikId])
 
   const handleSaveZapisnik = async () => {
     setSaving(true)
@@ -305,23 +314,38 @@ export default function SobaClientPage() {
             <p className="text-sm text-gray-500">
               Uloga: <strong>{ULOGA_LABELI[uloga]}</strong>. Izaberite svoje ime da se povežete.
             </p>
-            <select
-              value={selectedUcenikId}
-              onChange={(e) => setSelectedUcenikId(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm"
-            >
-              <option value="">— izaberite učenika —</option>
-              {ucenici.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.ime}
-                  {u.prezime ? ` ${u.prezime}` : ''}
-                  {u.razred ? ` (${u.razred})` : ''}
-                </option>
-              ))}
-            </select>
+            {forcedUcenikId ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm">
+                Automatski dodeljen učenik:{' '}
+                <strong>
+                  {ucenici.find((u) => u.id === forcedUcenikId)
+                    ? `${ucenici.find((u) => u.id === forcedUcenikId)?.ime}${
+                        ucenici.find((u) => u.id === forcedUcenikId)?.prezime
+                          ? ` ${ucenici.find((u) => u.id === forcedUcenikId)?.prezime}`
+                          : ''
+                      }`
+                    : forcedUcenikId}
+                </strong>
+              </div>
+            ) : (
+              <select
+                value={selectedUcenikId}
+                onChange={(e) => setSelectedUcenikId(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm"
+              >
+                <option value="">— izaberite učenika —</option>
+                {ucenici.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.ime}
+                    {u.prezime ? ` ${u.prezime}` : ''}
+                    {u.razred ? ` (${u.razred})` : ''}
+                  </option>
+                ))}
+              </select>
+            )}
             <button
               type="button"
-              disabled={joining || !selectedUcenikId}
+              disabled={joining || (!forcedUcenikId && !selectedUcenikId)}
               onClick={() => void handleJoin()}
               className="w-full rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-500/25 disabled:opacity-50"
             >

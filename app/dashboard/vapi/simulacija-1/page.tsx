@@ -18,6 +18,7 @@ import {
   getSobeList,
   kreirajSobu,
   zavrsiSobu,
+  getVapiUceniciList,
 } from '@/lib/actions/vapi-simulacija'
 import { getVapiAssistants } from '@/lib/actions/vapi-assistants'
 import { getVapiProfesori } from '@/lib/actions/vapi-profesor'
@@ -32,6 +33,7 @@ import {
   type VapiSobaDetalji,
   type VapiSimulacijaUloga,
   type VitalniParametri,
+  type UcesnikAssignments,
 } from '@/lib/types/vapi-simulacija'
 import type { VapiAssistant, VapiProfesor } from '@/lib/types/vapi'
 
@@ -57,30 +59,44 @@ export default function VapiSimulacija1Page() {
   const [linkovi, setLinkovi] = useState<SobaJoinLinkovi | null>(null)
   const [assistants, setAssistants] = useState<VapiAssistant[]>([])
   const [profesori, setProfesori] = useState<VapiProfesor[]>([])
+  const [ucenici, setUcenici] = useState<
+    Array<{ id: number; ime: string; prezime: string | null; razred: string | null }>
+  >([])
 
   const [naziv, setNaziv] = useState('')
   const [assistantId, setAssistantId] = useState('')
   const [profesorId, setProfesorId] = useState('')
   const [istorija, setIstorija] = useState('Pacijent sa bolom u grudima, 58 godina.')
+  const [ucesnikTrijaza, setUcesnikTrijaza] = useState('')
+  const [ucesnikZapisnik, setUcesnikZapisnik] = useState('')
+  const [ucesnikPosmatrac, setUcesnikPosmatrac] = useState('')
 
   const [vitalni, setVitalni] = useState<VitalniParametri>({ ...DEFAULT_VITALNI })
   const [trenutnoStanje, setTrenutnoStanje] = useState('stabilan')
   const [alarm, setAlarm] = useState(false)
   const [alarmPoruka, setAlarmPoruka] = useState<string | null>(null)
 
+  const generateNaziv = useCallback(() => {
+    const rand = Math.floor(1000 + Math.random() * 9000)
+    const suffix = Date.now().toString().slice(-4)
+    return `soba-${rand}-${suffix}`
+  }, [])
+
   const loadLists = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const [sobeRes, assRes, profRes] = await Promise.all([
+      const [sobeRes, assRes, profRes, uceniciRes] = await Promise.all([
         getSobeList(40),
         getVapiAssistants(200, 0),
         getVapiProfesori(200, 0),
+        getVapiUceniciList(500),
       ])
       if (sobeRes.error) setError(sobeRes.error)
       setSobe(sobeRes.data || [])
       setAssistants(assRes.data || [])
       setProfesori(profRes.data || [])
+      setUcenici((uceniciRes.data as typeof ucenici) || [])
     } finally {
       setLoading(false)
     }
@@ -90,22 +106,39 @@ export default function VapiSimulacija1Page() {
     void loadLists()
   }, [loadLists])
 
+  useEffect(() => {
+    setNaziv(generateNaziv())
+  }, [generateNaziv])
+
+  const buildJoinUrl = useCallback(
+    (sobaId: string, uloga: VapiSimulacijaUloga, assignments?: UcesnikAssignments) => {
+      const origin = typeof window !== 'undefined' ? window.location.origin : ''
+      const ucenikId = assignments?.[uloga]
+      const query = ucenikId ? `?uloga=${uloga}&ucenikId=${ucenikId}` : `?uloga=${uloga}`
+      return `${origin}/soba/${sobaId}${query}`
+    },
+    []
+  )
+
   const refreshActive = useCallback(async (sobaId: string) => {
     const result = await getSobaDetalji(sobaId)
     if (result.data) {
       setActiveSoba(result.data)
+      const assignments: UcesnikAssignments = {}
+      result.data.ucesnici.forEach((u) => {
+        assignments[u.uloga] = u.ucenik_id ?? null
+      })
       if (result.data.karton) {
         setVitalni(result.data.karton.vitalni_parametri)
         setTrenutnoStanje(result.data.karton.trenutno_stanje)
       }
-      const origin = typeof window !== 'undefined' ? window.location.origin : ''
       setLinkovi({
-        trijaza: `${origin}/soba/${sobaId}?uloga=trijaza`,
-        zapisnik: `${origin}/soba/${sobaId}?uloga=zapisnik`,
-        posmatrac: `${origin}/soba/${sobaId}?uloga=posmatrac`,
+        trijaza: buildJoinUrl(sobaId, 'trijaza', assignments),
+        zapisnik: buildJoinUrl(sobaId, 'zapisnik', assignments),
+        posmatrac: buildJoinUrl(sobaId, 'posmatrac', assignments),
       })
     }
-  }, [])
+  }, [buildJoinUrl])
 
   const { connected, connectionError, members } = useSobaPusher({
     sobaId: activeSoba?.id ?? null,
@@ -130,21 +163,24 @@ export default function VapiSimulacija1Page() {
   })
 
   const handleCreate = async () => {
-    if (!naziv.trim()) {
-      setError('Unesite naziv sobe.')
-      return
-    }
+    const finalNaziv = naziv.trim() || generateNaziv()
     setSaving(true)
     setError(null)
     setAlarm(false)
     setAlarmPoruka(null)
     try {
+      const assignments: { uloga: VapiSimulacijaUloga; ucenikId: number }[] = []
+      if (ucesnikTrijaza) assignments.push({ uloga: 'trijaza', ucenikId: Number(ucesnikTrijaza) })
+      if (ucesnikZapisnik) assignments.push({ uloga: 'zapisnik', ucenikId: Number(ucesnikZapisnik) })
+      if (ucesnikPosmatrac) assignments.push({ uloga: 'posmatrac', ucenikId: Number(ucesnikPosmatrac) })
+
       const result = await kreirajSobu({
-        naziv: naziv.trim(),
+        naziv: finalNaziv,
         assistantId: assistantId ? Number(assistantId) : null,
         profesorId: profesorId ? Number(profesorId) : null,
         istorijaBolesti: istorija.trim() || null,
         origin: window.location.origin,
+        ucesnici: assignments,
       })
       if (result.error || !result.data?.soba) {
         setError(result.error || 'Greška pri kreiranju sobe.')
@@ -154,7 +190,10 @@ export default function VapiSimulacija1Page() {
       setLinkovi(result.data.linkovi)
       setVitalni(result.data.soba.karton?.vitalni_parametri || { ...DEFAULT_VITALNI })
       setTrenutnoStanje(result.data.soba.karton?.trenutno_stanje || 'stabilan')
-      setNaziv('')
+      setNaziv(generateNaziv())
+      setUcesnikTrijaza('')
+      setUcesnikZapisnik('')
+      setUcesnikPosmatrac('')
       await loadLists()
     } finally {
       setSaving(false)
@@ -297,12 +336,11 @@ export default function VapiSimulacija1Page() {
         </h3>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs font-semibold text-gray-600">Naziv sobe</label>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Naziv (automatski)</label>
             <input
               value={naziv}
-              onChange={(e) => setNaziv(e.target.value)}
-              placeholder="Soba-MED-101"
-              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              readOnly
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm bg-gray-50 text-gray-600"
             />
           </div>
           <div>
@@ -345,6 +383,56 @@ export default function VapiSimulacija1Page() {
             rows={2}
             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none"
           />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Trijaža učenik</label>
+            <select
+              value={ucesnikTrijaza}
+              onChange={(e) => setUcesnikTrijaza(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none"
+            >
+              <option value="">— izaberi učenika —</option>
+              {ucenici.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.ime}
+                  {u.prezime ? ` ${u.prezime}` : ''} {u.razred ? `(${u.razred})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Zapisnik učenik</label>
+            <select
+              value={ucesnikZapisnik}
+              onChange={(e) => setUcesnikZapisnik(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none"
+            >
+              <option value="">— izaberi učenika —</option>
+              {ucenici.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.ime}
+                  {u.prezime ? ` ${u.prezime}` : ''} {u.razred ? `(${u.razred})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Posmatrač učenik</label>
+            <select
+              value={ucesnikPosmatrac}
+              onChange={(e) => setUcesnikPosmatrac(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none"
+            >
+              <option value="">— izaberi učenika —</option>
+              {ucenici.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.ime}
+                  {u.prezime ? ` ${u.prezime}` : ''} {u.razred ? `(${u.razred})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         <button
           type="button"

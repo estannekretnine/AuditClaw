@@ -15,6 +15,7 @@ import {
   type VapiSoba,
   type VapiSobaDetalji,
   type VapiSimulacijaUloga,
+  type UcesnikAssignments,
   type VapiUcesnikSimulacije,
   type VitalniParametri,
 } from '@/lib/types/vapi-simulacija'
@@ -26,6 +27,14 @@ const kreirajSobuSchema = z.object({
   profesorId: z.number().int().positive().optional().nullable(),
   assistantId: z.number().int().positive().optional().nullable(),
   istorijaBolesti: z.string().optional().nullable(),
+  ucesnici: z
+    .array(
+      z.object({
+        uloga: z.enum(['trijaza', 'zapisnik', 'posmatrac']),
+        ucenikId: z.number().int().positive(),
+      })
+    )
+    .optional(),
 })
 
 const pridruziSchema = z.object({
@@ -104,8 +113,11 @@ async function resolveProfesorId(user: Korisnik, requested?: number | null): Pro
 
 function buildJoinLinks(sobaId: string, origin?: string | null): SobaJoinLinkovi {
   const base = (origin || process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '')
-  const path = (uloga: VapiSimulacijaUloga) =>
-    base ? `${base}/soba/${sobaId}?uloga=${uloga}` : `/soba/${sobaId}?uloga=${uloga}`
+  const path = (uloga: VapiSimulacijaUloga, assignments?: UcesnikAssignments) => {
+    const ucenikId = assignments?.[uloga]
+    const query = ucenikId ? `?uloga=${uloga}&ucenikId=${ucenikId}` : `?uloga=${uloga}`
+    return base ? `${base}/soba/${sobaId}${query}` : `/soba/${sobaId}${query}`
+  }
 
   return {
     trijaza: path('trijaza'),
@@ -204,12 +216,34 @@ export async function getSobeList(limit: number = 30) {
   return { data: (data || []) as VapiSoba[], error: null, count: count || 0 }
 }
 
+export async function getVapiUceniciList(limit: number = 500) {
+  const access = await requireSimulacijaAccess()
+  if (access.error || !access.user) {
+    return { data: null, error: access.error || 'Nemate dozvolu.' }
+  }
+
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('vapi_ucenik')
+    .select('id, ime, prezime, razred')
+    .order('ime', { ascending: true })
+    .limit(limit)
+
+  if (error) {
+    console.error('Error listing ucenici:', error)
+    return { data: null, error: error.message }
+  }
+
+  return { data: data || [], error: null }
+}
+
 export async function kreirajSobu(input: {
   naziv: string
   profesorId?: number | null
   assistantId?: number | null
   istorijaBolesti?: string | null
   origin?: string | null
+  ucesnici?: { uloga: VapiSimulacijaUloga; ucenikId: number }[]
 }) {
   const access = await requireSimulacijaAccess()
   if (access.error || !access.user) {
@@ -252,10 +286,15 @@ export async function kreirajSobu(input: {
 
   const sobaId = soba.id as string
 
+  const assignments: UcesnikAssignments = {}
+  parsed.data.ucesnici?.forEach((u) => {
+    assignments[u.uloga] = u.ucenikId
+  })
+
   const ucesniciRows = ULOGE.map((uloga) => ({
     soba_id: sobaId,
     uloga,
-    ucenik_id: null,
+    ucenik_id: assignments[uloga] ?? null,
     online_status: false,
   }))
 
@@ -282,7 +321,7 @@ export async function kreirajSobu(input: {
   }
 
   const detalji = await getSobaDetalji(sobaId)
-  const linkovi = buildJoinLinks(sobaId, input.origin)
+  const linkovi = buildJoinLinks(sobaId, input.origin, assignments)
 
   revalidatePath('/dashboard/vapi/simulacija-1')
 

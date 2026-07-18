@@ -73,6 +73,8 @@ export interface SobaJoinLinkovi {
   posmatrac: string
 }
 
+export type UcesnikAssignments = Partial<Record<VapiSimulacijaUloga, number | null>>
+
 /** Pusher event payload tipovi */
 export interface StudentPristupioPayload {
   sobaId: string
