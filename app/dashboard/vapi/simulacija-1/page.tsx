@@ -535,6 +535,9 @@ export default function VapiSimulacija1Page() {
                       <span className="text-base font-bold text-gray-900">
                         {ULOGA_LABELI[currentQrUloga]}
                       </span>
+                      <span className="text-xs font-semibold text-gray-500">
+                        {qrIndex + 1} / {qrUloge.length}
+                      </span>
                     </div>
                     <div className="flex gap-2">
                       <button
