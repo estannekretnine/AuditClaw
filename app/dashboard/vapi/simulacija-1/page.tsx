@@ -529,32 +529,32 @@ export default function VapiSimulacija1Page() {
 
               {linkovi && (
                 <div className="space-y-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                      <span className="text-xs uppercase tracking-wide text-gray-500">QR kod za</span>
-                      <span className="text-base font-bold text-gray-900">
-                        {ULOGA_LABELI[currentQrUloga]}
-                      </span>
-                      <span className="text-xs font-semibold text-gray-500">
-                        {qrIndex + 1} / {qrUloge.length}
-                      </span>
+                  <div className="text-center space-y-1">
+                    <div className="text-xs uppercase tracking-[0.14em] text-gray-500 font-semibold">
+                      QR kod za
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={handleQrPrev}
-                        className="rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-                      >
-                        ← Prethodni
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleQrNext}
-                        className="rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-                      >
-                        Sledeći →
-                      </button>
+                    <div className="text-xl sm:text-2xl font-bold text-gray-900">
+                      {ULOGA_LABELI[currentQrUloga]}
                     </div>
+                    <div className="text-sm sm:text-base font-semibold text-gray-600">
+                      {qrIndex + 1} / {qrUloge.length}
+                    </div>
+                  </div>
+                  <div className="flex justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleQrPrev}
+                      className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                    >
+                      ← Prethodni
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleQrNext}
+                      className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                    >
+                      Sledeći →
+                    </button>
                   </div>
                   <div className="flex justify-center">
                     <QrCodeCard
