@@ -289,21 +289,17 @@ export default function VapiSimulacija1Page() {
     }
   }
 
-  // Auto sync svakog podešavanja profesora ka svim ulogama (lagani debounce)
-  useEffect(() => {
+  const handleLiveSync = useCallback(async () => {
     if (!activeSoba || activeSoba.status === 'zavrsena') return
-    const timeout = setTimeout(async () => {
-      try {
-        await azurirajStanjeSimulacije({
-          sobaId: activeSoba.id,
-          vitalniParametri: vitalni,
-          trenutnoStanje,
-        })
-      } catch (err) {
-        console.error('Auto sync stanja neuspešan:', err)
-      }
-    }, 700)
-    return () => clearTimeout(timeout)
+    try {
+      await azurirajStanjeSimulacije({
+        sobaId: activeSoba.id,
+        vitalniParametri: vitalni,
+        trenutnoStanje,
+      })
+    } catch (err) {
+      console.error('Live sync stanja neuspešan:', err)
+    }
   }, [activeSoba, vitalni, trenutnoStanje])
 
   const handleZavrsi = async () => {
@@ -561,6 +557,8 @@ export default function VapiSimulacija1Page() {
                     onChange={(e) =>
                       setVitalni((prev) => ({ ...prev, puls: Number(e.target.value) }))
                     }
+                  onMouseUp={() => void handleLiveSync()}
+                  onTouchEnd={() => void handleLiveSync()}
                     className="w-full accent-rose-500"
                   />
                 </div>
@@ -582,6 +580,8 @@ export default function VapiSimulacija1Page() {
                           pritisak: `${e.target.value}/${diastola}`,
                         }))
                       }
+                    onMouseUp={() => void handleLiveSync()}
+                    onTouchEnd={() => void handleLiveSync()}
                       className="w-full accent-indigo-500"
                     />
                   </div>
@@ -601,6 +601,8 @@ export default function VapiSimulacija1Page() {
                           pritisak: `${sistola}/${e.target.value}`,
                         }))
                       }
+                    onMouseUp={() => void handleLiveSync()}
+                    onTouchEnd={() => void handleLiveSync()}
                       className="w-full accent-indigo-500"
                     />
                   </div>
@@ -619,6 +621,8 @@ export default function VapiSimulacija1Page() {
                     onChange={(e) =>
                       setVitalni((prev) => ({ ...prev, saturacija: Number(e.target.value) }))
                     }
+                  onMouseUp={() => void handleLiveSync()}
+                  onTouchEnd={() => void handleLiveSync()}
                     className="w-full accent-sky-500"
                   />
                 </div>
@@ -629,7 +633,8 @@ export default function VapiSimulacija1Page() {
                   </label>
                   <input
                     value={trenutnoStanje}
-                    onChange={(e) => setTrenutnoStanje(e.target.value)}
+                  onChange={(e) => setTrenutnoStanje(e.target.value)}
+                  onBlur={() => void handleLiveSync()}
                     className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm"
                   />
                 </div>
