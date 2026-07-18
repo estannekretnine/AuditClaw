@@ -78,6 +78,7 @@ export default function VapiSimulacija1Page() {
   const [trenutnoStanje, setTrenutnoStanje] = useState('stabilan')
   const [alarm, setAlarm] = useState(false)
   const [alarmPoruka, setAlarmPoruka] = useState<string | null>(null)
+  const [qrIndex, setQrIndex] = useState(0)
 
   const profesorOptions = useMemo<SearchableOption[]>(
     () =>
@@ -302,6 +303,14 @@ export default function VapiSimulacija1Page() {
     }
   }, [activeSoba, vitalni, trenutnoStanje])
 
+  const handleQrPrev = () => {
+    setQrIndex((prev) => (prev - 1 + qrUloge.length) % qrUloge.length)
+  }
+
+  const handleQrNext = () => {
+    setQrIndex((prev) => (prev + 1) % qrUloge.length)
+  }
+
   const handleZavrsi = async () => {
     if (!activeSoba) return
     if (!window.confirm('Završiti ovu simulaciju?')) return
@@ -323,6 +332,9 @@ export default function VapiSimulacija1Page() {
     const parts = String(vitalni.pritisak).split('/')
     return Number(parts[1]) || 80
   }, [vitalni.pritisak])
+
+  const qrUloge = useMemo<VapiSimulacijaUloga[]>(() => ['trijaza', 'zapisnik', 'posmatrac'], [])
+  const currentQrUloga = qrUloge[qrIndex % qrUloge.length]
 
   if (loading) {
     return (
@@ -516,16 +528,39 @@ export default function VapiSimulacija1Page() {
               </div>
 
               {linkovi && (
-                <div className="grid gap-4 sm:grid-cols-3">
-                  {(['trijaza', 'zapisnik', 'posmatrac'] as VapiSimulacijaUloga[]).map((uloga) => (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                      <span className="text-xs uppercase tracking-wide text-gray-500">QR kod za</span>
+                      <span className="text-base font-bold text-gray-900">
+                        {ULOGA_LABELI[currentQrUloga]}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleQrPrev}
+                        className="rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                      >
+                        ← Prethodni
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleQrNext}
+                        className="rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                      >
+                        Sledeći →
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex justify-center">
                     <QrCodeCard
-                      key={uloga}
-                      label={ULOGA_LABELI[uloga]}
-                      url={linkovi[uloga]}
-                      online={isOnline(activeSoba, uloga)}
-                      studentName={ucenikImeFromSlot(activeSoba, uloga)}
+                      label={ULOGA_LABELI[currentQrUloga]}
+                      url={linkovi[currentQrUloga]}
+                      online={isOnline(activeSoba, currentQrUloga)}
+                      studentName={ucenikImeFromSlot(activeSoba, currentQrUloga)}
                     />
-                  ))}
+                  </div>
                 </div>
               )}
 

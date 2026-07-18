@@ -8,7 +8,7 @@ interface QrCodeCardProps {
 }
 
 export function QrCodeCard({ label, url, online = false, studentName }: QrCodeCardProps) {
-  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(url)}`
 
   return (
     <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-lg flex flex-col items-center text-center">
@@ -28,7 +28,7 @@ export function QrCodeCard({ label, url, online = false, studentName }: QrCodeCa
       <img
         src={qrSrc}
         alt={`QR kod za ${label}`}
-        className="h-48 w-48 rounded-2xl border border-gray-100 bg-white"
+        className="h-72 w-72 rounded-2xl border border-gray-100 bg-white"
       />
 
       <p className="mt-3 text-xs text-gray-500 break-all line-clamp-2">{url}</p>
